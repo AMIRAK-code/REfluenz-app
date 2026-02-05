@@ -120,5 +120,6 @@ out
 
 # Vite
 dist
+build
 dist-ssr
 *.local

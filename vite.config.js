@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   base: '/',
   build: {
-    outDir: 'build', // Changed from 'dist' to 'build' to match Vercel's default React expectation
+    outDir: 'dist',
     emptyOutDir: true,
   }
 })

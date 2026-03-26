@@ -21,7 +21,7 @@ A platform for creators who value depth over reach.
    npm install
    ```
 
-2. Start the backend API (serves mock users, creators, tiers, posts, stories, and mock auth/payment):
+2. Start the backend API (serves mock users, creators, tiers, posts, stories, creator channels, avatar updates, and mock auth/payment):
    ```bash
    npm run server
    ```
@@ -46,6 +46,9 @@ A platform for creators who value depth over reach.
 - `GET /api/dashboard/creator/:id` → creator dashboard data
 - `POST /api/creators/:id/posts` → creator post publishing
 - `POST /api/creators/:id/stories` → creator story publishing
+- `POST /api/creators/:id/channel-messages` → creator text channel publishing
+- `POST /api/users/:id/avatar` → user profile image upload
+- `POST /api/creators/:id/avatar` → creator profile image upload
 - `POST /api/users/:id/purchase-tier` → mock subscription purchase with mock payment response
 
 ### Mock Credentials

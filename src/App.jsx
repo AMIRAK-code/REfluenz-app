@@ -19,6 +19,65 @@ import {
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 const FALLBACK_IMAGE = '/mock/post-concrete.svg';
 const FALLBACK_AVATAR = '/mock/user-aria.svg';
+const THEME_TOKENS = {
+  dark: {
+    '--color-bg': '#050605',
+    '--color-surface': '#0e1210',
+    '--color-text-main': '#eff1f0',
+    '--color-text-muted': '#889993',
+    '--color-accent': '#d6cdc6',
+    '--color-accent-hover': '#e8e2de',
+    '--story-ring-unseen': '#f8fafc',
+    '--story-ring-seen': '#9ca3af',
+  },
+  light: {
+    '--color-bg': '#f6f8fb',
+    '--color-surface': '#ffffff',
+    '--color-text-main': '#111827',
+    '--color-text-muted': '#4b5563',
+    '--color-accent': '#111827',
+    '--color-accent-hover': '#374151',
+    '--story-ring-unseen': '#111827',
+    '--story-ring-seen': '#9ca3af',
+  },
+  instagram: {
+    '--color-bg': '#0f1023',
+    '--color-surface': '#1a1530',
+    '--color-text-main': '#f8f7ff',
+    '--color-text-muted': '#c6bedf',
+    '--color-accent': '#ff3f93',
+    '--color-accent-hover': '#ff6cae',
+    '--story-ring-unseen': '#feda75',
+    '--story-ring-seen': '#9ca3af',
+  },
+  facebook: {
+    '--color-bg': '#f0f2f5',
+    '--color-surface': '#ffffff',
+    '--color-text-main': '#1c1e21',
+    '--color-text-muted': '#65676b',
+    '--color-accent': '#1877f2',
+    '--color-accent-hover': '#2d88ff',
+    '--story-ring-unseen': '#1877f2',
+    '--story-ring-seen': '#bcc0c4',
+  },
+  pinterest: {
+    '--color-bg': '#fff7f7',
+    '--color-surface': '#ffffff',
+    '--color-text-main': '#211922',
+    '--color-text-muted': '#5f5b62',
+    '--color-accent': '#e60023',
+    '--color-accent-hover': '#ad081b',
+    '--story-ring-unseen': '#e60023',
+    '--story-ring-seen': '#d4d4d8',
+  },
+};
+const THEME_OPTIONS = [
+  { value: 'dark', label: 'Dark' },
+  { value: 'light', label: 'Light' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'facebook', label: 'Facebook' },
+  { value: 'pinterest', label: 'Pinterest' },
+];
 
 const toDataUrl = (file) => new Promise((resolve, reject) => {
   const reader = new FileReader();
@@ -27,7 +86,7 @@ const toDataUrl = (file) => new Promise((resolve, reject) => {
   reader.readAsDataURL(file);
 });
 
-const Navbar = ({ onViewChange, currentView }) => {
+const Navbar = ({ onViewChange, currentView, theme, onThemeChange }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const links = [
@@ -38,10 +97,10 @@ const Navbar = ({ onViewChange, currentView }) => {
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 backdrop-blur-md border-b border-white/5 bg-opacity-80 bg-[#050605]">
+    <nav className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 backdrop-blur-md border-b border-white/10 bg-opacity-90" style={{ backgroundColor: 'var(--color-bg)' }}>
       <div className="container mx-auto px-6 h-20 flex items-center justify-between">
         <button className="text-2xl font-bold font-heading tracking-tight" onClick={() => onViewChange('auth')}>
-          REfluenz<span className="text-[#d6cdc6]">.</span>
+          REfluenz<span style={{ color: 'var(--color-accent)' }}>.</span>
         </button>
 
         <div className="hidden md:flex items-center space-x-8">
@@ -57,6 +116,17 @@ const Navbar = ({ onViewChange, currentView }) => {
               {link.label}
             </button>
           ))}
+          <select
+            value={theme}
+            onChange={(event) => onThemeChange(event.target.value)}
+            className="bg-transparent border border-white/20 rounded-md px-2 py-1 text-xs"
+          >
+            {THEME_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value} className="text-black">
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="md:hidden">
@@ -80,6 +150,17 @@ const Navbar = ({ onViewChange, currentView }) => {
               {link.label}
             </button>
           ))}
+          <select
+            value={theme}
+            onChange={(event) => onThemeChange(event.target.value)}
+            className="w-full bg-transparent border border-white/20 rounded-md px-2 py-2 text-xs"
+          >
+            {THEME_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value} className="text-black">
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
       ) : null}
     </nav>
@@ -350,7 +431,8 @@ const UserDashboard = ({ creators, tiers, sessionUser, onSessionUserChange }) =>
   const [paymentResult, setPaymentResult] = useState(null);
   const [paymentError, setPaymentError] = useState('');
   const [avatarError, setAvatarError] = useState('');
-  const [storyIndex, setStoryIndex] = useState(0);
+  const [activeStoryId, setActiveStoryId] = useState(null);
+  const [seenStoryIds, setSeenStoryIds] = useState([]);
 
   useEffect(() => {
     setLoggedInUser(sessionUser || null);
@@ -376,10 +458,6 @@ const UserDashboard = ({ creators, tiers, sessionUser, onSessionUserChange }) =>
       refreshDashboard(loggedInUser.id);
     }
   }, [loggedInUser?.id]);
-
-  useEffect(() => {
-    setStoryIndex(0);
-  }, [dashboard?.feed?.length]);
 
   const handlePurchaseTier = async (event) => {
     event.preventDefault();
@@ -450,7 +528,11 @@ const UserDashboard = ({ creators, tiers, sessionUser, onSessionUserChange }) =>
   }
 
   const stories = (dashboard?.feed || []).filter((item) => item.type === 'story');
-  const activeStory = stories[storyIndex] || null;
+  const activeStory = stories.find((story) => story.id === activeStoryId) || null;
+  const openStory = (story) => {
+    setActiveStoryId(story.id);
+    setSeenStoryIds((current) => (current.includes(story.id) ? current : [...current, story.id]));
+  };
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-32 pb-20 min-h-screen">
@@ -491,40 +573,6 @@ const UserDashboard = ({ creators, tiers, sessionUser, onSessionUserChange }) =>
               <input type="file" accept="image/*" onChange={handleAvatarUpload} className="w-full text-sm text-[#889993]" />
               <p className="text-xs text-[#889993] mt-2">Upload your own profile image or use mock avatars.</p>
               {avatarError ? <p className="text-sm text-red-300 mt-2">{avatarError}</p> : null}
-            </div>
-
-            <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
-              <h3 className="font-semibold mb-3">Story Bar</h3>
-              <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                {stories.map((story, index) => (
-                  <button
-                    key={story.id}
-                    onClick={() => setStoryIndex(index)}
-                    className={`w-full text-left p-2 rounded-md border ${storyIndex === index ? 'border-white/40 bg-white/10' : 'border-white/10'}`}
-                  >
-                    <p className="text-xs text-[#d6cdc6]">{story.creator?.name}</p>
-                    <p className="text-xs text-[#889993] line-clamp-1">{story.text}</p>
-                  </button>
-                ))}
-              </div>
-              {activeStory ? (
-                <div
-                  className="mt-3 border border-white/10 rounded-lg overflow-hidden cursor-pointer"
-                  onClick={(event) => {
-                    const bounds = event.currentTarget.getBoundingClientRect();
-                    const clickedRight = event.clientX > bounds.left + bounds.width / 2;
-                    if (clickedRight) {
-                      setStoryIndex((current) => (stories.length ? (current + 1) % stories.length : 0));
-                    }
-                  }}
-                >
-                  {activeStory.imageUrl ? <FeedImage src={activeStory.imageUrl} alt={activeStory.text} className="w-full h-40 object-cover" /> : null}
-                  <div className="p-3 text-sm">
-                    <p className="text-[#d6cdc6] text-xs mb-1">Click right side to auto-next</p>
-                    <p>{activeStory.text}</p>
-                  </div>
-                </div>
-              ) : null}
             </div>
 
             <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
@@ -581,7 +629,50 @@ const UserDashboard = ({ creators, tiers, sessionUser, onSessionUserChange }) =>
             </div>
           </aside>
         </div>
+
+        <aside className="hidden lg:flex fixed right-2 top-28 bottom-8 z-40">
+          <div className="w-[66px] rounded-full border border-white/10 bg-black/20 backdrop-blur-sm py-3 px-2 overflow-y-auto space-y-3">
+            {stories.map((story) => {
+              const seen = seenStoryIds.includes(story.id);
+              return (
+                <button
+                  key={story.id}
+                  onClick={() => openStory(story)}
+                  title={story.creator?.name || 'Story'}
+                  className="w-full flex justify-center"
+                >
+                  <span
+                    className="p-[2px] rounded-full transition-colors"
+                    style={{ border: '2px solid', borderColor: seen ? 'var(--story-ring-seen)' : 'var(--story-ring-unseen)' }}
+                  >
+                    <Avatar url={story.creator?.avatarUrl} alt={story.creator?.name || 'Story creator'} />
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </aside>
       </div>
+
+      {activeStory ? (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-md flex items-center justify-center p-4"
+          onClick={() => setActiveStoryId(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-white/20 bg-[#0e1210] overflow-hidden"
+            onClick={(event) => event.stopPropagation()}
+          >
+            {activeStory.imageUrl ? (
+              <FeedImage src={activeStory.imageUrl} alt={activeStory.text || 'Story'} className="w-full h-80 object-cover" />
+            ) : null}
+            <div className="p-4">
+              <p className="text-sm text-[#d6cdc6] mb-2">{activeStory.creator?.name}</p>
+              <p className="text-base">{activeStory.text || 'Story'}</p>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </motion.div>
   );
 };
@@ -870,6 +961,7 @@ const CreatorDashboard = ({ sessionCreator, onSessionCreatorChange }) => {
 
 const App = () => {
   const [view, setView] = useState('auth');
+  const [theme, setTheme] = useState('dark');
   const [users, setUsers] = useState([]);
   const [creators, setCreators] = useState([]);
   const [tiers, setTiers] = useState([]);
@@ -892,6 +984,13 @@ const App = () => {
         setTiers([]);
       });
   }, []);
+
+  useEffect(() => {
+    const tokens = THEME_TOKENS[theme] || THEME_TOKENS.dark;
+    Object.entries(tokens).forEach(([key, value]) => {
+      document.documentElement.style.setProperty(key, value);
+    });
+  }, [theme]);
 
   const viewNode = useMemo(() => {
     if (view === 'user') {
@@ -932,7 +1031,7 @@ const App = () => {
 
   return (
     <div className="min-h-screen">
-      <Navbar onViewChange={setView} currentView={view} />
+      <Navbar onViewChange={setView} currentView={view} theme={theme} onThemeChange={setTheme} />
       <AnimatePresence mode="wait">{viewNode}</AnimatePresence>
       <footer className="py-12 border-t border-white/5 mt-auto">
         <div className="container mx-auto px-6 text-center text-[#889993] text-sm">

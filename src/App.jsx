@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowRight,
@@ -19,6 +19,7 @@ import {
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 const FALLBACK_IMAGE = '/mock/post-concrete.svg';
 const FALLBACK_AVATAR = '/mock/user-aria.svg';
+const wrapIndex = (index, length) => ((index % length) + length) % length;
 const THEME_TOKENS = {
   dark: {
     '--color-bg': '#050605',
@@ -97,7 +98,7 @@ const Navbar = ({ onViewChange, currentView, theme, onThemeChange }) => {
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 backdrop-blur-md border-b border-white/10 bg-opacity-90" style={{ backgroundColor: 'var(--color-bg)' }}>
+    <nav className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 backdrop-blur-md border-b border-white/10" style={{ backgroundColor: 'var(--color-bg)' }}>
       <div className="container mx-auto px-6 h-20 flex items-center justify-between">
         <button className="text-2xl font-bold font-heading tracking-tight" onClick={() => onViewChange('auth')}>
           REfluenz<span style={{ color: 'var(--color-accent)' }}>.</span>
@@ -119,10 +120,12 @@ const Navbar = ({ onViewChange, currentView, theme, onThemeChange }) => {
           <select
             value={theme}
             onChange={(event) => onThemeChange(event.target.value)}
-            className="bg-transparent border border-white/20 rounded-md px-2 py-1 text-xs"
+            aria-label="Select theme"
+            className="border border-white/20 rounded-md px-2 py-1 text-xs"
+            style={{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text-main)' }}
           >
             {THEME_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value} className="text-black">
+              <option key={option.value} value={option.value}>
                 {option.label}
               </option>
             ))}
@@ -153,10 +156,12 @@ const Navbar = ({ onViewChange, currentView, theme, onThemeChange }) => {
           <select
             value={theme}
             onChange={(event) => onThemeChange(event.target.value)}
-            className="w-full bg-transparent border border-white/20 rounded-md px-2 py-2 text-xs"
+            aria-label="Select theme"
+            className="w-full border border-white/20 rounded-md px-2 py-2 text-xs"
+            style={{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text-main)' }}
           >
             {THEME_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value} className="text-black">
+              <option key={option.value} value={option.value}>
                 {option.label}
               </option>
             ))}
@@ -433,6 +438,7 @@ const UserDashboard = ({ creators, tiers, sessionUser, onSessionUserChange }) =>
   const [avatarError, setAvatarError] = useState('');
   const [activeStoryId, setActiveStoryId] = useState(null);
   const [seenStoryIds, setSeenStoryIds] = useState([]);
+  const storyModalRef = useRef(null);
 
   useEffect(() => {
     setLoggedInUser(sessionUser || null);
@@ -529,10 +535,37 @@ const UserDashboard = ({ creators, tiers, sessionUser, onSessionUserChange }) =>
 
   const stories = (dashboard?.feed || []).filter((item) => item.type === 'story');
   const activeStory = stories.find((story) => story.id === activeStoryId) || null;
-  const openStory = (story) => {
+  const activeStoryIndex = stories.findIndex((story) => story.id === activeStoryId);
+  const openStory = useCallback((story) => {
     setActiveStoryId(story.id);
     setSeenStoryIds((current) => (current.includes(story.id) ? current : [...current, story.id]));
-  };
+  }, []);
+  const openStoryAtIndex = useCallback((index) => {
+    if (!stories.length) return;
+    const boundedIndex = wrapIndex(index, stories.length);
+    openStory(stories[boundedIndex]);
+  }, [openStory, stories]);
+
+  useEffect(() => {
+    if (!activeStory || !stories.length) return undefined;
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setActiveStoryId(null);
+      } else if (event.key === 'ArrowRight') {
+        openStoryAtIndex(activeStoryIndex + 1);
+      } else if (event.key === 'ArrowLeft') {
+        openStoryAtIndex(activeStoryIndex - 1);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeStory, activeStoryIndex, openStoryAtIndex, stories.length]);
+
+  useEffect(() => {
+    if (activeStory && storyModalRef.current) {
+      storyModalRef.current.focus();
+    }
+  }, [activeStory]);
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-32 pb-20 min-h-screen">
@@ -551,6 +584,28 @@ const UserDashboard = ({ creators, tiers, sessionUser, onSessionUserChange }) =>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-5">
             <h2 className="text-2xl font-semibold border-b border-white/10 pb-3">Scrollytelling Feed (Following)</h2>
+            <div className="lg:hidden">
+              <div className="flex items-center gap-3 overflow-x-auto pb-2">
+                {stories.map((story) => {
+                  const seen = seenStoryIds.includes(story.id);
+                  return (
+                    <button
+                      key={story.id}
+                      onClick={() => openStory(story)}
+                      aria-label={`View story from ${story.creator?.name || 'creator'}`}
+                      className="flex-shrink-0"
+                    >
+                      <span
+                        className="p-[2px] rounded-full transition-colors block"
+                        style={{ border: '2px solid', borderColor: seen ? 'var(--story-ring-seen)' : 'var(--story-ring-unseen)' }}
+                      >
+                        <Avatar url={story.creator?.avatarUrl} alt={story.creator?.name || 'Story creator'} />
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             {(dashboard?.feed || []).filter((item) => item.type === 'post').map((item) => (
               <article key={item.id} className="p-5 border border-white/10 bg-white/[0.02] rounded-lg">
                 <div className="flex items-center gap-3 mb-3">
@@ -631,14 +686,22 @@ const UserDashboard = ({ creators, tiers, sessionUser, onSessionUserChange }) =>
         </div>
 
         <aside className="hidden lg:flex fixed right-2 top-28 bottom-8 z-40">
-          <div className="w-[66px] rounded-full border border-white/10 bg-black/20 backdrop-blur-sm py-3 px-2 overflow-y-auto space-y-3">
+          <div
+            tabIndex={0}
+            role="region"
+            aria-label="Story rail"
+            className="w-[66px] rounded-full border border-white/10 backdrop-blur-sm py-3 px-2 overflow-y-auto space-y-3"
+            style={{ backgroundColor: 'var(--color-surface)' }}
+          >
             {stories.map((story) => {
               const seen = seenStoryIds.includes(story.id);
               return (
                 <button
                   key={story.id}
                   onClick={() => openStory(story)}
+                  onFocus={(event) => event.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest' })}
                   title={story.creator?.name || 'Story'}
+                  aria-label={`View story from ${story.creator?.name || 'creator'}`}
                   className="w-full flex justify-center"
                 >
                   <span
@@ -657,18 +720,53 @@ const UserDashboard = ({ creators, tiers, sessionUser, onSessionUserChange }) =>
       {activeStory ? (
         <div
           className="fixed inset-0 z-50 bg-black/50 backdrop-blur-md flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Story viewer"
           onClick={() => setActiveStoryId(null)}
         >
           <div
-            className="w-full max-w-md rounded-2xl border border-white/20 bg-[#0e1210] overflow-hidden"
+            className="w-full max-w-md rounded-2xl border border-white/20 overflow-hidden"
+            style={{ backgroundColor: 'var(--color-surface)' }}
             onClick={(event) => event.stopPropagation()}
+            tabIndex={0}
+            ref={storyModalRef}
+            onKeyDown={(event) => {
+              if (event.key !== 'Tab') return;
+              const focusable = Array.from(
+                event.currentTarget.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
+              );
+              if (!focusable.length) {
+                event.preventDefault();
+                return;
+              }
+              const first = focusable[0];
+              const last = focusable[focusable.length - 1];
+              if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+              } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+              }
+            }}
           >
+            <div className="flex justify-end p-2">
+              <button
+                type="button"
+                onClick={() => setActiveStoryId(null)}
+                aria-label="Close story viewer"
+                className="rounded-full p-1 border border-white/20"
+              >
+                <X size={16} />
+              </button>
+            </div>
             {activeStory.imageUrl ? (
               <FeedImage src={activeStory.imageUrl} alt={activeStory.text || 'Story'} className="w-full h-80 object-cover" />
             ) : null}
             <div className="p-4">
-              <p className="text-sm text-[#d6cdc6] mb-2">{activeStory.creator?.name}</p>
-              <p className="text-base">{activeStory.text || 'Story'}</p>
+              <p className="text-sm mb-2" style={{ color: 'var(--color-text-muted)' }}>{activeStory.creator?.name}</p>
+              <p className="text-base" style={{ color: 'var(--color-text-main)' }}>{activeStory.text || 'Story'}</p>
             </div>
           </div>
         </div>

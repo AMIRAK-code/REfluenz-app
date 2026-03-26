@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#5f4b8b"/><stop offset="100%" stop-color="#0e1210"/></linearGradient></defs>
+<rect width="100%" height="100%" fill="url(#g)"/>
+<circle cx="60" cy="60" r="30" fill="rgba(214,205,198,0.22)"/>
+<text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#eff1f0" font-family="Inter, Arial" font-size="16">Noah</text>
+</svg>

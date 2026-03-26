@@ -123,6 +123,20 @@ let nextStoryId = stories.length + 1;
 
 const sanitizeUser = ({ password, ...safeUser }) => safeUser;
 const sanitizeCreator = ({ password, ...safeCreator }) => safeCreator;
+const normalizeImageUrl = (value) => {
+  const candidate = String(value || '').trim();
+  if (!candidate) return '';
+  if (candidate.startsWith('/mock/')) return candidate;
+  try {
+    const parsed = new URL(candidate);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return candidate;
+    }
+  } catch {
+    return '';
+  }
+  return '';
+};
 
 const json = (res, statusCode, payload) => {
   res.writeHead(statusCode, {
@@ -279,7 +293,7 @@ createServer(async (req, res) => {
 
     const tierId = String(body.tierId).trim();
     const cardName = String(body.cardName).trim();
-    const cardNumber = String(body.cardNumber).replace(/\s+/g, '');
+    const hasCardNumber = Boolean(String(body.cardNumber || '').trim());
     const tier = subscriptionTiers.find((item) => item.id === tierId);
 
     if (!tier) {
@@ -287,7 +301,7 @@ createServer(async (req, res) => {
       return;
     }
 
-    if (!cardName || cardNumber.length < 12) {
+    if (!cardName || !hasCardNumber) {
       json(res, 400, { error: 'Mock payment details are invalid' });
       return;
     }
@@ -299,7 +313,6 @@ createServer(async (req, res) => {
         transactionId: `txn_${Date.now()}`,
         amount: tier.monthlyPrice,
         currency: 'USD',
-        cardLast4: cardNumber.slice(-4),
       },
       tier,
       user: sanitizeUser(user),
@@ -344,7 +357,7 @@ createServer(async (req, res) => {
     }
     const title = String(body.title).trim();
     const content = String(body.body).trim();
-    const imageUrl = String(body.imageUrl || '').trim();
+    const imageUrl = normalizeImageUrl(body.imageUrl);
     if (!title || !content) {
       json(res, 400, { error: 'title and body are required' });
       return;
@@ -378,7 +391,7 @@ createServer(async (req, res) => {
       return;
     }
     const text = String(body.text).trim();
-    const imageUrl = String(body.imageUrl || '').trim();
+    const imageUrl = normalizeImageUrl(body.imageUrl);
     if (!text) {
       json(res, 400, { error: 'text is required' });
       return;

@@ -1,6 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowRight, Check, Lock, Menu, PlusCircle, Shield, TrendingUp, Users, X } from 'lucide-react';
+import {
+  ArrowRight,
+  Check,
+  CreditCard,
+  Lock,
+  Menu,
+  PlusCircle,
+  Shield,
+  TrendingUp,
+  Users,
+  X,
+} from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 
@@ -24,7 +35,10 @@ const Navbar = ({ onViewChange, currentView }) => {
           {links.map((link) => (
             <button
               key={link.key}
-              onClick={() => onViewChange(link.key)}
+              onClick={() => {
+                onViewChange(link.key);
+                setMobileMenuOpen(false);
+              }}
               className={`text-sm font-medium transition-colors ${currentView === link.key ? 'text-white' : 'text-[#889993] hover:text-white'}`}
             >
               {link.label}
@@ -38,9 +52,30 @@ const Navbar = ({ onViewChange, currentView }) => {
           </button>
         </div>
       </div>
+
+      {mobileMenuOpen ? (
+        <div className="md:hidden px-6 pb-4 space-y-2 border-t border-white/5 bg-[#050605]">
+          {links.map((link) => (
+            <button
+              key={link.key}
+              onClick={() => {
+                onViewChange(link.key);
+                setMobileMenuOpen(false);
+              }}
+              className={`w-full text-left py-2 text-sm font-medium ${currentView === link.key ? 'text-white' : 'text-[#889993]'}`}
+            >
+              {link.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </nav>
   );
 };
+
+const Avatar = ({ url, alt }) => (
+  <img src={url} alt={alt} className="w-11 h-11 rounded-full object-cover border border-white/15" loading="lazy" />
+);
 
 const LandingView = ({ onViewChange, tiers }) => (
   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-32 pb-20">
@@ -104,7 +139,10 @@ const LandingView = ({ onViewChange, tiers }) => (
           {tiers.map((tier) => (
             <div key={tier.id} className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
               <p className="text-[#d6cdc6] text-sm uppercase tracking-wider mb-2">{tier.name}</p>
-              <p className="text-4xl font-bold mb-4">${tier.monthlyPrice}<span className="text-sm text-[#889993]">/mo</span></p>
+              <p className="text-4xl font-bold mb-4">
+                ${tier.monthlyPrice}
+                <span className="text-sm text-[#889993]">/mo</span>
+              </p>
               <ul className="space-y-2">
                 {tier.features.map((feature) => (
                   <li key={feature} className="flex items-start text-sm text-[#889993]">
@@ -122,37 +160,142 @@ const LandingView = ({ onViewChange, tiers }) => (
 );
 
 const UserDashboard = ({ users, creators, tiers }) => {
-  const [selectedUserId, setSelectedUserId] = useState('');
+  const [loginEmail, setLoginEmail] = useState('aria@refluenz.app');
+  const [loginPassword, setLoginPassword] = useState('user123');
+  const [loggedInUser, setLoggedInUser] = useState(null);
   const [dashboard, setDashboard] = useState(null);
+  const [loginError, setLoginError] = useState('');
+  const [payment, setPayment] = useState({ tierId: '', cardName: '', cardNumber: '' });
+  const [paymentResult, setPaymentResult] = useState(null);
+  const [paymentError, setPaymentError] = useState('');
 
   useEffect(() => {
-    if (users.length && !selectedUserId) {
-      setSelectedUserId(users[0].id);
-    }
-  }, [users, selectedUserId]);
+    if (!tiers.length || payment.tierId) return;
+    setPayment((current) => ({ ...current, tierId: tiers[0].id }));
+  }, [tiers, payment.tierId]);
 
-  useEffect(() => {
-    if (!selectedUserId) return;
-    fetch(`${API_BASE}/api/dashboard/user/${selectedUserId}`)
+  const refreshDashboard = (userId) => {
+    fetch(`${API_BASE}/api/dashboard/user/${userId}`)
       .then((response) => response.json())
-      .then(setDashboard)
+      .then((data) => {
+        setDashboard(data);
+      })
       .catch(() => setDashboard(null));
-  }, [selectedUserId]);
+  };
+
+  const handleUserLogin = async (event) => {
+    event.preventDefault();
+    setLoginError('');
+
+    try {
+      const response = await fetch(`${API_BASE}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: 'user', email: loginEmail, password: loginPassword }),
+      });
+
+      if (!response.ok) {
+        setLoginError('Invalid credentials. Try aria@refluenz.app / user123');
+        return;
+      }
+
+      const data = await response.json();
+      setLoggedInUser(data.user);
+      setPaymentResult(null);
+      setPaymentError('');
+      refreshDashboard(data.user.id);
+    } catch {
+      setLoginError('Unable to login. Ensure backend is running on port 4000.');
+    }
+  };
+
+  const handlePurchaseTier = async (event) => {
+    event.preventDefault();
+    if (!loggedInUser) return;
+
+    setPaymentResult(null);
+    setPaymentError('');
+
+    try {
+      const response = await fetch(`${API_BASE}/api/users/${loggedInUser.id}/purchase-tier`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payment),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        setPaymentError(data.error || 'Payment failed');
+        return;
+      }
+
+      setPaymentResult(data.payment);
+      setLoggedInUser(data.user);
+      refreshDashboard(loggedInUser.id);
+    } catch {
+      setPaymentError('Payment request failed.');
+    }
+  };
+
+  if (!loggedInUser) {
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-32 pb-20 min-h-screen">
+        <div className="container mx-auto px-6 max-w-xl">
+          <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
+            <h1 className="text-3xl font-bold mb-4">User Login</h1>
+            <p className="text-sm text-[#889993] mb-4">Mock credentials: aria@refluenz.app / user123</p>
+            <form className="space-y-3" onSubmit={handleUserLogin}>
+              <input
+                className="w-full bg-[#0e1210] border border-white/10 rounded-md px-4 py-2 text-sm"
+                placeholder="Email"
+                value={loginEmail}
+                onChange={(event) => setLoginEmail(event.target.value)}
+              />
+              <input
+                type="password"
+                className="w-full bg-[#0e1210] border border-white/10 rounded-md px-4 py-2 text-sm"
+                placeholder="Password"
+                value={loginPassword}
+                onChange={(event) => setLoginPassword(event.target.value)}
+              />
+              {loginError ? <p className="text-sm text-red-300">{loginError}</p> : null}
+              <button className="inline-flex items-center bg-[#d6cdc6] text-[#050605] px-4 py-2 rounded-sm font-medium">
+                <Lock className="w-4 h-4 mr-2" />
+                Login as User
+              </button>
+            </form>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-32 pb-20 min-h-screen">
       <div className="container mx-auto px-6 max-w-6xl">
         <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-          <h1 className="text-4xl font-bold">User Dashboard</h1>
-          <select
-            value={selectedUserId}
-            onChange={(event) => setSelectedUserId(event.target.value)}
-            className="bg-[#0e1210] border border-white/10 rounded-md px-4 py-2 text-sm"
-          >
-            {users.map((user) => (
-              <option value={user.id} key={user.id}>{user.name}</option>
+          <h1 className="text-4xl font-bold">User Home Feed</h1>
+          <div className="flex items-center gap-3">
+            <Avatar url={loggedInUser.avatarUrl} alt={loggedInUser.name} />
+            <div>
+              <p className="font-semibold">{loggedInUser.name}</p>
+              <p className="text-sm text-[#889993]">{loggedInUser.email}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold border-b border-white/10 pb-3 mb-4">Recent posts from your creators</h2>
+          <div className="flex gap-4 overflow-x-auto pb-2 snap-x">
+            {(dashboard?.recentSubscribedPosts || []).map((post) => (
+              <article key={post.id} className="min-w-[280px] max-w-[320px] p-4 border border-white/10 bg-white/[0.02] rounded-lg snap-start">
+                {post.imageUrl ? <img src={post.imageUrl} alt={post.title} className="w-full h-40 object-cover rounded-md mb-3" loading="lazy" /> : null}
+                <p className="text-xs uppercase tracking-wider text-[#d6cdc6] mb-1">{post.creator?.name}</p>
+                <h3 className="text-lg font-semibold mb-2">{post.title}</h3>
+                <p className="text-sm text-[#889993]">{post.body}</p>
+              </article>
             ))}
-          </select>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -160,9 +303,16 @@ const UserDashboard = ({ users, creators, tiers }) => {
             <h2 className="text-2xl font-semibold border-b border-white/10 pb-3">Content Feed</h2>
             {(dashboard?.feed || []).map((item) => (
               <article key={item.id} className="p-5 border border-white/10 bg-white/[0.02] rounded-lg">
-                <p className="text-xs uppercase tracking-wider text-[#d6cdc6] mb-2">{item.type} • {item.creator?.name}</p>
+                <div className="flex items-center gap-3 mb-3">
+                  {item.creator?.avatarUrl ? <Avatar url={item.creator.avatarUrl} alt={item.creator.name} /> : null}
+                  <div>
+                    <p className="text-xs uppercase tracking-wider text-[#d6cdc6]">{item.type} • {item.creator?.name}</p>
+                    <p className="text-xs text-[#889993]">{item.creator?.niche}</p>
+                  </div>
+                </div>
                 <h3 className="text-xl font-semibold mb-2">{item.title || item.text}</h3>
-                {item.body ? <p className="text-[#889993]">{item.body}</p> : null}
+                {item.body ? <p className="text-[#889993] mb-3">{item.body}</p> : null}
+                {item.imageUrl ? <img src={item.imageUrl} alt={item.title || item.text} className="w-full max-h-[360px] object-cover rounded-md" loading="lazy" /> : null}
               </article>
             ))}
           </div>
@@ -175,20 +325,47 @@ const UserDashboard = ({ users, creators, tiers }) => {
               <p className="text-2xl font-semibold">{dashboard?.tier?.name || '-'}</p>
             </div>
             <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
-              <h3 className="font-semibold mb-3">Available Creators</h3>
-              <ul className="space-y-2">
-                {creators.map((creator) => (
-                  <li key={creator.id} className="text-sm text-[#889993]">{creator.name} • {creator.niche}</li>
+              <h3 className="font-semibold mb-3">Subscribed Creators</h3>
+              <ul className="space-y-3">
+                {(dashboard?.subscribedCreators || creators).map((creator) => (
+                  <li key={creator.id} className="flex items-center gap-2 text-sm text-[#889993]">
+                    <Avatar url={creator.avatarUrl} alt={creator.name} />
+                    <span>{creator.name} • {creator.niche}</span>
+                  </li>
                 ))}
               </ul>
             </div>
             <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
-              <h3 className="font-semibold mb-3">Upgrade Options</h3>
-              <ul className="space-y-2">
-                {tiers.map((tier) => (
-                  <li key={tier.id} className="text-sm text-[#889993]">{tier.name} — ${tier.monthlyPrice}/mo</li>
-                ))}
-              </ul>
+              <h3 className="font-semibold mb-3">Upgrade Tier (Mock Payment)</h3>
+              <form className="space-y-2" onSubmit={handlePurchaseTier}>
+                <select
+                  value={payment.tierId}
+                  onChange={(event) => setPayment((current) => ({ ...current, tierId: event.target.value }))}
+                  className="w-full bg-[#0e1210] border border-white/10 rounded-md px-3 py-2 text-sm"
+                >
+                  {tiers.map((tier) => (
+                    <option key={tier.id} value={tier.id}>{tier.name} — ${tier.monthlyPrice}/mo</option>
+                  ))}
+                </select>
+                <input
+                  className="w-full bg-[#0e1210] border border-white/10 rounded-md px-3 py-2 text-sm"
+                  placeholder="Cardholder name"
+                  value={payment.cardName}
+                  onChange={(event) => setPayment((current) => ({ ...current, cardName: event.target.value }))}
+                />
+                <input
+                  className="w-full bg-[#0e1210] border border-white/10 rounded-md px-3 py-2 text-sm"
+                  placeholder="Card number"
+                  value={payment.cardNumber}
+                  onChange={(event) => setPayment((current) => ({ ...current, cardNumber: event.target.value }))}
+                />
+                {paymentError ? <p className="text-sm text-red-300">{paymentError}</p> : null}
+                {paymentResult ? <p className="text-sm text-[#4E9F76]">Paid mock transaction {paymentResult.transactionId}. Card ending {paymentResult.cardLast4}.</p> : null}
+                <button className="inline-flex items-center bg-[#d6cdc6] text-[#050605] px-4 py-2 rounded-sm font-medium text-sm">
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Pay & Upgrade
+                </button>
+              </form>
             </div>
           </aside>
         </div>
@@ -197,12 +374,17 @@ const UserDashboard = ({ users, creators, tiers }) => {
   );
 };
 
-const CreatorDashboard = ({ creators }) => {
+const CreatorDashboard = () => {
+  const [loginEmail, setLoginEmail] = useState('julian@refluenz.app');
+  const [loginPassword, setLoginPassword] = useState('creator123');
   const [selectedCreatorId, setSelectedCreatorId] = useState('');
   const [dashboard, setDashboard] = useState(null);
   const [postTitle, setPostTitle] = useState('');
   const [postBody, setPostBody] = useState('');
+  const [postImageUrl, setPostImageUrl] = useState('');
   const [storyText, setStoryText] = useState('');
+  const [storyImageUrl, setStoryImageUrl] = useState('');
+  const [loginError, setLoginError] = useState('');
 
   const refreshDashboard = (creatorId) => {
     fetch(`${API_BASE}/api/dashboard/creator/${creatorId}`)
@@ -212,16 +394,33 @@ const CreatorDashboard = ({ creators }) => {
   };
 
   useEffect(() => {
-    if (creators.length && !selectedCreatorId) {
-      setSelectedCreatorId(creators[0].id);
-    }
-  }, [creators, selectedCreatorId]);
-
-  useEffect(() => {
     if (selectedCreatorId) {
       refreshDashboard(selectedCreatorId);
     }
   }, [selectedCreatorId]);
+
+  const handleCreatorLogin = async (event) => {
+    event.preventDefault();
+    setLoginError('');
+
+    try {
+      const response = await fetch(`${API_BASE}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: 'creator', email: loginEmail, password: loginPassword }),
+      });
+
+      if (!response.ok) {
+        setLoginError('Invalid credentials. Try julian@refluenz.app / creator123');
+        return;
+      }
+
+      const data = await response.json();
+      setSelectedCreatorId(data.creator.id);
+    } catch {
+      setLoginError('Unable to login. Ensure backend is running on port 4000.');
+    }
+  };
 
   const handleCreatePost = async (event) => {
     event.preventDefault();
@@ -231,13 +430,14 @@ const CreatorDashboard = ({ creators }) => {
       const response = await fetch(`${API_BASE}/api/creators/${selectedCreatorId}/posts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: postTitle, body: postBody }),
+        body: JSON.stringify({ title: postTitle, body: postBody, imageUrl: postImageUrl }),
       });
       if (!response.ok) {
         return;
       }
       setPostTitle('');
       setPostBody('');
+      setPostImageUrl('');
       refreshDashboard(selectedCreatorId);
     } catch {
       return;
@@ -252,32 +452,66 @@ const CreatorDashboard = ({ creators }) => {
       const response = await fetch(`${API_BASE}/api/creators/${selectedCreatorId}/stories`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: storyText }),
+        body: JSON.stringify({ text: storyText, imageUrl: storyImageUrl }),
       });
       if (!response.ok) {
         return;
       }
       setStoryText('');
+      setStoryImageUrl('');
       refreshDashboard(selectedCreatorId);
     } catch {
       return;
     }
   };
 
+  if (!selectedCreatorId) {
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-32 pb-20 min-h-screen">
+        <div className="container mx-auto px-6 max-w-xl">
+          <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
+            <h1 className="text-3xl font-bold mb-4">Creator Login</h1>
+            <p className="text-sm text-[#889993] mb-4">Mock credentials: julian@refluenz.app / creator123</p>
+            <form className="space-y-3" onSubmit={handleCreatorLogin}>
+              <input
+                className="w-full bg-[#0e1210] border border-white/10 rounded-md px-4 py-2 text-sm"
+                placeholder="Email"
+                value={loginEmail}
+                onChange={(event) => setLoginEmail(event.target.value)}
+              />
+              <input
+                type="password"
+                className="w-full bg-[#0e1210] border border-white/10 rounded-md px-4 py-2 text-sm"
+                placeholder="Password"
+                value={loginPassword}
+                onChange={(event) => setLoginPassword(event.target.value)}
+              />
+              {loginError ? <p className="text-sm text-red-300">{loginError}</p> : null}
+              <button className="inline-flex items-center bg-[#d6cdc6] text-[#050605] px-4 py-2 rounded-sm font-medium">
+                <Lock className="w-4 h-4 mr-2" />
+                Login as Creator
+              </button>
+            </form>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-32 pb-20 min-h-screen">
       <div className="container mx-auto px-6 max-w-6xl">
         <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
           <h1 className="text-4xl font-bold">Creator Dashboard</h1>
-          <select
-            value={selectedCreatorId}
-            onChange={(event) => setSelectedCreatorId(event.target.value)}
-            className="bg-[#0e1210] border border-white/10 rounded-md px-4 py-2 text-sm"
-          >
-            {creators.map((creator) => (
-              <option value={creator.id} key={creator.id}>{creator.name}</option>
-            ))}
-          </select>
+          {dashboard?.creator ? (
+            <div className="flex items-center gap-3">
+              <Avatar url={dashboard.creator.avatarUrl} alt={dashboard.creator.name} />
+              <div>
+                <p className="font-semibold">{dashboard.creator.name}</p>
+                <p className="text-sm text-[#889993]">{dashboard.creator.niche}</p>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -297,6 +531,12 @@ const CreatorDashboard = ({ creators }) => {
                   value={postBody}
                   onChange={(event) => setPostBody(event.target.value)}
                 />
+                <input
+                  className="w-full bg-[#0e1210] border border-white/10 rounded-md px-4 py-2 text-sm"
+                  placeholder="Post image URL"
+                  value={postImageUrl}
+                  onChange={(event) => setPostImageUrl(event.target.value)}
+                />
                 <button className="inline-flex items-center bg-[#d6cdc6] text-[#050605] px-4 py-2 rounded-sm font-medium">
                   <PlusCircle className="w-4 h-4 mr-2" />
                   Publish Post
@@ -313,6 +553,12 @@ const CreatorDashboard = ({ creators }) => {
                   value={storyText}
                   onChange={(event) => setStoryText(event.target.value)}
                 />
+                <input
+                  className="w-full bg-[#0e1210] border border-white/10 rounded-md px-4 py-2 text-sm"
+                  placeholder="Story image URL"
+                  value={storyImageUrl}
+                  onChange={(event) => setStoryImageUrl(event.target.value)}
+                />
                 <button className="inline-flex items-center border border-white/20 px-4 py-2 rounded-sm font-medium">
                   <PlusCircle className="w-4 h-4 mr-2" />
                   Publish Story
@@ -324,17 +570,23 @@ const CreatorDashboard = ({ creators }) => {
           <aside className="space-y-5">
             <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
               <h3 className="font-semibold mb-3">Recent Posts</h3>
-              <ul className="space-y-2">
+              <ul className="space-y-4">
                 {(dashboard?.posts || []).slice(0, 5).map((post) => (
-                  <li key={post.id} className="text-sm text-[#889993]">{post.title}</li>
+                  <li key={post.id} className="text-sm text-[#889993]">
+                    {post.imageUrl ? <img src={post.imageUrl} alt={post.title} className="w-full h-24 object-cover rounded-md mb-2" loading="lazy" /> : null}
+                    <p className="text-white">{post.title}</p>
+                  </li>
                 ))}
               </ul>
             </div>
             <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
               <h3 className="font-semibold mb-3">Recent Stories</h3>
-              <ul className="space-y-2">
+              <ul className="space-y-4">
                 {(dashboard?.stories || []).slice(0, 5).map((story) => (
-                  <li key={story.id} className="text-sm text-[#889993]">{story.text}</li>
+                  <li key={story.id} className="text-sm text-[#889993]">
+                    {story.imageUrl ? <img src={story.imageUrl} alt={story.text} className="w-full h-24 object-cover rounded-md mb-2" loading="lazy" /> : null}
+                    {story.text}
+                  </li>
                 ))}
               </ul>
             </div>
@@ -374,7 +626,7 @@ const App = () => {
       return <UserDashboard key="user" users={users} creators={creators} tiers={tiers} />;
     }
     if (view === 'creator') {
-      return <CreatorDashboard key="creator" creators={creators} />;
+      return <CreatorDashboard key="creator" />;
     }
     return <LandingView key="landing" onViewChange={setView} tiers={tiers} />;
   }, [view, users, creators, tiers]);

@@ -9,35 +9,120 @@ const subscriptionTiers = [
 ];
 
 const users = [
-  { id: 'u1', name: 'Aria Bennett', email: 'aria@refluenz.app', tierId: 'essential' },
-  { id: 'u2', name: 'Noah Cole', email: 'noah@refluenz.app', tierId: 'premium' },
-  { id: 'u3', name: 'Mila Rhodes', email: 'mila@refluenz.app', tierId: 'signature' },
-  { id: 'u4', name: 'Ethan Vale', email: 'ethan@refluenz.app', tierId: 'premium' },
-  { id: 'u5', name: 'Sage Monroe', email: 'sage@refluenz.app', tierId: 'essential' },
+  {
+    id: 'u1',
+    name: 'Aria Bennett',
+    email: 'aria@refluenz.app',
+    password: 'user123',
+    tierId: 'essential',
+    avatarUrl: '/mock/user-aria.svg',
+    subscribedCreatorIds: ['c1', 'c3'],
+  },
+  {
+    id: 'u2',
+    name: 'Noah Cole',
+    email: 'noah@refluenz.app',
+    password: 'user123',
+    tierId: 'premium',
+    avatarUrl: '/mock/user-noah.svg',
+    subscribedCreatorIds: ['c2', 'c4'],
+  },
+  {
+    id: 'u3',
+    name: 'Mila Rhodes',
+    email: 'mila@refluenz.app',
+    password: 'user123',
+    tierId: 'signature',
+    avatarUrl: '/mock/user-mila.svg',
+    subscribedCreatorIds: ['c1', 'c5', 'c3'],
+  },
+  {
+    id: 'u4',
+    name: 'Ethan Vale',
+    email: 'ethan@refluenz.app',
+    password: 'user123',
+    tierId: 'premium',
+    avatarUrl: '/mock/user-ethan.svg',
+    subscribedCreatorIds: ['c4', 'c2'],
+  },
+  {
+    id: 'u5',
+    name: 'Sage Monroe',
+    email: 'sage@refluenz.app',
+    password: 'user123',
+    tierId: 'essential',
+    avatarUrl: '/mock/user-sage.svg',
+    subscribedCreatorIds: ['c5', 'c1'],
+  },
 ];
 
 const creators = [
-  { id: 'c1', name: 'Julian Dax', niche: 'Architecture', audience: 12500 },
-  { id: 'c2', name: 'Sera Lin', niche: 'Luxury Wellness', audience: 9800 },
-  { id: 'c3', name: 'Romy Kade', niche: 'Design Systems', audience: 14200 },
-  { id: 'c4', name: 'Theo Arman', niche: 'Product Leadership', audience: 8700 },
-  { id: 'c5', name: 'Ivy Rena', niche: 'Editorial Photography', audience: 11300 },
+  {
+    id: 'c1',
+    name: 'Julian Dax',
+    email: 'julian@refluenz.app',
+    password: 'creator123',
+    niche: 'Architecture',
+    audience: 12500,
+    avatarUrl: '/mock/creator-julian.svg',
+  },
+  {
+    id: 'c2',
+    name: 'Sera Lin',
+    email: 'sera@refluenz.app',
+    password: 'creator123',
+    niche: 'Luxury Wellness',
+    audience: 9800,
+    avatarUrl: '/mock/creator-sera.svg',
+  },
+  {
+    id: 'c3',
+    name: 'Romy Kade',
+    email: 'romy@refluenz.app',
+    password: 'creator123',
+    niche: 'Design Systems',
+    audience: 14200,
+    avatarUrl: '/mock/creator-romy.svg',
+  },
+  {
+    id: 'c4',
+    name: 'Theo Arman',
+    email: 'theo@refluenz.app',
+    password: 'creator123',
+    niche: 'Product Leadership',
+    audience: 8700,
+    avatarUrl: '/mock/creator-theo.svg',
+  },
+  {
+    id: 'c5',
+    name: 'Ivy Rena',
+    email: 'ivy@refluenz.app',
+    password: 'creator123',
+    niche: 'Editorial Photography',
+    audience: 11300,
+    avatarUrl: '/mock/creator-ivy.svg',
+  },
 ];
 
 const posts = [
-  { id: 'p1', creatorId: 'c1', title: 'Concrete Quiet', body: 'How minimalist architecture reduces cognitive overload.', createdAt: '2026-03-21T09:00:00.000Z' },
-  { id: 'p2', creatorId: 'c2', title: 'Rituals for Focus', body: 'A 20-minute premium morning structure for founders.', createdAt: '2026-03-22T13:15:00.000Z' },
-  { id: 'p3', creatorId: 'c3', title: 'Design Debt Signals', body: 'Three practical indicators your product UI is drifting.', createdAt: '2026-03-23T17:45:00.000Z' },
+  { id: 'p1', creatorId: 'c1', title: 'Concrete Quiet', body: 'How minimalist architecture reduces cognitive overload.', imageUrl: '/mock/post-concrete.svg', createdAt: '2026-03-21T09:00:00.000Z' },
+  { id: 'p2', creatorId: 'c2', title: 'Rituals for Focus', body: 'A 20-minute premium morning structure for founders.', imageUrl: '/mock/post-focus.svg', createdAt: '2026-03-22T13:15:00.000Z' },
+  { id: 'p3', creatorId: 'c3', title: 'Design Debt Signals', body: 'Three practical indicators your product UI is drifting.', imageUrl: '/mock/post-design.svg', createdAt: '2026-03-23T17:45:00.000Z' },
+  { id: 'p4', creatorId: 'c4', title: 'Decision Logs That Scale', body: 'A short framework for product leaders documenting key choices.', imageUrl: '/mock/post-leadership.svg', createdAt: '2026-03-24T09:15:00.000Z' },
+  { id: 'p5', creatorId: 'c5', title: 'Shadow and Texture', body: 'How to frame editorial portraits with one practical light setup.', imageUrl: '/mock/post-photo.svg', createdAt: '2026-03-25T11:40:00.000Z' },
 ];
 
 const stories = [
-  { id: 's1', creatorId: 'c1', text: 'Live from Lisbon studio review. New photo set at 6 PM.', createdAt: '2026-03-24T10:30:00.000Z' },
-  { id: 's2', creatorId: 'c4', text: 'Quick leadership brief: 2 questions for weekly retros.', createdAt: '2026-03-25T08:20:00.000Z' },
-  { id: 's3', creatorId: 'c5', text: 'Behind the lens: grading setup for cinematic shadows.', createdAt: '2026-03-25T19:05:00.000Z' },
+  { id: 's1', creatorId: 'c1', text: 'Live from Lisbon studio review. New photo set at 6 PM.', imageUrl: '/mock/story-lisbon.svg', createdAt: '2026-03-24T10:30:00.000Z' },
+  { id: 's2', creatorId: 'c4', text: 'Quick leadership brief: 2 questions for weekly retros.', imageUrl: '/mock/story-retro.svg', createdAt: '2026-03-25T08:20:00.000Z' },
+  { id: 's3', creatorId: 'c5', text: 'Behind the lens: grading setup for cinematic shadows.', imageUrl: '/mock/story-lens.svg', createdAt: '2026-03-25T19:05:00.000Z' },
 ];
 
 let nextPostId = posts.length + 1;
 let nextStoryId = stories.length + 1;
+
+const sanitizeUser = ({ password, ...safeUser }) => safeUser;
+const sanitizeCreator = ({ password, ...safeCreator }) => safeCreator;
 
 const json = (res, statusCode, payload) => {
   res.writeHead(statusCode, {
@@ -68,14 +153,34 @@ const buildUserDashboard = (userId) => {
   if (!user) return null;
 
   const tier = subscriptionTiers.find((item) => item.id === user.tierId);
+  const subscribedCreatorIds = user.subscribedCreatorIds || [];
+  const subscribedCreators = creators
+    .filter((creator) => subscribedCreatorIds.includes(creator.id))
+    .map(sanitizeCreator);
+
   const contentFeed = [...posts.map((post) => ({ type: 'post', ...post })), ...stories.map((story) => ({ type: 'story', ...story }))]
+    .filter((item) => subscribedCreatorIds.includes(item.creatorId))
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .map((item) => ({
       ...item,
-      creator: creators.find((creator) => creator.id === item.creatorId) || null,
+      creator: sanitizeCreator(creators.find((creator) => creator.id === item.creatorId) || {}),
     }));
 
-  return { user, tier, feed: contentFeed };
+  const recentSubscribedPosts = posts
+    .filter((post) => subscribedCreatorIds.includes(post.creatorId))
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .map((post) => ({
+      ...post,
+      creator: sanitizeCreator(creators.find((creator) => creator.id === post.creatorId) || {}),
+    }));
+
+  return {
+    user: sanitizeUser(user),
+    tier,
+    feed: contentFeed,
+    subscribedCreators,
+    recentSubscribedPosts,
+  };
 };
 
 const buildCreatorDashboard = (creatorId) => {
@@ -83,7 +188,7 @@ const buildCreatorDashboard = (creatorId) => {
   if (!creator) return null;
 
   return {
-    creator,
+    creator: sanitizeCreator(creator),
     posts: posts.filter((post) => post.creatorId === creatorId).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
     stories: stories.filter((story) => story.creatorId === creatorId).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
   };
@@ -108,18 +213,97 @@ createServer(async (req, res) => {
     return;
   }
 
+  if (req.method === 'POST' && path === '/api/auth/login') {
+    const body = await parseBody(req);
+    if (!body || !body.role || !body.email || !body.password) {
+      json(res, 400, { error: 'role, email and password are required' });
+      return;
+    }
+
+    const role = String(body.role).trim();
+    const email = String(body.email).trim().toLowerCase();
+    const password = String(body.password).trim();
+
+    if (role === 'user') {
+      const user = users.find((item) => item.email.toLowerCase() === email && item.password === password);
+      if (!user) {
+        json(res, 401, { error: 'Invalid user credentials' });
+        return;
+      }
+      json(res, 200, { role: 'user', user: sanitizeUser(user) });
+      return;
+    }
+
+    if (role === 'creator') {
+      const creator = creators.find((item) => item.email.toLowerCase() === email && item.password === password);
+      if (!creator) {
+        json(res, 401, { error: 'Invalid creator credentials' });
+        return;
+      }
+      json(res, 200, { role: 'creator', creator: sanitizeCreator(creator) });
+      return;
+    }
+
+    json(res, 400, { error: 'Invalid role' });
+    return;
+  }
+
   if (req.method === 'GET' && path === '/api/users') {
-    json(res, 200, { users });
+    json(res, 200, { users: users.map(sanitizeUser) });
     return;
   }
 
   if (req.method === 'GET' && path === '/api/creators') {
-    json(res, 200, { creators });
+    json(res, 200, { creators: creators.map(sanitizeCreator) });
     return;
   }
 
   if (req.method === 'GET' && path === '/api/subscription-tiers') {
     json(res, 200, { tiers: subscriptionTiers });
+    return;
+  }
+
+  if (req.method === 'POST' && path.startsWith('/api/users/') && path.endsWith('/purchase-tier')) {
+    const userId = path.split('/')[3];
+    const user = users.find((item) => item.id === userId);
+    if (!user) {
+      json(res, 404, { error: 'User not found' });
+      return;
+    }
+
+    const body = await parseBody(req);
+    if (!body || !body.tierId || !body.cardName || !body.cardNumber) {
+      json(res, 400, { error: 'tierId, cardName and cardNumber are required' });
+      return;
+    }
+
+    const tierId = String(body.tierId).trim();
+    const cardName = String(body.cardName).trim();
+    const cardNumber = String(body.cardNumber).replace(/\s+/g, '');
+    const tier = subscriptionTiers.find((item) => item.id === tierId);
+
+    if (!tier) {
+      json(res, 400, { error: 'Invalid tierId' });
+      return;
+    }
+
+    if (!cardName || cardNumber.length < 12) {
+      json(res, 400, { error: 'Mock payment details are invalid' });
+      return;
+    }
+
+    user.tierId = tierId;
+    json(res, 200, {
+      payment: {
+        status: 'paid',
+        transactionId: `txn_${Date.now()}`,
+        amount: tier.monthlyPrice,
+        currency: 'USD',
+        cardLast4: cardNumber.slice(-4),
+      },
+      tier,
+      user: sanitizeUser(user),
+    });
     return;
   }
 
@@ -160,6 +344,7 @@ createServer(async (req, res) => {
     }
     const title = String(body.title).trim();
     const content = String(body.body).trim();
+    const imageUrl = String(body.imageUrl || '').trim();
     if (!title || !content) {
       json(res, 400, { error: 'title and body are required' });
       return;
@@ -170,6 +355,7 @@ createServer(async (req, res) => {
       creatorId,
       title,
       body: content,
+      imageUrl,
       createdAt: new Date().toISOString(),
     };
     nextPostId += 1;
@@ -192,6 +378,7 @@ createServer(async (req, res) => {
       return;
     }
     const text = String(body.text).trim();
+    const imageUrl = String(body.imageUrl || '').trim();
     if (!text) {
       json(res, 400, { error: 'text is required' });
       return;
@@ -201,6 +388,7 @@ createServer(async (req, res) => {
       id: `s${nextStoryId}`,
       creatorId,
       text,
+      imageUrl,
       createdAt: new Date().toISOString(),
     };
     nextStoryId += 1;

@@ -118,8 +118,14 @@ const stories = [
   { id: 's3', creatorId: 'c5', text: 'Behind the lens: grading setup for cinematic shadows.', imageUrl: '/mock/story-lens.svg', createdAt: '2026-03-25T19:05:00.000Z' },
 ];
 
+const channelMessages = [
+  { id: 'm1', creatorId: 'c1', text: 'Welcome to the Architecture channel. Weekly teardown drops every Friday.', createdAt: '2026-03-24T11:00:00.000Z' },
+  { id: 'm2', creatorId: 'c3', text: 'Design Systems channel is open. Share your component architecture questions.', createdAt: '2026-03-25T09:30:00.000Z' },
+];
+
 let nextPostId = posts.length + 1;
 let nextStoryId = stories.length + 1;
+let nextChannelMessageId = channelMessages.length + 1;
 
 const sanitizeUser = ({ password, ...safeUser }) => safeUser;
 const sanitizeCreator = ({ password, ...safeCreator }) => safeCreator;
@@ -127,6 +133,7 @@ const normalizeImageUrl = (value) => {
   const candidate = String(value || '').trim();
   if (!candidate) return '';
   if (candidate.startsWith('/mock/')) return candidate;
+  if (candidate.startsWith('data:image/') && candidate.length <= 2_000_000) return candidate;
   try {
     const parsed = new URL(candidate);
     if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
@@ -205,6 +212,7 @@ const buildCreatorDashboard = (creatorId) => {
     creator: sanitizeCreator(creator),
     posts: posts.filter((post) => post.creatorId === creatorId).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
     stories: stories.filter((story) => story.creatorId === creatorId).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
+    channelMessages: channelMessages.filter((message) => message.creatorId === creatorId).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
   };
 };
 
@@ -374,6 +382,89 @@ createServer(async (req, res) => {
     nextPostId += 1;
     posts.push(post);
     json(res, 201, { post });
+    return;
+  }
+
+  if (req.method === 'POST' && path.startsWith('/api/users/') && path.endsWith('/avatar')) {
+    const userId = path.split('/')[3];
+    const user = users.find((item) => item.id === userId);
+    if (!user) {
+      json(res, 404, { error: 'User not found' });
+      return;
+    }
+
+    const body = await parseBody(req);
+    const avatarUrl = normalizeImageUrl(body?.avatarUrl);
+    if (!avatarUrl) {
+      json(res, 400, { error: 'avatarUrl is required' });
+      return;
+    }
+
+    user.avatarUrl = avatarUrl;
+    json(res, 200, { user: sanitizeUser(user) });
+    return;
+  }
+
+  if (req.method === 'POST' && path.startsWith('/api/creators/') && path.endsWith('/avatar')) {
+    const creatorId = path.split('/')[3];
+    const creator = creators.find((item) => item.id === creatorId);
+    if (!creator) {
+      json(res, 404, { error: 'Creator not found' });
+      return;
+    }
+
+    const body = await parseBody(req);
+    const avatarUrl = normalizeImageUrl(body?.avatarUrl);
+    if (!avatarUrl) {
+      json(res, 400, { error: 'avatarUrl is required' });
+      return;
+    }
+
+    creator.avatarUrl = avatarUrl;
+    json(res, 200, { creator: sanitizeCreator(creator) });
+    return;
+  }
+
+  if (req.method === 'GET' && path.startsWith('/api/creators/') && path.endsWith('/channel-messages')) {
+    const creatorId = path.split('/')[3];
+    const creatorExists = creators.some((creator) => creator.id === creatorId);
+    if (!creatorExists) {
+      json(res, 404, { error: 'Creator not found' });
+      return;
+    }
+
+    json(res, 200, {
+      messages: channelMessages
+        .filter((message) => message.creatorId === creatorId)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
+    });
+    return;
+  }
+
+  if (req.method === 'POST' && path.startsWith('/api/creators/') && path.endsWith('/channel-messages')) {
+    const creatorId = path.split('/')[3];
+    const creatorExists = creators.some((creator) => creator.id === creatorId);
+    if (!creatorExists) {
+      json(res, 404, { error: 'Creator not found' });
+      return;
+    }
+
+    const body = await parseBody(req);
+    const text = String(body?.text || '').trim();
+    if (!text) {
+      json(res, 400, { error: 'text is required' });
+      return;
+    }
+
+    const message = {
+      id: `m${nextChannelMessageId}`,
+      creatorId,
+      text,
+      createdAt: new Date().toISOString(),
+    };
+    nextChannelMessageId += 1;
+    channelMessages.push(message);
+    json(res, 201, { message });
     return;
   }
 

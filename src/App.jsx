@@ -4,11 +4,14 @@ import {
   ArrowRight,
   Check,
   CreditCard,
+  ImagePlus,
   Lock,
   Menu,
+  MessageSquare,
   PlusCircle,
   Shield,
   TrendingUp,
+  Upload,
   Users,
   X,
 } from 'lucide-react';
@@ -17,10 +20,18 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 const FALLBACK_IMAGE = '/mock/post-concrete.svg';
 const FALLBACK_AVATAR = '/mock/user-aria.svg';
 
+const toDataUrl = (file) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(String(reader.result || ''));
+  reader.onerror = () => reject(new Error('Unable to read file'));
+  reader.readAsDataURL(file);
+});
+
 const Navbar = ({ onViewChange, currentView }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const links = [
+    { key: 'auth', label: 'Access' },
     { key: 'landing', label: 'Platform' },
     { key: 'user', label: 'User Dashboard' },
     { key: 'creator', label: 'Creator Dashboard' },
@@ -29,7 +40,7 @@ const Navbar = ({ onViewChange, currentView }) => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 backdrop-blur-md border-b border-white/5 bg-opacity-80 bg-[#050605]">
       <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-        <button className="text-2xl font-bold font-heading tracking-tight" onClick={() => onViewChange('landing')}>
+        <button className="text-2xl font-bold font-heading tracking-tight" onClick={() => onViewChange('auth')}>
           REfluenz<span className="text-[#d6cdc6]">.</span>
         </button>
 
@@ -118,17 +129,11 @@ const LandingView = ({ onViewChange, tiers }) => (
           </p>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <button
-              onClick={() => onViewChange('user')}
+              onClick={() => onViewChange('auth')}
               className="bg-[#d6cdc6] text-[#050605] px-8 py-3.5 rounded-sm font-medium text-lg hover:bg-[#e8e2de] transition-colors flex items-center"
             >
-              Open User Dashboard
+              Open Access Page
               <ArrowRight className="ml-2 w-4 h-4" />
-            </button>
-            <button
-              onClick={() => onViewChange('creator')}
-              className="px-8 py-3.5 rounded-sm font-medium text-lg border border-white/20 text-white hover:border-white/40 transition-colors"
-            >
-              Open Creator Dashboard
             </button>
           </div>
         </div>
@@ -181,15 +186,175 @@ const LandingView = ({ onViewChange, tiers }) => (
   </motion.div>
 );
 
-const UserDashboard = ({ users, creators, tiers }) => {
+const AccessView = ({ users, creators, onAuthenticated }) => {
+  const [mode, setMode] = useState('login');
+  const [role, setRole] = useState('user');
   const [loginEmail, setLoginEmail] = useState('aria@refluenz.app');
   const [loginPassword, setLoginPassword] = useState('user123');
-  const [loggedInUser, setLoggedInUser] = useState(null);
+  const [registerId, setRegisterId] = useState('');
+  const [error, setError] = useState('');
+
+  const roleAccounts = role === 'user' ? users : creators;
+
+  useEffect(() => {
+    if (!roleAccounts.length) return;
+    if (!registerId || !roleAccounts.some((account) => account.id === registerId)) {
+      setRegisterId(roleAccounts[0].id);
+    }
+  }, [roleAccounts, registerId]);
+
+  useEffect(() => {
+    if (role === 'user') {
+      setLoginEmail('aria@refluenz.app');
+      setLoginPassword('user123');
+    } else {
+      setLoginEmail('julian@refluenz.app');
+      setLoginPassword('creator123');
+    }
+  }, [role]);
+
+  const handleLogin = async (event) => {
+    event.preventDefault();
+    setError('');
+
+    try {
+      const response = await fetch(`${API_BASE}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role, email: loginEmail, password: loginPassword }),
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        setError(payload.error || 'Invalid credentials');
+        return;
+      }
+
+      onAuthenticated({ role, account: role === 'user' ? payload.user : payload.creator });
+    } catch {
+      setError('Unable to login. Ensure backend is running on port 4000.');
+    }
+  };
+
+  const handleMockRegister = (event) => {
+    event.preventDefault();
+    const account = roleAccounts.find((item) => item.id === registerId);
+    if (!account) {
+      setError('Please choose a mock account.');
+      return;
+    }
+    onAuthenticated({ role, account });
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-32 pb-20 min-h-screen">
+      <div className="container mx-auto px-6 max-w-3xl">
+        <div className="p-6 md:p-8 border border-white/10 bg-white/[0.02] rounded-xl">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">Login or Register</h1>
+          <p className="text-sm text-[#889993] mb-6">Choose your role and continue with mock IDs, just like an Instagram-style entry flow.</p>
+
+          <div className="flex flex-wrap gap-3 mb-6">
+            <button
+              onClick={() => setMode('login')}
+              className={`px-4 py-2 rounded-sm text-sm border ${mode === 'login' ? 'bg-[#d6cdc6] text-[#050605] border-[#d6cdc6]' : 'border-white/20 text-white'}`}
+            >
+              Login
+            </button>
+            <button
+              onClick={() => setMode('register')}
+              className={`px-4 py-2 rounded-sm text-sm border ${mode === 'register' ? 'bg-[#d6cdc6] text-[#050605] border-[#d6cdc6]' : 'border-white/20 text-white'}`}
+            >
+              Register (Mock)
+            </button>
+          </div>
+
+          <div className="flex gap-3 mb-6">
+            {['user', 'creator'].map((item) => (
+              <button
+                key={item}
+                onClick={() => setRole(item)}
+                className={`px-4 py-2 rounded-sm text-sm capitalize border ${role === item ? 'bg-white/10 border-white/30' : 'border-white/10 text-[#889993]'}`}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+
+          {mode === 'login' ? (
+            <form className="space-y-3" onSubmit={handleLogin}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {roleAccounts.slice(0, 5).map((account) => (
+                  <button
+                    key={account.id}
+                    type="button"
+                    onClick={() => {
+                      setLoginEmail(account.email);
+                      setLoginPassword(role === 'user' ? 'user123' : 'creator123');
+                    }}
+                    className="text-left p-2 rounded-md border border-white/10 hover:border-white/20"
+                  >
+                    <p className="text-sm font-medium">{account.name}</p>
+                    <p className="text-xs text-[#889993]">{account.email}</p>
+                  </button>
+                ))}
+              </div>
+              <input
+                className="w-full bg-[#0e1210] border border-white/10 rounded-md px-4 py-2 text-sm"
+                placeholder="Email"
+                value={loginEmail}
+                onChange={(event) => setLoginEmail(event.target.value)}
+              />
+              <input
+                type="password"
+                className="w-full bg-[#0e1210] border border-white/10 rounded-md px-4 py-2 text-sm"
+                placeholder="Password"
+                value={loginPassword}
+                onChange={(event) => setLoginPassword(event.target.value)}
+              />
+              <p className="text-xs text-[#889993]">Mock password: {role === 'user' ? 'user123' : 'creator123'}</p>
+              {error ? <p className="text-sm text-red-300">{error}</p> : null}
+              <button className="inline-flex items-center bg-[#d6cdc6] text-[#050605] px-4 py-2 rounded-sm font-medium">
+                <Lock className="w-4 h-4 mr-2" />
+                Login as {role}
+              </button>
+            </form>
+          ) : (
+            <form className="space-y-3" onSubmit={handleMockRegister}>
+              <select
+                value={registerId}
+                onChange={(event) => setRegisterId(event.target.value)}
+                className="w-full bg-[#0e1210] border border-white/10 rounded-md px-3 py-2 text-sm"
+              >
+                {roleAccounts.map((account) => (
+                  <option key={account.id} value={account.id}>{account.name} ({account.email})</option>
+                ))}
+              </select>
+              <p className="text-xs text-[#889993]">Mock register uses seeded IDs and continues directly to dashboard/home feed.</p>
+              {error ? <p className="text-sm text-red-300">{error}</p> : null}
+              <button className="inline-flex items-center bg-[#d6cdc6] text-[#050605] px-4 py-2 rounded-sm font-medium">
+                Continue as {role}
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+const UserDashboard = ({ creators, tiers, sessionUser, onSessionUserChange }) => {
+  const [loggedInUser, setLoggedInUser] = useState(sessionUser || null);
   const [dashboard, setDashboard] = useState(null);
-  const [loginError, setLoginError] = useState('');
   const [payment, setPayment] = useState({ tierId: '', cardName: '', cardNumber: '' });
   const [paymentResult, setPaymentResult] = useState(null);
   const [paymentError, setPaymentError] = useState('');
+  const [avatarError, setAvatarError] = useState('');
+  const [storyIndex, setStoryIndex] = useState(0);
+
+  useEffect(() => {
+    setLoggedInUser(sessionUser || null);
+  }, [sessionUser]);
 
   useEffect(() => {
     if (!tiers.length || payment.tierId) return;
@@ -197,6 +362,7 @@ const UserDashboard = ({ users, creators, tiers }) => {
   }, [tiers, payment.tierId]);
 
   const refreshDashboard = (userId) => {
+    if (!userId) return;
     fetch(`${API_BASE}/api/dashboard/user/${userId}`)
       .then((response) => response.json())
       .then((data) => {
@@ -205,31 +371,15 @@ const UserDashboard = ({ users, creators, tiers }) => {
       .catch(() => setDashboard(null));
   };
 
-  const handleUserLogin = async (event) => {
-    event.preventDefault();
-    setLoginError('');
-
-    try {
-      const response = await fetch(`${API_BASE}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: 'user', email: loginEmail, password: loginPassword }),
-      });
-
-      if (!response.ok) {
-        setLoginError('Invalid credentials. Try aria@refluenz.app / user123');
-        return;
-      }
-
-      const data = await response.json();
-      setLoggedInUser(data.user);
-      setPaymentResult(null);
-      setPaymentError('');
-      refreshDashboard(data.user.id);
-    } catch {
-      setLoginError('Unable to login. Ensure backend is running on port 4000.');
+  useEffect(() => {
+    if (loggedInUser?.id) {
+      refreshDashboard(loggedInUser.id);
     }
-  };
+  }, [loggedInUser?.id]);
+
+  useEffect(() => {
+    setStoryIndex(0);
+  }, [dashboard?.feed?.length]);
 
   const handlePurchaseTier = async (event) => {
     event.preventDefault();
@@ -253,9 +403,36 @@ const UserDashboard = ({ users, creators, tiers }) => {
 
       setPaymentResult(data.payment);
       setLoggedInUser(data.user);
+      onSessionUserChange(data.user);
       refreshDashboard(loggedInUser.id);
     } catch {
       setPaymentError('Payment request failed.');
+    }
+  };
+
+  const handleAvatarUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file || !loggedInUser) return;
+
+    setAvatarError('');
+
+    try {
+      const avatarUrl = await toDataUrl(file);
+      const response = await fetch(`${API_BASE}/api/users/${loggedInUser.id}/avatar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatarUrl }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setAvatarError(data.error || 'Unable to upload profile picture.');
+        return;
+      }
+      setLoggedInUser(data.user);
+      onSessionUserChange(data.user);
+      refreshDashboard(loggedInUser.id);
+    } catch {
+      setAvatarError('Unable to upload profile picture.');
     }
   };
 
@@ -264,33 +441,16 @@ const UserDashboard = ({ users, creators, tiers }) => {
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-32 pb-20 min-h-screen">
         <div className="container mx-auto px-6 max-w-xl">
           <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
-            <h1 className="text-3xl font-bold mb-4">User Login</h1>
-            <p className="text-sm text-[#889993] mb-4">Mock credentials: aria@refluenz.app / user123</p>
-            <form className="space-y-3" onSubmit={handleUserLogin}>
-              <input
-                className="w-full bg-[#0e1210] border border-white/10 rounded-md px-4 py-2 text-sm"
-                placeholder="Email"
-                value={loginEmail}
-                onChange={(event) => setLoginEmail(event.target.value)}
-              />
-              <input
-                type="password"
-                className="w-full bg-[#0e1210] border border-white/10 rounded-md px-4 py-2 text-sm"
-                placeholder="Password"
-                value={loginPassword}
-                onChange={(event) => setLoginPassword(event.target.value)}
-              />
-              {loginError ? <p className="text-sm text-red-300">{loginError}</p> : null}
-              <button className="inline-flex items-center bg-[#d6cdc6] text-[#050605] px-4 py-2 rounded-sm font-medium">
-                <Lock className="w-4 h-4 mr-2" />
-                Login as User
-              </button>
-            </form>
+            <h1 className="text-3xl font-bold mb-4">User Access Needed</h1>
+            <p className="text-sm text-[#889993]">Open the Access page and login/register as a user to continue.</p>
           </div>
         </div>
       </motion.div>
     );
   }
+
+  const stories = (dashboard?.feed || []).filter((item) => item.type === 'story');
+  const activeStory = stories[storyIndex] || null;
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-32 pb-20 min-h-screen">
@@ -306,39 +466,67 @@ const UserDashboard = ({ users, creators, tiers }) => {
           </div>
         </div>
 
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold border-b border-white/10 pb-3 mb-4">Recent posts from your creators</h2>
-          <div className="flex gap-4 overflow-x-auto pb-2 snap-x">
-            {(dashboard?.recentSubscribedPosts || []).map((post) => (
-              <article key={post.id} className="min-w-[280px] max-w-[320px] p-4 border border-white/10 bg-white/[0.02] rounded-lg snap-start">
-                {post.imageUrl ? <FeedImage src={post.imageUrl} alt={post.title} className="w-full h-40 object-cover rounded-md mb-3" /> : null}
-                <p className="text-xs uppercase tracking-wider text-[#d6cdc6] mb-1">{post.creator?.name}</p>
-                <h3 className="text-lg font-semibold mb-2">{post.title}</h3>
-                <p className="text-sm text-[#889993]">{post.body}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-5">
-            <h2 className="text-2xl font-semibold border-b border-white/10 pb-3">Content Feed</h2>
-            {(dashboard?.feed || []).map((item) => (
+            <h2 className="text-2xl font-semibold border-b border-white/10 pb-3">Scrollytelling Feed (Following)</h2>
+            {(dashboard?.feed || []).filter((item) => item.type === 'post').map((item) => (
               <article key={item.id} className="p-5 border border-white/10 bg-white/[0.02] rounded-lg">
                 <div className="flex items-center gap-3 mb-3">
                   {item.creator?.avatarUrl ? <Avatar url={item.creator.avatarUrl} alt={item.creator.name} /> : null}
                   <div>
-                    <p className="text-xs uppercase tracking-wider text-[#d6cdc6]">{item.type} • {item.creator?.name}</p>
+                    <p className="text-xs uppercase tracking-wider text-[#d6cdc6]">@{item.creator?.name} • followed creator</p>
                     <p className="text-xs text-[#889993]">{item.creator?.niche}</p>
                   </div>
                 </div>
                 <h3 className="text-xl font-semibold mb-2">{item.title || item.text}</h3>
                 {item.body ? <p className="text-[#889993] mb-3">{item.body}</p> : null}
-                {item.imageUrl ? <FeedImage src={item.imageUrl} alt={item.title || item.text} className="w-full max-h-[360px] object-cover rounded-md" /> : null}
+                {item.imageUrl ? <FeedImage src={item.imageUrl} alt={item.title || item.text} className="w-full max-h-[420px] object-cover rounded-md" /> : null}
               </article>
             ))}
           </div>
+
           <aside className="space-y-5">
+            <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
+              <h3 className="font-semibold mb-3">Profile Picture</h3>
+              <input type="file" accept="image/*" onChange={handleAvatarUpload} className="w-full text-sm text-[#889993]" />
+              <p className="text-xs text-[#889993] mt-2">Upload your own profile image or use mock avatars.</p>
+              {avatarError ? <p className="text-sm text-red-300 mt-2">{avatarError}</p> : null}
+            </div>
+
+            <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
+              <h3 className="font-semibold mb-3">Story Bar</h3>
+              <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                {stories.map((story, index) => (
+                  <button
+                    key={story.id}
+                    onClick={() => setStoryIndex(index)}
+                    className={`w-full text-left p-2 rounded-md border ${storyIndex === index ? 'border-white/40 bg-white/10' : 'border-white/10'}`}
+                  >
+                    <p className="text-xs text-[#d6cdc6]">{story.creator?.name}</p>
+                    <p className="text-xs text-[#889993] line-clamp-1">{story.text}</p>
+                  </button>
+                ))}
+              </div>
+              {activeStory ? (
+                <div
+                  className="mt-3 border border-white/10 rounded-lg overflow-hidden cursor-pointer"
+                  onClick={(event) => {
+                    const bounds = event.currentTarget.getBoundingClientRect();
+                    const clickedRight = event.clientX > bounds.left + bounds.width / 2;
+                    if (clickedRight) {
+                      setStoryIndex((current) => (stories.length ? (current + 1) % stories.length : 0));
+                    }
+                  }}
+                >
+                  {activeStory.imageUrl ? <FeedImage src={activeStory.imageUrl} alt={activeStory.text} className="w-full h-40 object-cover" /> : null}
+                  <div className="p-3 text-sm">
+                    <p className="text-[#d6cdc6] text-xs mb-1">Click right side to auto-next</p>
+                    <p>{activeStory.text}</p>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
             <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
               <div className="flex items-center mb-3 text-[#d6cdc6]">
                 <Lock className="w-5 h-5 mr-2" />
@@ -346,17 +534,7 @@ const UserDashboard = ({ users, creators, tiers }) => {
               </div>
               <p className="text-2xl font-semibold">{dashboard?.tier?.name || '-'}</p>
             </div>
-            <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
-              <h3 className="font-semibold mb-3">Subscribed Creators</h3>
-              <ul className="space-y-3">
-                {(dashboard?.subscribedCreators || creators).map((creator) => (
-                  <li key={creator.id} className="flex items-center gap-2 text-sm text-[#889993]">
-                    <Avatar url={creator.avatarUrl} alt={creator.name} />
-                    <span>{creator.name} • {creator.niche}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+
             <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
               <h3 className="font-semibold mb-3">Upgrade Tier (Mock Payment)</h3>
               <form className="space-y-2" onSubmit={handlePurchaseTier}>
@@ -389,6 +567,18 @@ const UserDashboard = ({ users, creators, tiers }) => {
                 </button>
               </form>
             </div>
+
+            <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
+              <h3 className="font-semibold mb-3">Subscribed Creators</h3>
+              <ul className="space-y-3">
+                {(dashboard?.subscribedCreators || creators).map((creator) => (
+                  <li key={creator.id} className="flex items-center gap-2 text-sm text-[#889993]">
+                    <Avatar url={creator.avatarUrl} alt={creator.name} />
+                    <span>{creator.name} • {creator.niche}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </aside>
         </div>
       </div>
@@ -396,17 +586,21 @@ const UserDashboard = ({ users, creators, tiers }) => {
   );
 };
 
-const CreatorDashboard = () => {
-  const [loginEmail, setLoginEmail] = useState('julian@refluenz.app');
-  const [loginPassword, setLoginPassword] = useState('creator123');
-  const [selectedCreatorId, setSelectedCreatorId] = useState('');
+const CreatorDashboard = ({ sessionCreator, onSessionCreatorChange }) => {
+  const [selectedCreatorId, setSelectedCreatorId] = useState(sessionCreator?.id || '');
   const [dashboard, setDashboard] = useState(null);
   const [postTitle, setPostTitle] = useState('');
   const [postBody, setPostBody] = useState('');
-  const [postImageUrl, setPostImageUrl] = useState('');
+  const [postImageData, setPostImageData] = useState('');
   const [storyText, setStoryText] = useState('');
   const [storyImageUrl, setStoryImageUrl] = useState('');
-  const [loginError, setLoginError] = useState('');
+  const [channelText, setChannelText] = useState('');
+  const [uploadHint, setUploadHint] = useState('Drop image here or select from device');
+  const [avatarError, setAvatarError] = useState('');
+
+  useEffect(() => {
+    setSelectedCreatorId(sessionCreator?.id || '');
+  }, [sessionCreator?.id]);
 
   const refreshDashboard = (creatorId) => {
     fetch(`${API_BASE}/api/dashboard/creator/${creatorId}`)
@@ -421,26 +615,14 @@ const CreatorDashboard = () => {
     }
   }, [selectedCreatorId]);
 
-  const handleCreatorLogin = async (event) => {
-    event.preventDefault();
-    setLoginError('');
-
+  const handlePostImageFile = async (file) => {
+    if (!file) return;
     try {
-      const response = await fetch(`${API_BASE}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: 'creator', email: loginEmail, password: loginPassword }),
-      });
-
-      if (!response.ok) {
-        setLoginError('Invalid credentials. Try julian@refluenz.app / creator123');
-        return;
-      }
-
-      const data = await response.json();
-      setSelectedCreatorId(data.creator.id);
+      const dataUrl = await toDataUrl(file);
+      setPostImageData(dataUrl);
+      setUploadHint(`Selected: ${file.name}`);
     } catch {
-      setLoginError('Unable to login. Ensure backend is running on port 4000.');
+      setUploadHint('Unable to read file');
     }
   };
 
@@ -452,14 +634,15 @@ const CreatorDashboard = () => {
       const response = await fetch(`${API_BASE}/api/creators/${selectedCreatorId}/posts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: postTitle, body: postBody, imageUrl: postImageUrl }),
+        body: JSON.stringify({ title: postTitle, body: postBody, imageUrl: postImageData }),
       });
       if (!response.ok) {
         return;
       }
       setPostTitle('');
       setPostBody('');
-      setPostImageUrl('');
+      setPostImageData('');
+      setUploadHint('Drop image here or select from device');
       refreshDashboard(selectedCreatorId);
     } catch {
       return;
@@ -487,33 +670,56 @@ const CreatorDashboard = () => {
     }
   };
 
+  const handleChannelPost = async (event) => {
+    event.preventDefault();
+    if (!channelText.trim()) return;
+
+    try {
+      const response = await fetch(`${API_BASE}/api/creators/${selectedCreatorId}/channel-messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: channelText }),
+      });
+      if (!response.ok) return;
+      setChannelText('');
+      refreshDashboard(selectedCreatorId);
+    } catch {
+      return;
+    }
+  };
+
+  const handleAvatarUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file || !selectedCreatorId) return;
+
+    setAvatarError('');
+
+    try {
+      const avatarUrl = await toDataUrl(file);
+      const response = await fetch(`${API_BASE}/api/creators/${selectedCreatorId}/avatar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatarUrl }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setAvatarError(data.error || 'Unable to upload profile picture.');
+        return;
+      }
+      onSessionCreatorChange(data.creator);
+      refreshDashboard(selectedCreatorId);
+    } catch {
+      setAvatarError('Unable to upload profile picture.');
+    }
+  };
+
   if (!selectedCreatorId) {
     return (
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-32 pb-20 min-h-screen">
         <div className="container mx-auto px-6 max-w-xl">
           <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
-            <h1 className="text-3xl font-bold mb-4">Creator Login</h1>
-            <p className="text-sm text-[#889993] mb-4">Mock credentials: julian@refluenz.app / creator123</p>
-            <form className="space-y-3" onSubmit={handleCreatorLogin}>
-              <input
-                className="w-full bg-[#0e1210] border border-white/10 rounded-md px-4 py-2 text-sm"
-                placeholder="Email"
-                value={loginEmail}
-                onChange={(event) => setLoginEmail(event.target.value)}
-              />
-              <input
-                type="password"
-                className="w-full bg-[#0e1210] border border-white/10 rounded-md px-4 py-2 text-sm"
-                placeholder="Password"
-                value={loginPassword}
-                onChange={(event) => setLoginPassword(event.target.value)}
-              />
-              {loginError ? <p className="text-sm text-red-300">{loginError}</p> : null}
-              <button className="inline-flex items-center bg-[#d6cdc6] text-[#050605] px-4 py-2 rounded-sm font-medium">
-                <Lock className="w-4 h-4 mr-2" />
-                Login as Creator
-              </button>
-            </form>
+            <h1 className="text-3xl font-bold mb-4">Creator Access Needed</h1>
+            <p className="text-sm text-[#889993]">Open the Access page and login/register as a creator to continue.</p>
           </div>
         </div>
       </motion.div>
@@ -553,12 +759,22 @@ const CreatorDashboard = () => {
                   value={postBody}
                   onChange={(event) => setPostBody(event.target.value)}
                 />
-                <input
-                  className="w-full bg-[#0e1210] border border-white/10 rounded-md px-4 py-2 text-sm"
-                  placeholder="Post image URL"
-                  value={postImageUrl}
-                  onChange={(event) => setPostImageUrl(event.target.value)}
-                />
+                <label
+                  className="block border border-dashed border-white/20 rounded-md p-4 text-sm text-[#889993]"
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    handlePostImageFile(event.dataTransfer.files?.[0]);
+                  }}
+                  onDragOver={(event) => event.preventDefault()}
+                >
+                  <div className="flex items-center gap-2 mb-2 text-white">
+                    <ImagePlus className="w-4 h-4" />
+                    Post image upload
+                  </div>
+                  <p>{uploadHint}</p>
+                  <input type="file" accept="image/*" className="mt-3 text-xs" onChange={(event) => handlePostImageFile(event.target.files?.[0])} />
+                  {postImageData ? <FeedImage src={postImageData} alt="Upload preview" className="w-full h-40 object-cover rounded-md mt-3" /> : null}
+                </label>
                 <button className="inline-flex items-center bg-[#d6cdc6] text-[#050605] px-4 py-2 rounded-sm font-medium">
                   <PlusCircle className="w-4 h-4 mr-2" />
                   Publish Post
@@ -587,9 +803,42 @@ const CreatorDashboard = () => {
                 </button>
               </form>
             </div>
+
+            <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
+              <div className="flex items-center gap-2 mb-4">
+                <MessageSquare className="w-5 h-5 text-[#d6cdc6]" />
+                <h2 className="text-xl font-semibold">Creator Text Channel</h2>
+              </div>
+              <form className="space-y-3" onSubmit={handleChannelPost}>
+                <textarea
+                  className="w-full bg-[#0e1210] border border-white/10 rounded-md px-4 py-2 text-sm h-20"
+                  placeholder="Share an update with your channel"
+                  value={channelText}
+                  onChange={(event) => setChannelText(event.target.value)}
+                />
+                <button className="inline-flex items-center border border-white/20 px-4 py-2 rounded-sm font-medium">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Post to Channel
+                </button>
+              </form>
+              <ul className="space-y-3 mt-4">
+                {(dashboard?.channelMessages || []).slice(0, 6).map((message) => (
+                  <li key={message.id} className="text-sm border border-white/10 rounded-md p-3 text-[#889993]">
+                    {message.text}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </section>
 
           <aside className="space-y-5">
+            <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
+              <h3 className="font-semibold mb-3">Profile Picture</h3>
+              <input type="file" accept="image/*" onChange={handleAvatarUpload} className="w-full text-sm text-[#889993]" />
+              <p className="text-xs text-[#889993] mt-2">Upload your own profile image or use the seeded mock profile pictures.</p>
+              {avatarError ? <p className="text-sm text-red-300 mt-2">{avatarError}</p> : null}
+            </div>
+
             <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
               <h3 className="font-semibold mb-3">Recent Posts</h3>
               <ul className="space-y-4">
@@ -620,10 +869,11 @@ const CreatorDashboard = () => {
 };
 
 const App = () => {
-  const [view, setView] = useState('landing');
+  const [view, setView] = useState('auth');
   const [users, setUsers] = useState([]);
   const [creators, setCreators] = useState([]);
   const [tiers, setTiers] = useState([]);
+  const [session, setSession] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -645,13 +895,40 @@ const App = () => {
 
   const viewNode = useMemo(() => {
     if (view === 'user') {
-      return <UserDashboard key="user" users={users} creators={creators} tiers={tiers} />;
+      return (
+        <UserDashboard
+          key="user"
+          creators={creators}
+          tiers={tiers}
+          sessionUser={session?.role === 'user' ? session.account : null}
+          onSessionUserChange={(account) => setSession({ role: 'user', account })}
+        />
+      );
     }
     if (view === 'creator') {
-      return <CreatorDashboard key="creator" />;
+      return (
+        <CreatorDashboard
+          key="creator"
+          sessionCreator={session?.role === 'creator' ? session.account : null}
+          onSessionCreatorChange={(account) => setSession({ role: 'creator', account })}
+        />
+      );
     }
-    return <LandingView key="landing" onViewChange={setView} tiers={tiers} />;
-  }, [view, users, creators, tiers]);
+    if (view === 'landing') {
+      return <LandingView key="landing" onViewChange={setView} tiers={tiers} />;
+    }
+    return (
+      <AccessView
+        key="auth"
+        users={users}
+        creators={creators}
+        onAuthenticated={(nextSession) => {
+          setSession(nextSession);
+          setView(nextSession.role === 'user' ? 'user' : 'creator');
+        }}
+      />
+    );
+  }, [view, creators, tiers, users, session]);
 
   return (
     <div className="min-h-screen">

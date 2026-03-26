@@ -21,12 +21,27 @@ A platform for creators who value depth over reach.
    npm install
    ```
 
-2. Run the development server:
+2. Start the backend API (serves mock users, creators, tiers, posts, stories):
+   ```bash
+   npm run server
+   ```
+
+3. Run the frontend development server:
    ```bash
    npm run dev
    ```
 
-3. Build for production:
+4. Build for production:
    ```bash
    npm run build
    ```
+
+## MVP API (Mock Data)
+
+- `GET /api/users` → 5 mock users
+- `GET /api/creators` → 5 mock creators
+- `GET /api/subscription-tiers` → 3 subscription tiers
+- `GET /api/dashboard/user/:id` → user dashboard feed (posts + stories)
+- `GET /api/dashboard/creator/:id` → creator dashboard data
+- `POST /api/creators/:id/posts` → creator post publishing
+- `POST /api/creators/:id/stories` → creator story publishing

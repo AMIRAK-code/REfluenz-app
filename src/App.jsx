@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+const FALLBACK_IMAGE = '/mock/post-concrete.svg';
+const FALLBACK_AVATAR = '/mock/user-aria.svg';
 
 const Navbar = ({ onViewChange, currentView }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -74,7 +76,27 @@ const Navbar = ({ onViewChange, currentView }) => {
 };
 
 const Avatar = ({ url, alt }) => (
-  <img src={url} alt={alt} className="w-11 h-11 rounded-full object-cover border border-white/15" loading="lazy" />
+  <img
+    src={url || FALLBACK_AVATAR}
+    alt={alt}
+    className="w-11 h-11 rounded-full object-cover border border-white/15"
+    loading="lazy"
+    onError={(event) => {
+      event.currentTarget.src = FALLBACK_AVATAR;
+    }}
+  />
+);
+
+const FeedImage = ({ src, alt, className }) => (
+  <img
+    src={src || FALLBACK_IMAGE}
+    alt={alt}
+    className={className}
+    loading="lazy"
+    onError={(event) => {
+      event.currentTarget.src = FALLBACK_IMAGE;
+    }}
+  />
 );
 
 const LandingView = ({ onViewChange, tiers }) => (
@@ -289,7 +311,7 @@ const UserDashboard = ({ users, creators, tiers }) => {
           <div className="flex gap-4 overflow-x-auto pb-2 snap-x">
             {(dashboard?.recentSubscribedPosts || []).map((post) => (
               <article key={post.id} className="min-w-[280px] max-w-[320px] p-4 border border-white/10 bg-white/[0.02] rounded-lg snap-start">
-                {post.imageUrl ? <img src={post.imageUrl} alt={post.title} className="w-full h-40 object-cover rounded-md mb-3" loading="lazy" /> : null}
+                {post.imageUrl ? <FeedImage src={post.imageUrl} alt={post.title} className="w-full h-40 object-cover rounded-md mb-3" /> : null}
                 <p className="text-xs uppercase tracking-wider text-[#d6cdc6] mb-1">{post.creator?.name}</p>
                 <h3 className="text-lg font-semibold mb-2">{post.title}</h3>
                 <p className="text-sm text-[#889993]">{post.body}</p>
@@ -312,7 +334,7 @@ const UserDashboard = ({ users, creators, tiers }) => {
                 </div>
                 <h3 className="text-xl font-semibold mb-2">{item.title || item.text}</h3>
                 {item.body ? <p className="text-[#889993] mb-3">{item.body}</p> : null}
-                {item.imageUrl ? <img src={item.imageUrl} alt={item.title || item.text} className="w-full max-h-[360px] object-cover rounded-md" loading="lazy" /> : null}
+                {item.imageUrl ? <FeedImage src={item.imageUrl} alt={item.title || item.text} className="w-full max-h-[360px] object-cover rounded-md" /> : null}
               </article>
             ))}
           </div>
@@ -360,7 +382,7 @@ const UserDashboard = ({ users, creators, tiers }) => {
                   onChange={(event) => setPayment((current) => ({ ...current, cardNumber: event.target.value }))}
                 />
                 {paymentError ? <p className="text-sm text-red-300">{paymentError}</p> : null}
-                {paymentResult ? <p className="text-sm text-[#4E9F76]">Paid mock transaction {paymentResult.transactionId}. Card ending {paymentResult.cardLast4}.</p> : null}
+                {paymentResult ? <p className="text-sm text-[#4E9F76]">Paid mock transaction {paymentResult.transactionId}.</p> : null}
                 <button className="inline-flex items-center bg-[#d6cdc6] text-[#050605] px-4 py-2 rounded-sm font-medium text-sm">
                   <CreditCard className="w-4 h-4 mr-2" />
                   Pay & Upgrade
@@ -573,7 +595,7 @@ const CreatorDashboard = () => {
               <ul className="space-y-4">
                 {(dashboard?.posts || []).slice(0, 5).map((post) => (
                   <li key={post.id} className="text-sm text-[#889993]">
-                    {post.imageUrl ? <img src={post.imageUrl} alt={post.title} className="w-full h-24 object-cover rounded-md mb-2" loading="lazy" /> : null}
+                    {post.imageUrl ? <FeedImage src={post.imageUrl} alt={post.title} className="w-full h-24 object-cover rounded-md mb-2" /> : null}
                     <p className="text-white">{post.title}</p>
                   </li>
                 ))}
@@ -584,7 +606,7 @@ const CreatorDashboard = () => {
               <ul className="space-y-4">
                 {(dashboard?.stories || []).slice(0, 5).map((story) => (
                   <li key={story.id} className="text-sm text-[#889993]">
-                    {story.imageUrl ? <img src={story.imageUrl} alt={story.text} className="w-full h-24 object-cover rounded-md mb-2" loading="lazy" /> : null}
+                    {story.imageUrl ? <FeedImage src={story.imageUrl} alt={story.text} className="w-full h-24 object-cover rounded-md mb-2" /> : null}
                     {story.text}
                   </li>
                 ))}

@@ -227,27 +227,41 @@ const CreatorDashboard = ({ creators }) => {
     event.preventDefault();
     if (!postTitle.trim() || !postBody.trim()) return;
 
-    await fetch(`${API_BASE}/api/creators/${selectedCreatorId}/posts`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: postTitle, body: postBody }),
-    });
-    setPostTitle('');
-    setPostBody('');
-    refreshDashboard(selectedCreatorId);
+    try {
+      const response = await fetch(`${API_BASE}/api/creators/${selectedCreatorId}/posts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: postTitle, body: postBody }),
+      });
+      if (!response.ok) {
+        return;
+      }
+      setPostTitle('');
+      setPostBody('');
+      refreshDashboard(selectedCreatorId);
+    } catch {
+      return;
+    }
   };
 
   const handleCreateStory = async (event) => {
     event.preventDefault();
     if (!storyText.trim()) return;
 
-    await fetch(`${API_BASE}/api/creators/${selectedCreatorId}/stories`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: storyText }),
-    });
-    setStoryText('');
-    refreshDashboard(selectedCreatorId);
+    try {
+      const response = await fetch(`${API_BASE}/api/creators/${selectedCreatorId}/stories`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: storyText }),
+      });
+      if (!response.ok) {
+        return;
+      }
+      setStoryText('');
+      refreshDashboard(selectedCreatorId);
+    } catch {
+      return;
+    }
   };
 
   return (

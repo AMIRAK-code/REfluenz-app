@@ -21,7 +21,7 @@ A platform for creators who value depth over reach.
    npm install
    ```
 
-2. Start the backend API (serves mock users, creators, tiers, posts, stories):
+2. Start the backend API (serves mock users, creators, tiers, posts, stories, and mock auth/payment):
    ```bash
    npm run server
    ```
@@ -41,7 +41,14 @@ A platform for creators who value depth over reach.
 - `GET /api/users` → 5 mock users
 - `GET /api/creators` → 5 mock creators
 - `GET /api/subscription-tiers` → 3 subscription tiers
+- `POST /api/auth/login` → mock login for `user` or `creator` role
 - `GET /api/dashboard/user/:id` → user dashboard feed (posts + stories)
 - `GET /api/dashboard/creator/:id` → creator dashboard data
 - `POST /api/creators/:id/posts` → creator post publishing
 - `POST /api/creators/:id/stories` → creator story publishing
+- `POST /api/users/:id/purchase-tier` → mock subscription purchase with mock payment response
+
+### Mock Credentials
+
+- User: `aria@refluenz.app` / `user123`
+- Creator: `julian@refluenz.app` / `creator123`

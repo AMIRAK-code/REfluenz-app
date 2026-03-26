@@ -36,6 +36,9 @@ const stories = [
   { id: 's3', creatorId: 'c5', text: 'Behind the lens: grading setup for cinematic shadows.', createdAt: '2026-03-25T19:05:00.000Z' },
 ];
 
+let nextPostId = posts.length + 1;
+let nextStoryId = stories.length + 1;
+
 const json = (res, statusCode, payload) => {
   res.writeHead(statusCode, {
     'Content-Type': 'application/json',
@@ -163,12 +166,13 @@ createServer(async (req, res) => {
     }
 
     const post = {
-      id: `p${posts.length + 1}`,
+      id: `p${nextPostId}`,
       creatorId,
       title,
       body: content,
       createdAt: new Date().toISOString(),
     };
+    nextPostId += 1;
     posts.push(post);
     json(res, 201, { post });
     return;
@@ -194,11 +198,12 @@ createServer(async (req, res) => {
     }
 
     const story = {
-      id: `s${stories.length + 1}`,
+      id: `s${nextStoryId}`,
       creatorId,
       text,
       createdAt: new Date().toISOString(),
     };
+    nextStoryId += 1;
     stories.push(story);
     json(res, 201, { story });
     return;

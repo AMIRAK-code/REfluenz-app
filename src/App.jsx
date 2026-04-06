@@ -320,7 +320,7 @@ const ProfileView = ({ onSubscribe }) => (
         </div>
         <div className="flex-1">
           <h1 className="text-4xl font-bold mb-2">Julian Dax</h1>
-          <p className="text-lg text-[#d6cdc6] mb-4">Architectural Photographer &amp; Thought Leader</p>
+          <p className="text-lg text-[#d6cdc6] mb-4">Architectural Photographer & Thought Leader</p>
           <p className="text-[#889993] max-w-lg mb-6 leading-relaxed">
             Exploring the intersection of modern design and human psychology.
             Sharing weekly essays, photo studies, and private workshops.

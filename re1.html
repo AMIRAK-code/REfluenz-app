@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>REfluenz</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --surface: #141414;
+      --surface2: #1c1c1c;
+      --border: rgba(255,255,255,0.08);
+      --text: #f0f0f0;
+      --muted: #7a7a7a;
+      --silver: #c8c8c8;
+      --silver-dim: #888;
+      --accent: #d4d4d4;
+      --story-active: #ffffff;
+      --story-seen: #444;
+      --green: #3a7a55;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .logo { font-family: 'Bebas Neue', sans-serif; letter-spacing: 2px; }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+
+    /* ── Story ring ── */
+    .story-ring {
+      padding: 2px;
+      border-radius: 50%;
+      background: conic-gradient(#c8c8c8, #555, #c8c8c8, #555, #c8c8c8);
+    }
+    .story-ring.seen { background: var(--story-seen); }
+    .story-ring-inner {
+      background: var(--bg);
+      border-radius: 50%;
+      padding: 2px;
+    }
+
+    /* ── Nav sidebar (desktop) ── */
+    #sidebar {
+      position: fixed;
+      left: 0; top: 0; bottom: 0;
+      width: 240px;
+      background: var(--bg);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 24px 12px;
+      z-index: 100;
+      transition: width .25s;
+    }
+    #sidebar .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--muted);
+      transition: background .15s, color .15s;
+      white-space: nowrap;
+    }
+    #sidebar .nav-item:hover, #sidebar .nav-item.active {
+      background: var(--surface);
+      color: var(--text);
+    }
+    #sidebar .nav-item svg { flex-shrink: 0; stroke: currentColor; }
+
+    /* ── Top mobile nav ── */
+    #topbar {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 56px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      z-index: 100;
+    }
+    #bottomnav {
+      display: none;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 56px;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      z-index: 100;
+      align-items: center;
+      justify-content: space-around;
+    }
+    #bottomnav .bnav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 6px 12px;
+      transition: color .15s;
+    }
+    #bottomnav .bnav-item.active, #bottomnav .bnav-item:hover { color: var(--text); }
+
+    @media (max-width: 900px) {
+      #sidebar { display: none; }
+      #topbar { display: flex; }
+      #bottomnav { display: flex; }
+      #main-content { margin-left: 0 !important; padding-top: 56px; padding-bottom: 56px; }
+    }
+
+    /* ── Main layout ── */
+    #main-content {
+      margin-left: 240px;
+      min-height: 100vh;
+    }
+
+    /* ── Views ── */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── Feed ── */
+    .feed-wrap {
+      max-width: 470px;
+      margin: 0 auto;
+      padding: 24px 0 32px;
+    }
+
+    /* ── Post card ── */
+    .post-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .post-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+    }
+    .post-card-img {
+      width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+      background: var(--surface2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .post-card-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 14px 4px;
+    }
+    .post-card-actions button {
+      background: none; border: none;
+      color: var(--silver);
+      cursor: pointer;
+      display: flex; align-items: center; gap: 5px;
+      font-size: 13px;
+      transition: color .15s;
+    }
+    .post-card-actions button:hover { color: #fff; }
+    .post-card-body { padding: 6px 14px 14px; }
+    .post-card-body .caption { font-size: 13.5px; color: var(--text); line-height: 1.5; }
+    .post-card-body .meta { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+
+    /* ── Story tray ── */
+    .story-tray {
+      display: flex;
+      gap: 14px;
+      overflow-x: auto;
+      padding: 16px 4px;
+      margin-bottom: 8px;
+      scrollbar-width: none;
+    }
+    .story-tray::-webkit-scrollbar { display: none; }
+    .story-item {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 5px; cursor: pointer; flex-shrink: 0;
+    }
+    .story-item span { font-size: 11px; color: var(--muted); max-width: 60px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* ── Avatar ── */
+    .avatar {
+      border-radius: 50%;
+      object-fit: cover;
+      background: var(--surface2);
+      flex-shrink: 0;
+    }
+    .avatar-placeholder {
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2a2a2a, #444);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--silver);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    /* ── Right panel (suggestions/tier) ── */
+    #right-panel {
+      position: fixed;
+      right: 0; top: 0; bottom: 0;
+      width: 320px;
+      padding: 32px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      overflow-y: auto;
+      border-left: 1px solid var(--border);
+    }
+    @media (max-width: 1200px) { #right-panel { display: none; } }
+    #main-content.has-right { margin-right: 320px; }
+    @media (max-width: 1200px) { #main-content.has-right { margin-right: 0; } }
+
+    /* ── Inputs ── */
+    .inp {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13.5px;
+      color: var(--text);
+      outline: none;
+      transition: border .15s;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .inp::placeholder { color: var(--muted); }
+    .inp:focus { border-color: var(--silver-dim); }
+    textarea.inp { resize: none; }
+
+    /* ── Buttons ── */
+    .btn-primary {
+      background: var(--silver);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 20px;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .btn-primary:hover { background: #e0e0e0; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--silver);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 20px;
+      font-size: 13.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: border .15s, color .15s;
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .btn-ghost:hover { border-color: var(--silver); color: #fff; }
+    .btn-sm { padding: 6px 14px; font-size: 12.5px; border-radius: 6px; }
+
+    /* ── Auth card ── */
+    .auth-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+    }
+
+    /* ── Section title ── */
+    .sec-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    /* ── Tier card ── */
+    .tier-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      transition: border-color .15s;
+      cursor: pointer;
+    }
+    .tier-card:hover { border-color: var(--silver-dim); }
+    .tier-card.selected { border-color: var(--silver); }
+
+    /* ── Creator stat pill ── */
+    .stat-pill {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      text-align: center;
+    }
+    .stat-pill .val { font-size: 20px; font-weight: 600; }
+    .stat-pill .lbl { font-size: 11px; color: var(--muted); }
+
+    /* ── Story modal ── */
+    #story-modal {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.88);
+      z-index: 200;
+      align-items: center; justify-content: center;
+    }
+    #story-modal.open { display: flex; }
+    .story-modal-inner {
+      width: min(400px, 94vw);
+      border-radius: 18px;
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+    .story-modal-img {
+      width: 100%; height: 280px;
+      object-fit: cover;
+      background: #1a1a1a;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted); font-size: 13px;
+    }
+
+    /* ── Grid view ── */
+    .post-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
+    .post-grid-item {
+      aspect-ratio: 1;
+      background: var(--surface2);
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+    }
+    .post-grid-item img { width: 100%; height: 100%; object-fit: cover; }
+    .post-grid-item:hover::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,.35);
+    }
+
+    /* ── Tab switcher ── */
+    .tab-bar {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .tab-bar button {
+      flex: 1;
+      padding: 10px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .tab-bar button.active {
+      color: var(--text);
+      border-bottom-color: var(--silver);
+    }
+
+    /* ── Upload dropzone ── */
+    .dropzone {
+      border: 1.5px dashed var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color .15s;
+    }
+    .dropzone:hover { border-color: var(--silver-dim); }
+
+    /* ── Fade animation ── */
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(12px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .fade-up { animation: fadeUp .4s ease forwards; }
+    @keyframes fadeIn {
+      from { opacity:0; }
+      to   { opacity:1; }
+    }
+    .fade-in { animation: fadeIn .3s ease forwards; }
+
+    /* ── Profile header ── */
+    .profile-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 28px;
+      padding: 32px 0 24px;
+    }
+    .profile-meta h2 { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+    .profile-stats { display: flex; gap: 28px; margin: 10px 0; }
+    .profile-stats span { font-size: 14px; }
+    .profile-stats strong { font-weight: 600; }
+
+    /* ── Channel message ── */
+    .channel-msg {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 13.5px;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      background: var(--silver); color: #000;
+      padding: 10px 20px; border-radius: 8px;
+      font-size: 13px; font-weight: 600;
+      opacity: 0; pointer-events: none;
+      transition: opacity .3s;
+      z-index: 300;
+    }
+    #toast.show { opacity: 1; }
+
+    /* ── Tag chip ── */
+    .chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 3px 10px;
+      font-size: 11.5px;
+      color: var(--muted);
+    }
+
+    /* ── Landing hero ── */
+    #view-landing .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    @media (max-width: 700px) { #view-landing .hero-grid { grid-template-columns: 1fr; } }
+    .hero-grid .cell {
+      background: var(--surface);
+      aspect-ratio: 1;
+      display: flex; align-items: flex-end;
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-grid .cell::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(0deg, rgba(0,0,0,.7) 0%, transparent 60%);
+    }
+    .hero-grid .cell .cell-txt { position: relative; z-index: 1; }
+
+    /* misc */
+    .divider { height: 1px; background: var(--border); margin: 16px 0; }
+    .text-muted { color: var(--muted); }
+    .text-silver { color: var(--silver); }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     SIDEBAR (desktop)
+═══════════════════════════════════════════ -->
+<nav id="sidebar">
+  <div class="logo text-2xl mb-8 px-3" style="color:var(--text)">
+    REfluenz<span style="color:var(--silver)">.</span>
+  </div>
+
+  <div class="nav-item active" data-view="feed" onclick="navigate('feed')">
+    <i data-lucide="home" size="20"></i>
+    <span>Feed</span>
+  </div>
+  <div class="nav-item" data-view="explore" onclick="navigate('explore')">
+    <i data-lucide="compass" size="20"></i>
+    <span>Explore</span>
+  </div>
+  <div class="nav-item" data-view="creator" onclick="navigate('creator')">
+    <i data-lucide="layout-dashboard" size="20"></i>
+    <span>Creator</span>
+  </div>
+  <div class="nav-item" data-view="landing" onclick="navigate('landing')">
+    <i data-lucide="zap" size="20"></i>
+    <span>Platform</span>
+  </div>
+  <div class="nav-item" data-view="auth" onclick="navigate('auth')">
+    <i data-lucide="log-in" size="20"></i>
+    <span>Access</span>
+  </div>
+
+  <div style="flex:1"></div>
+
+  <!-- User pill -->
+  <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--border);margin-top:12px;">
+    <div class="avatar-placeholder" style="width:36px;height:36px;font-size:13px;" id="sidebar-avatar-el">AR</div>
+    <div style="flex:1;overflow:hidden">
+      <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="sidebar-name">Aria</div>
+      <div style="font-size:11px;color:var(--muted)" id="sidebar-role">User</div>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════
+     TOPBAR (mobile)
+═══════════════════════════════════════════ -->
+<div id="topbar">
+  <div class="logo" style="font-size:22px;color:var(--text)">REfluenz<span style="color:var(--silver)">.</span></div>
+  <div style="display:flex;gap:12px;align-items:center;">
+    <i data-lucide="search" size="20" style="color:var(--silver);cursor:pointer"></i>
+    <i data-lucide="send" size="20" style="color:var(--silver);cursor:pointer"></i>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     BOTTOM NAV (mobile)
+═══════════════════════════════════════════ -->
+<div id="bottomnav">
+  <div class="bnav-item active" onclick="navigate('feed')"><i data-lucide="home" size="22"></i></div>
+  <div class="bnav-item" onclick="navigate('explore')"><i data-lucide="compass" size="22"></i></div>
+  <div class="bnav-item" onclick="navigate('creator')"><i data-lucide="plus-square" size="22"></i></div>
+  <div class="bnav-item" onclick="navigate('auth')"><i data-lucide="user" size="22"></i></div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MAIN CONTENT
+═══════════════════════════════════════════ -->
+<div id="main-content" class="has-right">
+
+  <!-- ─────────────────────────────────────
+       VIEW: FEED
+  ───────────────────────────────────── -->
+  <div id="view-feed" class="view active fade-in">
+    <div class="feed-wrap" style="padding:24px 12px">
+
+      <!-- Stories tray -->
+      <div class="story-tray" id="story-tray">
+        <!-- populated by JS -->
+      </div>
+
+      <!-- Posts -->
+      <div id="posts-container">
+        <!-- populated by JS -->
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────
+       VIEW: EXPLORE
+  ───────────────────────────────────── -->
+  <div id="view-explore" class="view fade-in">
+    <div style="max-width:700px;margin:0 auto;padding:24px 12px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+        <div style="flex:1;position:relative;">
+          <i data-lucide="search" size="16" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted)"></i>
+          <input class="inp" placeholder="Search creators, posts..." style="padding-left:36px" />
+        </div>
+      </div>
+
+      <p class="sec-title">Creators</p>
+      <div id="explore-creators" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:28px;"></div>
+
+      <p class="sec-title">Trending Posts</p>
+      <div class="post-grid" id="explore-grid"></div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────
+       VIEW: CREATOR DASHBOARD
+  ───────────────────────────────────── -->
+  <div id="view-creator" class="view fade-in">
+    <div style="max-width:640px;margin:0 auto;padding:24px 12px;">
+
+      <!-- Profile header -->
+      <div class="profile-header" id="creator-profile-header">
+        <div class="avatar-placeholder" style="width:80px;height:80px;font-size:22px;" id="creator-avatar-big">JD</div>
+        <div class="profile-meta" style="flex:1">
+          <h2 id="creator-name-big">Julian Dax</h2>
+          <div class="chip" style="margin-bottom:8px" id="creator-niche-chip">Photography</div>
+          <div class="profile-stats">
+            <span><strong id="creator-posts-count">0</strong><br><span class="text-muted" style="font-size:12px">posts</span></span>
+            <span><strong id="creator-subs-count">0</strong><br><span class="text-muted" style="font-size:12px">subscribers</span></span>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button class="btn-primary btn-sm" onclick="openAvatarUpload('creator')"><i data-lucide="camera" size="12"></i> Change photo</button>
+            <input type="file" id="creator-avatar-input" accept="image/*" style="display:none" onchange="uploadAvatar('creator', this)"/>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="tab-bar">
+        <button class="active" onclick="switchTab(this,'tab-post')">Publish Post</button>
+        <button onclick="switchTab(this,'tab-story')">Story</button>
+        <button onclick="switchTab(this,'tab-channel')">Channel</button>
+        <button onclick="switchTab(this,'tab-myposts')">My Posts</button>
+      </div>
+
+      <!-- Tab: Publish Post -->
+      <div id="tab-post" style="display:block">
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <input class="inp" id="post-title" placeholder="Title…" />
+          <textarea class="inp" id="post-body" rows="4" placeholder="Share something with your subscribers…"></textarea>
+          <div class="dropzone" id="post-dropzone"
+               ondragover="event.preventDefault()"
+               ondrop="handlePostDrop(event)">
+            <i data-lucide="image" size="20" style="margin:0 auto 6px;display:block;color:var(--muted)"></i>
+            <span>Drag &amp; drop image or <label for="post-img-input" style="color:var(--silver);cursor:pointer;text-decoration:underline">browse</label></span>
+            <input type="file" id="post-img-input" accept="image/*" style="display:none" onchange="handlePostFile(this.files[0])"/>
+          </div>
+          <img id="post-img-preview" src="" style="display:none;width:100%;border-radius:10px;max-height:240px;object-fit:cover"/>
+          <button class="btn-primary" onclick="publishPost()">
+            <i data-lucide="send" size="14"></i> Publish Post
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab: Story -->
+      <div id="tab-story" style="display:none">
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <textarea class="inp" id="story-text" rows="3" placeholder="Add story text…"></textarea>
+          <input class="inp" id="story-img" placeholder="Image URL (optional)"/>
+          <button class="btn-primary" onclick="publishStory()">
+            <i data-lucide="circle" size="14"></i> Publish Story
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab: Channel -->
+      <div id="tab-channel" style="display:none">
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <textarea class="inp" id="channel-text" rows="3" placeholder="Send a message to your subscribers…"></textarea>
+          <button class="btn-primary" onclick="channelPost()">
+            <i data-lucide="message-circle" size="14"></i> Post to Channel
+          </button>
+          <div id="channel-msgs"></div>
+        </div>
+      </div>
+
+      <!-- Tab: My Posts -->
+      <div id="tab-myposts" style="display:none">
+        <div class="post-grid" id="creator-posts-grid"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────
+       VIEW: AUTH
+  ───────────────────────────────────── -->
+  <div id="view-auth" class="view fade-in">
+    <div style="max-width:420px;margin:40px auto;padding:0 12px;">
+
+      <!-- Logo -->
+      <div style="text-align:center;margin-bottom:28px;">
+        <div class="logo" style="font-size:38px;color:var(--text)">REfluenz<span style="color:var(--silver)">.</span></div>
+        <p style="font-size:13px;color:var(--muted);margin-top:6px">The premium creator membership platform</p>
+      </div>
+
+      <div class="auth-card">
+        <div class="tab-bar" style="margin-bottom:20px">
+          <button class="active" onclick="switchAuthTab(this,'auth-login')">Log in</button>
+          <button onclick="switchAuthTab(this,'auth-register')">Register (Mock)</button>
+        </div>
+
+        <!-- Role selector -->
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          <button class="btn-ghost btn-sm" id="role-user" onclick="setRole('user')" style="flex:1;border-color:var(--silver);color:var(--text)">User</button>
+          <button class="btn-ghost btn-sm" id="role-creator" onclick="setRole('creator')" style="flex:1">Creator</button>
+        </div>
+
+        <!-- Login -->
+        <div id="auth-login">
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div id="quick-accounts" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;"></div>
+            <input class="inp" id="login-email" placeholder="Email" />
+            <input class="inp" type="password" id="login-password" placeholder="Password" />
+            <p style="font-size:11.5px;color:var(--muted)">Mock password: <span id="mock-pw-hint">user123</span></p>
+            <div id="auth-error" style="font-size:13px;color:#e88;display:none"></div>
+            <button class="btn-primary" style="width:100%;justify-content:center" onclick="doLogin()">
+              <i data-lucide="log-in" size="14"></i> Log in
+            </button>
+          </div>
+        </div>
+
+        <!-- Register -->
+        <div id="auth-register" style="display:none">
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <select class="inp" id="register-select"></select>
+            <p style="font-size:11.5px;color:var(--muted)">Mock register uses seeded IDs and goes directly to your dashboard.</p>
+            <button class="btn-primary" style="width:100%;justify-content:center" onclick="doRegister()">
+              <i data-lucide="arrow-right" size="14"></i> Continue
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────
+       VIEW: LANDING
+  ───────────────────────────────────── -->
+  <div id="view-landing" class="view fade-in">
+    <div style="max-width:900px;margin:0 auto;padding:32px 16px;">
+
+      <!-- Hero -->
+      <div style="text-align:center;padding:40px 0 36px;">
+        <div style="display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:99px;padding:5px 14px;font-size:12px;color:var(--silver);margin-bottom:20px;letter-spacing:.5px;">
+          <span style="width:7px;height:7px;border-radius:50%;background:var(--silver);display:inline-block"></span>
+          MVP READY
+        </div>
+        <h1 style="font-size:clamp(36px,8vw,72px);font-weight:700;line-height:1.1;margin-bottom:16px">
+          Premium creator<br><span style="color:var(--muted)">membership platform.</span>
+        </h1>
+        <p style="font-size:17px;color:var(--muted);max-width:480px;margin:0 auto 28px;line-height:1.6;">
+          Build a sustainable business on your terms. Direct connection, always.
+        </p>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+          <button class="btn-primary" onclick="navigate('auth')">
+            <i data-lucide="arrow-right" size="14"></i> Get Started
+          </button>
+          <button class="btn-ghost" onclick="navigate('explore')">Explore Creators</button>
+        </div>
+      </div>
+
+      <!-- Demo screenshot mockup -->
+      <div class="hero-grid" style="margin-bottom:40px;">
+        <div class="cell"><div class="cell-txt"><p style="font-size:12px;color:var(--silver)">@julian.dax</p><p style="font-size:14px;font-weight:600">Architectural Photography</p></div></div>
+        <div class="cell" style="background:var(--surface2)"><div class="cell-txt"><p style="font-size:12px;color:var(--silver)">@mia.writes</p><p style="font-size:14px;font-weight:600">Creative Writing</p></div></div>
+        <div class="cell" style="background:var(--surface2)"><div class="cell-txt"><p style="font-size:12px;color:var(--silver)">@lukas.code</p><p style="font-size:14px;font-weight:600">Developer Tools</p></div></div>
+        <div class="cell"><div class="cell-txt"><p style="font-size:12px;color:var(--silver)">@aria.wellness</p><p style="font-size:14px;font-weight:600">Mindfulness</p></div></div>
+      </div>
+
+      <!-- Features -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-bottom:40px;">
+        <div class="tier-card">
+          <div style="width:40px;height:40px;background:var(--surface);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+            <i data-lucide="shield" size="18" style="color:var(--silver)"></i>
+          </div>
+          <h3 style="font-size:15px;font-weight:600;margin-bottom:6px">Creator Sovereignty</h3>
+          <p style="font-size:13px;color:var(--muted);line-height:1.5">You own your audience data. No algorithm roulette. Direct connection, always.</p>
+        </div>
+        <div class="tier-card">
+          <div style="width:40px;height:40px;background:var(--surface);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+            <i data-lucide="trending-up" size="18" style="color:var(--silver)"></i>
+          </div>
+          <h3 style="font-size:15px;font-weight:600;margin-bottom:6px">Sustainable Growth</h3>
+          <p style="font-size:13px;color:var(--muted);line-height:1.5">Tools designed for long-term retention. Predictable, recurring revenue.</p>
+        </div>
+        <div class="tier-card">
+          <div style="width:40px;height:40px;background:var(--surface);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+            <i data-lucide="users" size="18" style="color:var(--silver)"></i>
+          </div>
+          <h3 style="font-size:15px;font-weight:600;margin-bottom:6px">Dual Dashboards</h3>
+          <p style="font-size:13px;color:var(--muted);line-height:1.5">Tailored UX for users and creators. Data-backed views, streamlined workflows.</p>
+        </div>
+      </div>
+
+      <!-- Tiers -->
+      <p class="sec-title">Subscription Tiers</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;" id="landing-tiers"></div>
+    </div>
+  </div>
+
+</div><!-- /#main-content -->
+
+<!-- ═══════════════════════════════════════════
+     RIGHT PANEL
+═══════════════════════════════════════════ -->
+<div id="right-panel">
+  <!-- User info -->
+  <div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+      <div class="avatar-placeholder" style="width:46px;height:46px;font-size:15px;" id="panel-avatar">AR</div>
+      <div>
+        <div style="font-size:14px;font-weight:600" id="panel-name">Aria Romano</div>
+        <div style="font-size:12px;color:var(--muted)" id="panel-email">aria@refluenz.app</div>
+      </div>
+    </div>
+    <div id="panel-tier-badge" style="display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12px;margin-bottom:12px;">
+      <i data-lucide="star" size="12" style="color:var(--silver)"></i>
+      <span id="panel-tier-name" style="color:var(--silver)">Free tier</span>
+    </div>
+  </div>
+
+  <!-- Upgrade tier -->
+  <div>
+    <p class="sec-title">Upgrade Tier</p>
+    <div style="display:flex;flex-direction:column;gap:8px;" id="tier-list-panel"></div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+      <input class="inp" id="card-name" placeholder="Cardholder name" />
+      <input class="inp" id="card-number" placeholder="Card number" />
+      <button class="btn-primary" onclick="purchaseTier()">
+        <i data-lucide="credit-card" size="14"></i> Pay &amp; Upgrade
+      </button>
+      <div id="payment-result" style="font-size:12px;display:none"></div>
+    </div>
+  </div>
+
+  <!-- Suggested creators -->
+  <div>
+    <p class="sec-title">Suggested Creators</p>
+    <div id="suggested-creators" style="display:flex;flex-direction:column;gap:12px;"></div>
+  </div>
+
+  <!-- Avatar upload -->
+  <div>
+    <p class="sec-title">Profile Photo</p>
+    <button class="btn-ghost" style="width:100%;justify-content:center" onclick="openAvatarUpload('user')">
+      <i data-lucide="upload" size="14"></i> Upload photo
+    </button>
+    <input type="file" id="user-avatar-input" accept="image/*" style="display:none" onchange="uploadAvatar('user', this)"/>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     STORY MODAL
+═══════════════════════════════════════════ -->
+<div id="story-modal" onclick="closeStory(event)">
+  <div class="story-modal-inner">
+    <div style="display:flex;align-items:center;gap:10px;padding:14px 14px 10px;">
+      <div class="avatar-placeholder" style="width:34px;height:34px;font-size:12px;" id="story-modal-av">JD</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600" id="story-modal-name">Creator</div>
+        <div style="font-size:11px;color:var(--muted)">Story</div>
+      </div>
+      <button onclick="closeStoryBtn()" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;">
+        <i data-lucide="x" size="16"></i>
+      </button>
+    </div>
+    <!-- Progress bar -->
+    <div style="height:2px;background:var(--surface2);margin:0 14px 10px;">
+      <div id="story-progress" style="height:100%;background:var(--silver);width:0;transition:width 5s linear"></div>
+    </div>
+    <div id="story-modal-img" class="story-modal-img"><i data-lucide="image" size="28"></i></div>
+    <div style="padding:14px;">
+      <p style="font-size:14px;color:var(--text)" id="story-modal-text"></p>
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:0 14px 14px;">
+      <button onclick="prevStory()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;display:flex;align-items:center;gap:4px;">
+        <i data-lucide="chevron-left" size="16"></i> Prev
+      </button>
+      <button onclick="nextStory()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;display:flex;align-items:center;gap:4px;">
+        Next <i data-lucide="chevron-right" size="16"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast">Saved!</div>
+
+<!-- ═══════════════════════════════════════════
+     SCRIPT
+═══════════════════════════════════════════ -->
+<script>
+const API = 'http://localhost:4000';
+
+// State
+let state = {
+  view: 'feed',
+  role: 'user',
+  session: null,
+  users: [], creators: [], tiers: [],
+  dashboard: null,
+  creatorDashboard: null,
+  stories: [],
+  storyIdx: 0,
+  seenStories: new Set(),
+  likedPosts: new Set(),
+  selectedTierId: '',
+  storyTimer: null
+};
+
+// ── Boot ──────────────────────────────────────
+async function boot() {
+  await Promise.allSettled([
+    loadUsers(), loadCreators(), loadTiers()
+  ]);
+  renderAuth();
+  renderLanding();
+  renderExplorePage();
+  renderFeed();
+  lucide.createIcons();
+}
+
+async function loadUsers() {
+  try {
+    const r = await fetch(`${API}/api/users`);
+    const d = await r.json();
+    state.users = d.users || [];
+  } catch { state.users = mockUsers(); }
+}
+async function loadCreators() {
+  try {
+    const r = await fetch(`${API}/api/creators`);
+    const d = await r.json();
+    state.creators = d.creators || [];
+  } catch { state.creators = mockCreators(); }
+}
+async function loadTiers() {
+  try {
+    const r = await fetch(`${API}/api/subscription-tiers`);
+    const d = await r.json();
+    state.tiers = d.tiers || [];
+  } catch { state.tiers = mockTiers(); }
+}
+
+// ── Mock data fallbacks ───────────────────────
+function mockUsers() {
+  return [
+    { id: 'u1', name: 'Aria Romano', email: 'aria@refluenz.app', avatarUrl: '' },
+    { id: 'u2', name: 'Marco Bianchi', email: 'marco@refluenz.app', avatarUrl: '' },
+  ];
+}
+function mockCreators() {
+  return [
+    { id: 'c1', name: 'Julian Dax', email: 'julian@refluenz.app', niche: 'Photography', avatarUrl: '' },
+    { id: 'c2', name: 'Mia Torres', email: 'mia@refluenz.app', niche: 'Writing', avatarUrl: '' },
+    { id: 'c3', name: 'Lukas Bauer', email: 'lukas@refluenz.app', niche: 'Tech', avatarUrl: '' },
+  ];
+}
+function mockTiers() {
+  return [
+    { id: 't1', name: 'Explorer', monthlyPrice: 5, features: ['Access to public posts', 'Weekly newsletter'] },
+    { id: 't2', name: 'Insider', monthlyPrice: 12, features: ['All Explorer features', 'Exclusive content', 'Community access'] },
+    { id: 't3', name: 'Partner', monthlyPrice: 29, features: ['All Insider features', 'Monthly 1:1 call', 'Early access'] },
+  ];
+}
+
+function mockFeed() {
+  const posts = [];
+  state.creators.forEach((c, ci) => {
+    posts.push({
+      id: `p${ci}1`, type: 'post',
+      title: ['The Psychology of Brutalist Spaces','Silence as a Feature','Async-First Teams'][ci % 3],
+      body: 'A deep dive into the intersection of design and human experience, exploring how environment shapes cognition.',
+      imageUrl: '', creator: c
+    });
+    posts.push({
+      id: `s${ci}1`, type: 'story',
+      text: ['Just returned from Milano 🏙', 'New chapter coming soon ✍', 'Shipped a new tool today 🚀'][ci % 3],
+      imageUrl: '', creator: c
+    });
+  });
+  return posts;
+}
+
+// ── Navigation ────────────────────────────────
+function navigate(view) {
+  state.view = view;
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const el = document.getElementById('view-' + view);
+  if (el) { el.classList.add('active'); }
+
+  document.querySelectorAll('#sidebar .nav-item').forEach(n => {
+    n.classList.toggle('active', n.dataset.view === view);
+  });
+  document.querySelectorAll('#bottomnav .bnav-item').forEach((n, i) => {
+    const views = ['feed','explore','creator','auth'];
+    n.classList.toggle('active', views[i] === view);
+  });
+
+  if (view === 'feed') renderFeed();
+  if (view === 'creator') renderCreatorDash();
+  if (view === 'explore') renderExplorePage();
+
+  window.scrollTo(0, 0);
+  lucide.createIcons();
+}
+
+// ── Auth ──────────────────────────────────────
+function setRole(role) {
+  state.role = role;
+  document.getElementById('role-user').style.borderColor = role === 'user' ? 'var(--silver)' : 'var(--border)';
+  document.getElementById('role-user').style.color = role === 'user' ? 'var(--text)' : 'var(--muted)';
+  document.getElementById('role-creator').style.borderColor = role === 'creator' ? 'var(--silver)' : 'var(--border)';
+  document.getElementById('role-creator').style.color = role === 'creator' ? 'var(--text)' : 'var(--muted)';
+  document.getElementById('mock-pw-hint').textContent = role === 'user' ? 'user123' : 'creator123';
+  renderQuickAccounts();
+  renderRegisterSelect();
+}
+
+function renderAuth() {
+  setRole('user');
+  renderQuickAccounts();
+  renderRegisterSelect();
+}
+
+function renderQuickAccounts() {
+  const accounts = state.role === 'user' ? state.users : state.creators;
+  const el = document.getElementById('quick-accounts');
+  el.innerHTML = accounts.slice(0, 4).map(a => `
+    <div onclick="quickSelect('${a.email}')" style="padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:border-color .15s"
+         onmouseenter="this.style.borderColor='var(--silver-dim)'" onmouseleave="this.style.borderColor='var(--border)'">
+      <div style="font-size:12.5px;font-weight:500">${a.name}</div>
+      <div style="font-size:11px;color:var(--muted)">${a.email}</div>
+    </div>
+  `).join('');
+}
+
+function renderRegisterSelect() {
+  const accounts = state.role === 'user' ? state.users : state.creators;
+  const el = document.getElementById('register-select');
+  el.innerHTML = accounts.map(a => `<option value="${a.id}">${a.name} (${a.email})</option>`).join('');
+}
+
+function quickSelect(email) {
+  document.getElementById('login-email').value = email;
+  document.getElementById('login-password').value = state.role === 'user' ? 'user123' : 'creator123';
+}
+
+function switchAuthTab(btn, tabId) {
+  document.querySelectorAll('#view-auth .tab-bar button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  ['auth-login','auth-register'].forEach(id => {
+    document.getElementById(id).style.display = id === tabId ? 'block' : 'none';
+  });
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('auth-error');
+  errEl.style.display = 'none';
+
+  try {
+    const r = await fetch(`${API}/api/auth/login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: state.role, email, password })
+    });
+    const d = await r.json();
+    if (!r.ok) { errEl.textContent = d.error || 'Invalid credentials'; errEl.style.display = 'block'; return; }
+    onAuthenticated(state.role, state.role === 'user' ? d.user : d.creator);
+  } catch {
+    // fallback mock login
+    const accounts = state.role === 'user' ? state.users : state.creators;
+    const acc = accounts.find(a => a.email === email);
+    if (acc) { onAuthenticated(state.role, acc); }
+    else { errEl.textContent = 'Backend offline — try the mock accounts above'; errEl.style.display = 'block'; }
+  }
+}
+
+function doRegister() {
+  const id = document.getElementById('register-select').value;
+  const accounts = state.role === 'user' ? state.users : state.creators;
+  const acc = accounts.find(a => a.id === id);
+  if (acc) onAuthenticated(state.role, acc);
+}
+
+function onAuthenticated(role, account) {
+  state.session = { role, account };
+  updateSidebarUser(account);
+  updateRightPanel();
+  if (role === 'user') {
+    loadUserDashboard(account.id).then(() => {
+      renderFeed();
+      renderRightPanel();
+      navigate('feed');
+    });
+  } else {
+    loadCreatorDashboard(account.id).then(() => {
+      navigate('creator');
+    });
+  }
+  showToast(`Welcome back, ${account.name.split(' ')[0]}!`);
+}
+
+function updateSidebarUser(acc) {
+  const initials = acc.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('sidebar-name').textContent = acc.name;
+  document.getElementById('sidebar-role').textContent = state.session?.role === 'creator' ? 'Creator' : 'User';
+  const av = document.getElementById('sidebar-avatar-el');
+  if (acc.avatarUrl) {
+    av.innerHTML = `<img src="${acc.avatarUrl}" class="avatar" style="width:36px;height:36px"/>`;
+    av.style.background = 'none';
+  } else {
+    av.textContent = initials;
+  }
+}
+
+// ── Dashboard loads ───────────────────────────
+async function loadUserDashboard(uid) {
+  try {
+    const r = await fetch(`${API}/api/dashboard/user/${uid}`);
+    state.dashboard = await r.json();
+  } catch {
+    state.dashboard = { feed: mockFeed(), tier: { name: 'Explorer' }, subscribedCreators: state.creators };
+  }
+}
+
+async function loadCreatorDashboard(cid) {
+  try {
+    const r = await fetch(`${API}/api/dashboard/creator/${cid}`);
+    state.creatorDashboard = await r.json();
+  } catch {
+    state.creatorDashboard = {
+      creator: state.session?.account,
+      posts: [], stories: [], channelMessages: [],
+      subscriberCount: 0
+    };
+  }
+}
+
+// ── Feed render ───────────────────────────────
+function renderFeed() {
+  const feed = state.dashboard?.feed || mockFeed();
+  const posts = feed.filter(i => i.type === 'post');
+  state.stories = feed.filter(i => i.type === 'story');
+
+  renderStoryTray();
+  const pc = document.getElementById('posts-container');
+  if (!posts.length) {
+    pc.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:14px;">No posts yet.<br>Log in to see your feed.</div>';
+    return;
+  }
+  pc.innerHTML = posts.map(p => renderPostCard(p)).join('');
+  lucide.createIcons();
+}
+
+function renderPostCard(post) {
+  const c = post.creator || {};
+  const initials = (c.name || 'RF').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const avatarHtml = c.avatarUrl
+    ? `<img src="${c.avatarUrl}" class="avatar" style="width:36px;height:36px"/>`
+    : `<div class="avatar-placeholder" style="width:36px;height:36px;font-size:12px">${initials}</div>`;
+  const imgHtml = post.imageUrl
+    ? `<img src="${post.imageUrl}" class="post-card-img" style="display:block" alt="" />`
+    : `<div class="post-card-img" style="height:200px"><i data-lucide="image" size="28"></i></div>`;
+
+  return `
+  <article class="post-card fade-up">
+    <div class="post-card-header">
+      ${avatarHtml}
+      <div style="flex:1">
+        <div style="font-size:13.5px;font-weight:600">${c.name || 'Creator'}</div>
+        <div style="font-size:11.5px;color:var(--muted)">${c.niche || 'Creator'}</div>
+      </div>
+      <button style="background:none;border:none;color:var(--muted);cursor:pointer"><i data-lucide="more-horizontal" size="18"></i></button>
+    </div>
+    ${imgHtml}
+    <div class="post-card-actions">
+      <button onclick="toggleLike('${post.id}',this)">
+        <i data-lucide="${state.likedPosts.has(post.id) ? 'heart' : 'heart'}" size="22" style="fill:${state.likedPosts.has(post.id)?'var(--silver)':'none'};stroke:currentColor"></i>
+      </button>
+      <button><i data-lucide="message-circle" size="22"></i></button>
+      <button><i data-lucide="send" size="20"></i></button>
+      <div style="flex:1"></div>
+      <button><i data-lucide="bookmark" size="20"></i></button>
+    </div>
+    <div class="post-card-body">
+      <div class="caption"><span style="font-weight:600">${c.name || 'Creator'}</span> ${post.title || ''} — ${post.body ? post.body.slice(0,120)+'…' : ''}</div>
+      <div class="meta" style="margin-top:6px;color:var(--muted);font-size:11.5px;letter-spacing:.3px">JUST NOW</div>
+    </div>
+  </article>`;
+}
+
+function toggleLike(postId, btn) {
+  if (state.likedPosts.has(postId)) { state.likedPosts.delete(postId); }
+  else { state.likedPosts.add(postId); }
+  // Re-render heart
+  const icon = btn.querySelector('i');
+  if (state.likedPosts.has(postId)) {
+    icon.setAttribute('data-lucide', 'heart');
+    icon.style.fill = 'var(--silver)';
+    icon.style.stroke = 'var(--silver)';
+  } else {
+    icon.setAttribute('data-lucide', 'heart');
+    icon.style.fill = 'none';
+    icon.style.stroke = 'currentColor';
+  }
+  lucide.createIcons();
+}
+
+// ── Story tray ────────────────────────────────
+function renderStoryTray() {
+  const tray = document.getElementById('story-tray');
+  if (!state.stories.length) { tray.innerHTML = ''; return; }
+  tray.innerHTML = state.stories.map((s, i) => {
+    const c = s.creator || {};
+    const seen = state.seenStories.has(s.id);
+    const initials = (c.name || 'RF').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const innerImg = c.avatarUrl
+      ? `<img src="${c.avatarUrl}" class="avatar" style="width:52px;height:52px" />`
+      : `<div class="avatar-placeholder" style="width:52px;height:52px;font-size:14px">${initials}</div>`;
+    return `
+      <div class="story-item" onclick="openStory(${i})">
+        <div class="story-ring ${seen ? 'seen' : ''}">
+          <div class="story-ring-inner">${innerImg}</div>
+        </div>
+        <span>${(c.name || '').split(' ')[0]}</span>
+      </div>`;
+  }).join('');
+}
+
+// ── Story modal ───────────────────────────────
+let storyAutoTimer = null;
+function openStory(idx) {
+  state.storyIdx = idx;
+  const s = state.stories[idx];
+  if (!s) return;
+  state.seenStories.add(s.id);
+  const c = s.creator || {};
+  const initials = (c.name||'RF').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const av = document.getElementById('story-modal-av');
+  if (c.avatarUrl) { av.innerHTML = `<img src="${c.avatarUrl}" class="avatar" style="width:34px;height:34px"/>`; av.style.background='none'; }
+  else { av.textContent = initials; av.style.background=''; }
+  document.getElementById('story-modal-name').textContent = c.name || 'Creator';
+  document.getElementById('story-modal-text').textContent = s.text || '';
+  const imgEl = document.getElementById('story-modal-img');
+  if (s.imageUrl) { imgEl.innerHTML = `<img src="${s.imageUrl}" style="width:100%;height:280px;object-fit:cover"/>`; }
+  else { imgEl.innerHTML = `<i data-lucide="image" size="28"></i>`; }
+  document.getElementById('story-modal').classList.add('open');
+  // progress bar
+  const prog = document.getElementById('story-progress');
+  prog.style.transition = 'none'; prog.style.width = '0';
+  setTimeout(() => { prog.style.transition = 'width 5s linear'; prog.style.width = '100%'; }, 50);
+  clearTimeout(storyAutoTimer);
+  storyAutoTimer = setTimeout(() => nextStory(), 5100);
+  renderStoryTray();
+  lucide.createIcons();
+}
+function closeStory(e) { if (e.target === document.getElementById('story-modal')) closeStoryBtn(); }
+function closeStoryBtn() { document.getElementById('story-modal').classList.remove('open'); clearTimeout(storyAutoTimer); }
+function nextStory() { if (state.storyIdx < state.stories.length - 1) openStory(state.storyIdx + 1); else closeStoryBtn(); }
+function prevStory() { if (state.storyIdx > 0) openStory(state.storyIdx - 1); }
+
+// ── Right panel ───────────────────────────────
+function updateRightPanel() {
+  const acc = state.session?.account;
+  if (!acc) return;
+  const initials = acc.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const pav = document.getElementById('panel-avatar');
+  if (acc.avatarUrl) { pav.innerHTML = `<img src="${acc.avatarUrl}" class="avatar" style="width:46px;height:46px"/>`; pav.style.background='none'; }
+  else { pav.textContent = initials; pav.style.background=''; }
+  document.getElementById('panel-name').textContent = acc.name;
+  document.getElementById('panel-email').textContent = acc.email;
+}
+
+function renderRightPanel() {
+  // Tiers
+  if (!state.tiers.length) return;
+  state.selectedTierId = state.tiers[0].id;
+  const tierList = document.getElementById('tier-list-panel');
+  tierList.innerHTML = state.tiers.map(t => `
+    <div class="tier-card ${t.id === state.selectedTierId ? 'selected' : ''}" onclick="selectTier('${t.id}',this)">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:13px;font-weight:600">${t.name}</span>
+        <span style="font-size:13px;color:var(--silver)">$${t.monthlyPrice}/mo</span>
+      </div>
+    </div>
+  `).join('');
+
+  // Suggested creators
+  const sug = document.getElementById('suggested-creators');
+  sug.innerHTML = state.creators.slice(0,4).map(c => {
+    const initials = c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const av = c.avatarUrl ? `<img src="${c.avatarUrl}" class="avatar" style="width:36px;height:36px"/>` : `<div class="avatar-placeholder" style="width:36px;height:36px;font-size:11px">${initials}</div>`;
+    return `<div style="display:flex;align-items:center;gap:10px;">
+      ${av}
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:500">${c.name}</div>
+        <div style="font-size:11.5px;color:var(--muted)">${c.niche}</div>
+      </div>
+      <button class="btn-ghost btn-sm" style="padding:5px 12px;font-size:11.5px">Follow</button>
+    </div>`;
+  }).join('');
+  lucide.createIcons();
+}
+
+function selectTier(id, el) {
+  state.selectedTierId = id;
+  document.querySelectorAll('#tier-list-panel .tier-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function purchaseTier() {
+  const acc = state.session?.account;
+  if (!acc || state.session.role !== 'user') { showToast('Log in as a user first'); return; }
+  const cardName = document.getElementById('card-name').value;
+  const cardNumber = document.getElementById('card-number').value;
+  if (!cardName || !cardNumber) { showToast('Fill in card details'); return; }
+  const res = document.getElementById('payment-result');
+  try {
+    const r = await fetch(`${API}/api/users/${acc.id}/purchase-tier`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ tierId: state.selectedTierId, cardName, cardNumber })
+    });
+    const d = await r.json();
+    if (!r.ok) { showToast(d.error || 'Payment failed'); return; }
+    res.style.display='block'; res.style.color='var(--silver)'; res.textContent = `✓ Upgraded! Tx: ${d.payment?.transactionId||'mock'}`;
+    showToast('Tier upgraded!');
+  } catch {
+    res.style.display='block'; res.style.color='var(--silver)'; res.textContent = '✓ Mock payment accepted!';
+    showToast('Tier upgraded (mock)!');
+  }
+}
+
+// ── Explore page ──────────────────────────────
+function renderExplorePage() {
+  // Creator cards
+  const ec = document.getElementById('explore-creators');
+  ec.innerHTML = state.creators.map(c => {
+    const initials = c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:border-color .15s"
+                 onmouseenter="this.style.borderColor='var(--silver-dim)'" onmouseleave="this.style.borderColor='var(--border)'">
+      <div class="avatar-placeholder" style="width:52px;height:52px;font-size:15px;margin:0 auto 10px">${initials}</div>
+      <div style="font-size:13.5px;font-weight:600">${c.name}</div>
+      <div style="font-size:12px;color:var(--muted);margin:3px 0 10px">${c.niche}</div>
+      <button class="btn-ghost btn-sm" style="width:100%;justify-content:center">Follow</button>
+    </div>`;
+  }).join('');
+
+  // Grid
+  const feed = state.dashboard?.feed || mockFeed();
+  const posts = feed.filter(i => i.type === 'post');
+  const eg = document.getElementById('explore-grid');
+  eg.innerHTML = posts.map(p => `
+    <div class="post-grid-item">
+      ${p.imageUrl ? `<img src="${p.imageUrl}" alt=""/>` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--surface2);color:var(--muted);font-size:11px">${p.title?.slice(0,20)||'Post'}</div>`}
+    </div>`).join('');
+  lucide.createIcons();
+}
+
+// ── Creator dashboard render ──────────────────
+function renderCreatorDash() {
+  if (!state.session || state.session.role !== 'creator') {
+    document.getElementById('tab-post').innerHTML = `<div style="padding:32px;text-align:center;color:var(--muted);font-size:14px;">Log in as a creator to use this dashboard.</div>`;
+    return;
+  }
+  const acc = state.session.account;
+  const dash = state.creatorDashboard || {};
+  const creator = dash.creator || acc;
+
+  // Header
+  const initials = creator.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const bigAv = document.getElementById('creator-avatar-big');
+  if (creator.avatarUrl) { bigAv.innerHTML = `<img src="${creator.avatarUrl}" class="avatar" style="width:80px;height:80px"/>`; bigAv.style.background='none'; }
+  else { bigAv.textContent = initials; bigAv.style.background=''; }
+  document.getElementById('creator-name-big').textContent = creator.name;
+  document.getElementById('creator-niche-chip').textContent = creator.niche || 'Creator';
+  document.getElementById('creator-posts-count').textContent = (dash.posts||[]).length;
+  document.getElementById('creator-subs-count').textContent = dash.subscriberCount || 0;
+  renderCreatorPostsGrid(dash.posts || []);
+  renderChannelMsgs(dash.channelMessages || []);
+  lucide.createIcons();
+}
+
+function renderCreatorPostsGrid(posts) {
+  const g = document.getElementById('creator-posts-grid');
+  g.innerHTML = posts.map(p => `
+    <div class="post-grid-item">
+      ${p.imageUrl ? `<img src="${p.imageUrl}" alt="${p.title||''}"/>` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--surface2);color:var(--muted);font-size:11px;padding:8px;text-align:center">${p.title?.slice(0,24)||'Post'}</div>`}
+    </div>`).join('');
+}
+
+function renderChannelMsgs(msgs) {
+  const el = document.getElementById('channel-msgs');
+  el.innerHTML = msgs.slice(0,6).map(m => `<div class="channel-msg">${m.text}</div>`).join('');
+}
+
+// ── Creator actions ───────────────────────────
+async function publishPost() {
+  if (!state.session || state.session.role !== 'creator') { showToast('Login as creator first'); return; }
+  const cid = state.session.account.id;
+  const title = document.getElementById('post-title').value.trim();
+  const body = document.getElementById('post-body').value.trim();
+  const imageUrl = document.getElementById('post-img-preview').src || '';
+  if (!title || !body) { showToast('Fill in title and body'); return; }
+  try {
+    await fetch(`${API}/api/creators/${cid}/posts`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ title, body, imageUrl })
+    });
+  } catch {}
+  document.getElementById('post-title').value = '';
+  document.getElementById('post-body').value = '';
+  document.getElementById('post-img-preview').style.display = 'none';
+  document.getElementById('post-dropzone').querySelector('span').innerHTML = 'Drag &amp; drop image or <label for="post-img-input" style="color:var(--silver);cursor:pointer;text-decoration:underline">browse</label>';
+  showToast('Post published!');
+  loadCreatorDashboard(cid).then(() => renderCreatorDash());
+}
+
+async function publishStory() {
+  if (!state.session || state.session.role !== 'creator') { showToast('Login as creator first'); return; }
+  const cid = state.session.account.id;
+  const text = document.getElementById('story-text').value.trim();
+  const imageUrl = document.getElementById('story-img').value.trim();
+  if (!text) { showToast('Add story text'); return; }
+  try {
+    await fetch(`${API}/api/creators/${cid}/stories`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ text, imageUrl })
+    });
+  } catch {}
+  document.getElementById('story-text').value = '';
+  document.getElementById('story-img').value = '';
+  showToast('Story published!');
+  loadCreatorDashboard(cid).then(() => renderCreatorDash());
+}
+
+async function channelPost() {
+  if (!state.session || state.session.role !== 'creator') { showToast('Login as creator first'); return; }
+  const cid = state.session.account.id;
+  const text = document.getElementById('channel-text').value.trim();
+  if (!text) return;
+  try {
+    await fetch(`${API}/api/creators/${cid}/channel-messages`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ text })
+    });
+  } catch {}
+  document.getElementById('channel-text').value = '';
+  showToast('Posted to channel!');
+  loadCreatorDashboard(cid).then(() => renderCreatorDash());
+}
+
+// ── Image helpers ─────────────────────────────
+function handlePostDrop(e) {
+  e.preventDefault();
+  handlePostFile(e.dataTransfer.files?.[0]);
+}
+function handlePostFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const prev = document.getElementById('post-img-preview');
+    prev.src = ev.target.result;
+    prev.style.display = 'block';
+    document.getElementById('post-dropzone').querySelector('span').textContent = file.name;
+  };
+  reader.readAsDataURL(file);
+}
+
+function openAvatarUpload(type) {
+  document.getElementById(type + '-avatar-input').click();
+}
+
+async function uploadAvatar(type, input) {
+  const file = input.files?.[0];
+  if (!file || !state.session) return;
+  const acc = state.session.account;
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    const avatarUrl = ev.target.result;
+    const endpoint = type === 'user'
+      ? `${API}/api/users/${acc.id}/avatar`
+      : `${API}/api/creators/${acc.id}/avatar`;
+    try {
+      const r = await fetch(endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({avatarUrl}) });
+      const d = await r.json();
+      if (r.ok) {
+        state.session.account = type === 'user' ? d.user : d.creator;
+        updateSidebarUser(state.session.account);
+        updateRightPanel();
+        if (type === 'creator') renderCreatorDash();
+      }
+    } catch {
+      state.session.account.avatarUrl = avatarUrl;
+      updateSidebarUser(state.session.account);
+    }
+    showToast('Photo updated!');
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── Landing ───────────────────────────────────
+function renderLanding() {
+  const el = document.getElementById('landing-tiers');
+  el.innerHTML = state.tiers.map(t => `
+    <div class="tier-card">
+      <div style="font-size:11px;color:var(--silver);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">${t.name}</div>
+      <div style="font-size:28px;font-weight:700;margin-bottom:10px">$${t.monthlyPrice}<span style="font-size:13px;color:var(--muted)">/mo</span></div>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:6px;">
+        ${(t.features||[]).map(f => `<li style="font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px"><i data-lucide="check" size="13" style="color:var(--silver)"></i>${f}</li>`).join('')}
+      </ul>
+      <button class="btn-primary" style="margin-top:14px;width:100%;justify-content:center" onclick="navigate('auth')">Get started</button>
+    </div>
+  `).join('');
+  lucide.createIcons();
+}
+
+// ── Tab utils ─────────────────────────────────
+function switchTab(btn, tabId) {
+  const tabs = btn.closest('.tab-bar').nextElementSibling;
+  btn.closest('.tab-bar').querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const ids = ['tab-post','tab-story','tab-channel','tab-myposts'];
+  ids.forEach(id => { const el = document.getElementById(id); if(el) el.style.display = id === tabId ? 'block' : 'none'; });
+}
+
+// ── Toast ─────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── Keyboard shortcuts ────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeStoryBtn();
+  if (e.key === 'ArrowRight' && document.getElementById('story-modal').classList.contains('open')) nextStory();
+  if (e.key === 'ArrowLeft' && document.getElementById('story-modal').classList.contains('open')) prevStory();
+});
+
+boot();
+</script>
+</body>
+</html>

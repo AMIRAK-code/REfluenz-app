@@ -1,1258 +1,911 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Bookmark, Camera, Check, ChevronLeft, ChevronRight, Circle,
+  Compass, CreditCard, Heart, Home, Image, LayoutDashboard,
+  LogIn, MessageCircle, MoreHorizontal, PlusSquare, Search,
+  Send, Shield, Star, TrendingUp, Upload, User, Users, X, Zap,
   ArrowRight,
-  Check,
-  CreditCard,
-  ImagePlus,
-  Lock,
-  Menu,
-  MessageSquare,
-  PlusCircle,
-  Shield,
-  TrendingUp,
-  Upload,
-  Users,
-  X,
 } from 'lucide-react';
+import './index.css';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://refluenz-app.onrender.com';
-const FALLBACK_IMAGE = '/mock/post-concrete.svg';
-const FALLBACK_AVATAR = '/mock/user-aria.svg';
-const wrapIndex = (index, length) => ((index % length) + length) % length;
-const THEME_TOKENS = {
-  dark: {
-    '--color-bg': '#050605',
-    '--color-surface': '#0e1210',
-    '--color-text-main': '#eff1f0',
-    '--color-text-muted': '#889993',
-    '--color-accent': '#d6cdc6',
-    '--color-accent-hover': '#e8e2de',
-    '--story-ring-unseen': '#f8fafc',
-    '--story-ring-seen': '#9ca3af',
-  },
-  light: {
-    '--color-bg': '#f6f8fb',
-    '--color-surface': '#ffffff',
-    '--color-text-main': '#111827',
-    '--color-text-muted': '#4b5563',
-    '--color-accent': '#111827',
-    '--color-accent-hover': '#374151',
-    '--story-ring-unseen': '#111827',
-    '--story-ring-seen': '#9ca3af',
-  },
-  instagram: {
-    '--color-bg': '#0f1023',
-    '--color-surface': '#1a1530',
-    '--color-text-main': '#f8f7ff',
-    '--color-text-muted': '#c6bedf',
-    '--color-accent': '#ff3f93',
-    '--color-accent-hover': '#ff6cae',
-    '--story-ring-unseen': '#feda75',
-    '--story-ring-seen': '#9ca3af',
-  },
-  facebook: {
-    '--color-bg': '#f0f2f5',
-    '--color-surface': '#ffffff',
-    '--color-text-main': '#1c1e21',
-    '--color-text-muted': '#65676b',
-    '--color-accent': '#1877f2',
-    '--color-accent-hover': '#2d88ff',
-    '--story-ring-unseen': '#1877f2',
-    '--story-ring-seen': '#bcc0c4',
-  },
-  pinterest: {
-    '--color-bg': '#fff7f7',
-    '--color-surface': '#ffffff',
-    '--color-text-main': '#211922',
-    '--color-text-muted': '#5f5b62',
-    '--color-accent': '#e60023',
-    '--color-accent-hover': '#ad081b',
-    '--story-ring-unseen': '#e60023',
-    '--story-ring-seen': '#d4d4d8',
-  },
-};
-const THEME_OPTIONS = [
-  { value: 'dark', label: 'Dark' },
-  { value: 'light', label: 'Light' },
-  { value: 'instagram', label: 'Instagram' },
-  { value: 'facebook', label: 'Facebook' },
-  { value: 'pinterest', label: 'Pinterest' },
+
+/* ─────────────────────────────────────────────────
+   MOCK DATA FALLBACKS
+───────────────────────────────────────────────── */
+const MOCK_USERS = [
+  { id: 'u1', name: 'Aria Romano',   email: 'aria@refluenz.app',   avatarUrl: '' },
+  { id: 'u2', name: 'Marco Bianchi', email: 'marco@refluenz.app',  avatarUrl: '' },
 ];
+const MOCK_CREATORS = [
+  { id: 'c1', name: 'Julian Dax',  email: 'julian@refluenz.app', niche: 'Photography', avatarUrl: '' },
+  { id: 'c2', name: 'Mia Torres',  email: 'mia@refluenz.app',    niche: 'Writing',     avatarUrl: '' },
+  { id: 'c3', name: 'Lukas Bauer', email: 'lukas@refluenz.app',  niche: 'Tech',        avatarUrl: '' },
+];
+const MOCK_TIERS = [
+  { id: 't1', name: 'Explorer', monthlyPrice: 5,  features: ['Access to public posts', 'Weekly newsletter'] },
+  { id: 't2', name: 'Insider',  monthlyPrice: 12, features: ['All Explorer features', 'Exclusive content', 'Community access'] },
+  { id: 't3', name: 'Partner',  monthlyPrice: 29, features: ['All Insider features', 'Monthly 1:1 call', 'Early access'] },
+];
+function buildMockFeed(creators) {
+  const titles  = ['The Psychology of Brutalist Spaces', 'Silence as a Feature', 'Async-First Teams'];
+  const stories = ['Just returned from Milano 🏙', 'New chapter coming soon ✍', 'Shipped a new tool today 🚀'];
+  const posts = [];
+  creators.forEach((c, i) => {
+    posts.push({ id: `p${i}1`, type: 'post',  title: titles[i % 3],  body: 'A deep dive into the intersection of design and human experience, exploring how environment shapes cognition.', imageUrl: '', creator: c });
+    posts.push({ id: `s${i}1`, type: 'story', text: stories[i % 3], imageUrl: '', creator: c });
+  });
+  return posts;
+}
 
-const toDataUrl = (file) => new Promise((resolve, reject) => {
-  const reader = new FileReader();
-  reader.onload = () => resolve(String(reader.result || ''));
-  reader.onerror = () => reject(new Error('Unable to read file'));
-  reader.readAsDataURL(file);
-});
+/* ─────────────────────────────────────────────────
+   SMALL HELPERS
+───────────────────────────────────────────────── */
+function initials(name = '') {
+  return name.split(' ').map(w => w[0] || '').join('').slice(0, 2).toUpperCase() || 'RF';
+}
+function Avatar({ url, name, size = 36, fontSize = 13 }) {
+  if (url) return <img src={url} alt={name} className="avatar" style={{ width: size, height: size }} />;
+  return (
+    <div className="avatar-placeholder" style={{ width: size, height: size, fontSize }}>
+      {initials(name)}
+    </div>
+  );
+}
 
-const Navbar = ({ onViewChange, currentView, theme, onThemeChange }) => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+/* ─────────────────────────────────────────────────
+   TOAST (global)
+───────────────────────────────────────────────── */
+let _setToast = () => {};
+function showToast(msg) { _setToast(msg); }
 
-  const links = [
-    { key: 'landing', label: 'Platform' },
-    { key: 'profile', label: 'Explore Creators' },
-    { key: 'auth', label: 'Access' },
-    { key: 'user', label: 'User Dashboard' },
-    { key: 'creator', label: 'Creator Dashboard' },
-  ];
+function ToastPortal() {
+  const [msg, setMsg]       = useState('');
+  const [visible, setVisible] = useState(false);
+  const timerRef = useRef(null);
+  _setToast = (m) => {
+    setMsg(m);
+    setVisible(true);
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setVisible(false), 2200);
+  };
+  return <div className={`toast${visible ? ' show' : ''}`}>{msg}</div>;
+}
+
+/* ─────────────────────────────────────────────────
+   STORY MODAL
+───────────────────────────────────────────────── */
+function StoryModal({ stories, idx, seenIds, onClose, onNext, onPrev, onSeen }) {
+  const story = stories[idx];
+  const timerRef = useRef(null);
+  const [prog, setProg] = useState(0);
+
+  useEffect(() => {
+    if (!story) return;
+    onSeen(story.id);
+    setProg(0);
+    const t = setTimeout(() => setProg(100), 50);
+    timerRef.current = setTimeout(() => onNext(), 5100);
+    return () => { clearTimeout(t); clearTimeout(timerRef.current); };
+  }, [story?.id]);
+
+  if (!story) return null;
+  const c = story.creator || {};
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 backdrop-blur-md border-b border-white/10" style={{ backgroundColor: 'var(--color-bg)' }}>
-      <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-        <button className="text-2xl font-bold font-heading tracking-tight" onClick={() => onViewChange('auth')}>
-          REfluenz<span style={{ color: 'var(--color-accent)' }}>.</span>
-        </button>
-
-        <div className="hidden md:flex items-center space-x-8">
-          {links.map((link) => (
-            <button
-              key={link.key}
-              onClick={() => {
-                onViewChange(link.key);
-                setMobileMenuOpen(false);
-              }}
-              className={`text-sm font-medium transition-colors ${currentView === link.key ? 'text-white' : 'text-[#889993] hover:text-white'}`}
-            >
-              {link.label}
-            </button>
-          ))}
-          <select
-            value={theme}
-            onChange={(event) => onThemeChange(event.target.value)}
-            aria-label="Select theme"
-            className="border border-white/20 rounded-md px-2 py-1 text-xs"
-            style={{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text-main)' }}
-          >
-            {THEME_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+    <div className="story-modal-overlay open" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="story-modal-inner">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 14px 10px' }}>
+          <Avatar url={c.avatarUrl} name={c.name} size={34} fontSize={12} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>{c.name || 'Creator'}</div>
+            <div style={{ fontSize: 11, color: 'var(--muted)' }}>Story</div>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer' }}>
+            <X size={16} />
+          </button>
         </div>
-
-        <div className="md:hidden">
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-white">
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        {/* progress */}
+        <div style={{ height: 2, background: 'var(--surface2)', margin: '0 14px 10px' }}>
+          <div style={{ height: '100%', background: 'var(--silver)', width: `${prog}%`, transition: prog === 0 ? 'none' : 'width 5s linear' }} />
+        </div>
+        <div className="story-modal-img-area">
+          {story.imageUrl ? <img src={story.imageUrl} alt="" /> : <Image size={28} />}
+        </div>
+        <div style={{ padding: 14 }}>
+          <p style={{ fontSize: 14, color: 'var(--text)' }}>{story.text || ''}</p>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 14px 14px' }}>
+          <button onClick={onPrev} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}>
+            <ChevronLeft size={16} /> Prev
+          </button>
+          <button onClick={onNext} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}>
+            Next <ChevronRight size={16} />
           </button>
         </div>
       </div>
-
-      {mobileMenuOpen ? (
-        <div className="md:hidden px-6 pb-4 space-y-2 border-t border-white/5 bg-[#050605]">
-          {links.map((link) => (
-            <button
-              key={link.key}
-              onClick={() => {
-                onViewChange(link.key);
-                setMobileMenuOpen(false);
-              }}
-              className={`w-full text-left py-2 text-sm font-medium ${currentView === link.key ? 'text-white' : 'text-[#889993]'}`}
-            >
-              {link.label}
-            </button>
-          ))}
-          <select
-            value={theme}
-            onChange={(event) => onThemeChange(event.target.value)}
-            aria-label="Select theme"
-            className="w-full border border-white/20 rounded-md px-2 py-2 text-xs"
-            style={{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text-main)' }}
-          >
-            {THEME_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      ) : null}
-    </nav>
+    </div>
   );
-};
+}
 
-const Avatar = ({ url, alt }) => (
-  <img
-    src={url || FALLBACK_AVATAR}
-    alt={alt}
-    className="w-11 h-11 rounded-full object-cover border border-white/15"
-    loading="lazy"
-    onError={(event) => {
-      event.currentTarget.src = FALLBACK_AVATAR;
-    }}
-  />
-);
-
-const FeedImage = ({ src, alt, className }) => (
-  <img
-    src={src || FALLBACK_IMAGE}
-    alt={alt}
-    className={className}
-    loading="lazy"
-    onError={(event) => {
-      event.currentTarget.src = FALLBACK_IMAGE;
-    }}
-  />
-);
-
-const LandingView = ({ onViewChange, tiers }) => (
-  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-32 pb-20">
-    {/* Hero */}
-    <section className="relative pb-20 md:pb-32 overflow-hidden border-b border-white/5">
-      <div className="container mx-auto px-6 relative z-10">
-        <div className="max-w-3xl">
-          <div className="inline-flex items-center space-x-2 bg-white/5 border border-white/10 rounded-full px-3 py-1 mb-8">
-            <span className="w-2 h-2 rounded-full bg-[#d6cdc6]" />
-            <span className="text-xs font-medium text-[#d6cdc6] tracking-wide uppercase">Private Beta Access</span>
-          </div>
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-            Influence with <br />
-            <span className="text-[#889993]">Intent.</span>
-          </h1>
-          <p className="text-lg md:text-xl text-[#889993] mb-10 max-w-xl leading-relaxed">
-            The platform for creators who value depth over reach. Build a sustainable business on your terms, without the noise.
-          </p>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <button
-              onClick={() => onViewChange('profile')}
-              className="bg-[#d6cdc6] text-[#050605] px-8 py-3.5 rounded-sm font-medium text-lg hover:bg-[#e8e2de] transition-colors flex items-center group"
-            >
-              View Creator Demo
-              <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
-            </button>
-            <button
-              onClick={() => onViewChange('auth')}
-              className="px-8 py-3.5 rounded-sm font-medium text-lg border border-white/20 text-white hover:border-white/40 transition-colors"
-            >
-              Request Access
-            </button>
-          </div>
+/* ─────────────────────────────────────────────────
+   POST CARD
+───────────────────────────────────────────────── */
+function PostCard({ post, liked, onLike }) {
+  const c = post.creator || {};
+  return (
+    <article className="post-card fade-up">
+      <div className="post-card-header">
+        <Avatar url={c.avatarUrl} name={c.name} size={36} fontSize={12} />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 13.5, fontWeight: 600 }}>{c.name || 'Creator'}</div>
+          <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>{c.niche || 'Creator'}</div>
         </div>
-      </div>
-      <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-b from-[#0e1210] to-[#050605] opacity-50 pointer-events-none" />
-      <div className="absolute top-20 right-[-10%] w-[600px] h-[600px] bg-[#d6cdc6] rounded-full blur-[120px] opacity-5 mix-blend-screen pointer-events-none" />
-    </section>
-
-    {/* Features */}
-    <section className="py-24 border-b border-white/5">
-      <div className="container mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            { icon: Shield, title: 'Creator Sovereignty', desc: 'You own your audience data. No algorithm roulette. Direct connection, always.' },
-            { icon: TrendingUp, title: 'Sustainable Growth', desc: 'Tools designed for long-term retention, not just viral spikes. Predictable revenue.' },
-            { icon: Users, title: 'Curated Community', desc: 'A noise-free environment for your most dedicated followers to engage deeply.' },
-          ].map((item) => (
-            <div key={item.title} className="p-8 border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-colors rounded-xl">
-              <div className="w-12 h-12 flex items-center justify-center bg-[#161c18] rounded-lg mb-6 text-[#d6cdc6]">
-                <item.icon size={24} />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">{item.title}</h3>
-              <p className="text-[#889993] leading-relaxed">{item.desc}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-
-    {/* Subscription Tiers */}
-    <section className="py-20">
-      <div className="container mx-auto px-6">
-        <h2 className="text-3xl font-bold mb-8">Subscription Tiers</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {tiers.map((tier) => (
-            <div key={tier.id} className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
-              <p className="text-[#d6cdc6] text-sm uppercase tracking-wider mb-2">{tier.name}</p>
-              <p className="text-4xl font-bold mb-4">
-                ${tier.monthlyPrice}
-                <span className="text-sm text-[#889993]">/mo</span>
-              </p>
-              <ul className="space-y-2">
-                {tier.features.map((feature) => (
-                  <li key={feature} className="flex items-start text-sm text-[#889993]">
-                    <Check className="w-4 h-4 mr-2 mt-0.5 text-[#4E9F76]" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  </motion.div>
-);
-
-const MOCK_ESSAYS = [
-  {
-    id: 'essay-1',
-    category: 'Architecture',
-    readTime: '5 min read',
-    title: 'The Psychology of Brutalist Spaces',
-    excerpt: 'Why do we feel calm in concrete? Looking at the raw honesty of materials and how they affect our cognitive load...',
-  },
-  {
-    id: 'essay-2',
-    category: 'Design',
-    readTime: '7 min read',
-    title: 'Silence as a Feature',
-    excerpt: 'In a world of noise, empty space is the ultimate luxury. How to design for silence in digital interfaces...',
-  },
-];
-
-const MOCK_MEMBER_BENEFITS = [
-  'Weekly Deep Dives',
-  'High-Res Image Library',
-  'Monthly Q&A Calls',
-  'Community Discord',
-];
-
-const ProfileView = ({ onSubscribe }) => (
-  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-32 pb-20 min-h-screen">
-    <div className="container mx-auto px-6 max-w-4xl">
-
-      {/* Profile Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center gap-8 mb-16">
-        <div className="w-32 h-32 md:w-40 md:h-40 bg-[#161c18] rounded-full overflow-hidden border-2 border-white/10 relative shrink-0 flex items-center justify-center">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#2f3e35] to-[#0e1210]" />
-          <span className="relative text-2xl font-heading text-[#889993] select-none">JD</span>
-        </div>
-        <div className="flex-1">
-          <h1 className="text-4xl font-bold mb-2">Julian Dax</h1>
-          <p className="text-lg text-[#d6cdc6] mb-4">Architectural Photographer & Thought Leader</p>
-          <p className="text-[#889993] max-w-lg mb-6 leading-relaxed">
-            Exploring the intersection of modern design and human psychology.
-            Sharing weekly essays, photo studies, and private workshops.
-          </p>
-          <div className="flex gap-4 text-sm text-[#889993]">
-            <span>12.5k Subscribers</span>
-            <span>•</span>
-            <span>84 Published Essays</span>
-          </div>
-        </div>
-        <button
-          onClick={onSubscribe}
-          className="bg-[#d6cdc6] text-[#050605] px-6 py-3 rounded-sm font-medium hover:bg-[#e8e2de] transition-colors w-full md:w-auto"
-        >
-          Subscribe • $12/mo
+        <button style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer' }}>
+          <MoreHorizontal size={18} />
         </button>
       </div>
 
-      {/* Content Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+      <div className="post-card-img-wrap">
+        {post.imageUrl ? <img src={post.imageUrl} alt={post.title || ''} /> : <Image size={28} />}
+      </div>
 
-        {/* Essays Feed */}
-        <div className="md:col-span-2 space-y-12">
-          <h2 className="text-2xl font-semibold border-b border-white/10 pb-4 mb-8">Latest Essays</h2>
-          {MOCK_ESSAYS.map((essay) => (
-            <div key={essay.id} className="group cursor-pointer">
-              <div className="aspect-video bg-[#161c18] rounded-lg mb-4 overflow-hidden relative">
-                <div className="absolute inset-0 bg-neutral-900 opacity-50 group-hover:opacity-40 transition-opacity" />
+      <div className="post-card-actions">
+        <button onClick={() => onLike(post.id)}>
+          <Heart size={22} style={{ fill: liked ? 'var(--silver)' : 'none', stroke: liked ? 'var(--silver)' : 'currentColor' }} />
+        </button>
+        <button><MessageCircle size={22} /></button>
+        <button><Send size={20} /></button>
+        <div style={{ flex: 1 }} />
+        <button><Bookmark size={20} /></button>
+      </div>
+
+      <div className="post-card-body">
+        <div className="caption">
+          <span style={{ fontWeight: 600 }}>{c.name || 'Creator'}</span>{' '}
+          {post.title || ''}{post.body ? ` — ${post.body.slice(0, 120)}…` : ''}
+        </div>
+        <div className="meta">JUST NOW</div>
+      </div>
+    </article>
+  );
+}
+
+/* ─────────────────────────────────────────────────
+   STORY TRAY
+───────────────────────────────────────────────── */
+function StoryTray({ stories, seenIds, onOpen }) {
+  if (!stories.length) return null;
+  return (
+    <div className="story-tray">
+      {stories.map((s, i) => {
+        const c = s.creator || {};
+        const seen = seenIds.has(s.id);
+        return (
+          <div key={s.id} className="story-item" onClick={() => onOpen(i)}>
+            <div className={`story-ring${seen ? ' seen' : ''}`}>
+              <div className="story-ring-inner">
+                <Avatar url={c.avatarUrl} name={c.name} size={52} fontSize={14} />
               </div>
-              <p className="text-xs text-[#d6cdc6] mb-2 uppercase tracking-wider">
-                {essay.category} • {essay.readTime}
-              </p>
-              <h3 className="text-2xl font-bold mb-3 group-hover:text-[#d6cdc6] transition-colors">{essay.title}</h3>
-              <p className="text-[#889993] leading-relaxed mb-4">{essay.excerpt}</p>
-              <div className="flex items-center text-sm font-medium text-white group-hover:underline decoration-[#d6cdc6]">
-                Read full essay <ArrowRight className="ml-2 w-4 h-4" />
+            </div>
+            <span>{(c.name || '').split(' ')[0]}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────
+   VIEW: FEED
+───────────────────────────────────────────────── */
+function FeedView({ feed, likedPosts, onLike, onOpenStory, seenStories }) {
+  const posts   = feed.filter(i => i.type === 'post');
+  const stories = feed.filter(i => i.type === 'story');
+  return (
+    <div className="feed-wrap">
+      <StoryTray stories={stories} seenIds={seenStories} onOpen={onOpenStory} />
+      {posts.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: 40, color: 'var(--muted)', fontSize: 14 }}>
+          No posts yet.<br />Log in to see your feed.
+        </div>
+      ) : posts.map(p => (
+        <PostCard key={p.id} post={p} liked={likedPosts.has(p.id)} onLike={onLike} />
+      ))}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────
+   VIEW: EXPLORE
+───────────────────────────────────────────────── */
+function ExploreView({ creators, feed }) {
+  const posts = feed.filter(i => i.type === 'post');
+  return (
+    <div style={{ maxWidth: 700, margin: '0 auto', padding: '24px 12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+        <div style={{ flex: 1, position: 'relative' }}>
+          <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
+          <input className="inp" placeholder="Search creators, posts…" style={{ paddingLeft: 36 }} />
+        </div>
+      </div>
+
+      <p className="sec-title">Creators</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: 12, marginBottom: 28 }}>
+        {creators.map(c => (
+          <div key={c.id} className="tier-card" style={{ textAlign: 'center' }}>
+            <div style={{ margin: '0 auto 10px' }}>
+              <Avatar url={c.avatarUrl} name={c.name} size={52} fontSize={15} />
+            </div>
+            <div style={{ fontSize: 13.5, fontWeight: 600 }}>{c.name}</div>
+            <div style={{ fontSize: 12, color: 'var(--muted)', margin: '3px 0 10px' }}>{c.niche}</div>
+            <button className="btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'center' }}>Follow</button>
+          </div>
+        ))}
+      </div>
+
+      <p className="sec-title">Trending Posts</p>
+      <div className="post-grid">
+        {posts.map(p => (
+          <div key={p.id} className="post-grid-item">
+            {p.imageUrl ? <img src={p.imageUrl} alt="" /> : (p.title || 'Post').slice(0, 20)}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────
+   VIEW: AUTH
+───────────────────────────────────────────────── */
+function AuthView({ users, creators, onAuthenticated }) {
+  const [tab,      setTab]      = useState('login');
+  const [role,     setRole]     = useState('user');
+  const [email,    setEmail]    = useState('aria@refluenz.app');
+  const [password, setPassword] = useState('user123');
+  const [regId,    setRegId]    = useState('');
+  const [error,    setError]    = useState('');
+
+  const accounts = role === 'user' ? users : creators;
+
+  useEffect(() => {
+    if (role === 'user') { setEmail('aria@refluenz.app');   setPassword('user123'); }
+    else                 { setEmail('julian@refluenz.app'); setPassword('creator123'); }
+    if (accounts.length) setRegId(accounts[0].id);
+  }, [role, accounts.length]);
+
+  const applyRole = (r) => { setRole(r); setError(''); };
+
+  async function doLogin(e) {
+    e.preventDefault();
+    setError('');
+    try {
+      const r = await fetch(`${API_BASE}/api/auth/login`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role, email, password }),
+      });
+      const d = await r.json();
+      if (!r.ok) { setError(d.error || 'Invalid credentials'); return; }
+      onAuthenticated(role, role === 'user' ? d.user : d.creator);
+    } catch {
+      const acc = accounts.find(a => a.email === email);
+      if (acc) onAuthenticated(role, acc);
+      else setError('Backend offline — try the mock accounts above');
+    }
+  }
+
+  function doRegister(e) {
+    e.preventDefault();
+    const acc = accounts.find(a => a.id === regId);
+    if (acc) onAuthenticated(role, acc);
+  }
+
+  return (
+    <div style={{ maxWidth: 420, margin: '40px auto', padding: '0 12px' }}>
+      <div style={{ textAlign: 'center', marginBottom: 28 }}>
+        <div className="logo" style={{ fontSize: 38, color: 'var(--text)' }}>
+          REfluenz<span style={{ color: 'var(--silver)' }}>.</span>
+        </div>
+        <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 6 }}>The premium creator membership platform</p>
+      </div>
+
+      <div className="auth-card">
+        {/* tab bar */}
+        <div className="tab-bar" style={{ marginBottom: 20 }}>
+          {['login', 'register'].map(t => (
+            <button key={t} className={tab === t ? 'active' : ''} onClick={() => setTab(t)}>
+              {t === 'login' ? 'Log in' : 'Register (Mock)'}
+            </button>
+          ))}
+        </div>
+
+        {/* role selector */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          {['user', 'creator'].map(r => (
+            <button key={r} className="btn-ghost btn-sm"
+              onClick={() => applyRole(r)}
+              style={{ flex: 1, borderColor: role === r ? 'var(--silver)' : 'var(--border)', color: role === r ? 'var(--text)' : 'var(--muted)' }}>
+              {r.charAt(0).toUpperCase() + r.slice(1)}
+            </button>
+          ))}
+        </div>
+
+        {tab === 'login' ? (
+          <form onSubmit={doLogin} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {/* quick accounts */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 4 }}>
+              {accounts.slice(0, 4).map(a => (
+                <div key={a.id} className="tier-card" style={{ padding: '8px 10px', cursor: 'pointer' }}
+                  onClick={() => { setEmail(a.email); setPassword(role === 'user' ? 'user123' : 'creator123'); }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 500 }}>{a.name}</div>
+                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>{a.email}</div>
+                </div>
+              ))}
+            </div>
+            <input className="inp" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" />
+            <input className="inp" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" />
+            <p style={{ fontSize: 11.5, color: 'var(--muted)' }}>Mock password: {role === 'user' ? 'user123' : 'creator123'}</p>
+            {error && <div style={{ fontSize: 13, color: '#e88' }}>{error}</div>}
+            <button className="btn-primary" type="submit" style={{ width: '100%', justifyContent: 'center' }}>
+              <LogIn size={14} /> Log in
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={doRegister} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <select className="inp" value={regId} onChange={e => setRegId(e.target.value)}>
+              {accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({a.email})</option>)}
+            </select>
+            <p style={{ fontSize: 11.5, color: 'var(--muted)' }}>Mock register uses seeded IDs and goes directly to your dashboard.</p>
+            <button className="btn-primary" type="submit" style={{ width: '100%', justifyContent: 'center' }}>
+              <ArrowRight size={14} /> Continue
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────
+   VIEW: LANDING
+───────────────────────────────────────────────── */
+function LandingView({ tiers, onNavigate }) {
+  return (
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 16px' }}>
+      {/* Hero */}
+      <div style={{ textAlign: 'center', padding: '40px 0 36px' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 99, padding: '5px 14px', fontSize: 12, color: 'var(--silver)', marginBottom: 20, letterSpacing: '.5px' }}>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--silver)', display: 'inline-block' }} />
+          MVP READY
+        </div>
+        <h1 style={{ fontSize: 'clamp(36px,8vw,72px)', fontWeight: 700, lineHeight: 1.1, marginBottom: 16 }}>
+          Premium creator<br /><span style={{ color: 'var(--muted)' }}>membership platform.</span>
+        </h1>
+        <p style={{ fontSize: 17, color: 'var(--muted)', maxWidth: 480, margin: '0 auto 28px', lineHeight: 1.6 }}>
+          Build a sustainable business on your terms. Direct connection, always.
+        </p>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button className="btn-primary" onClick={() => onNavigate('auth')}><ArrowRight size={14} /> Get Started</button>
+          <button className="btn-ghost" onClick={() => onNavigate('explore')}>Explore Creators</button>
+        </div>
+      </div>
+
+      {/* Grid */}
+      <div className="hero-grid">
+        {[['@julian.dax','Architectural Photography'],['@mia.writes','Creative Writing'],['@lukas.code','Developer Tools'],['@aria.wellness','Mindfulness']].map(([handle, label], i) => (
+          <div key={handle} className="hero-cell" style={{ background: i % 2 === 0 ? 'var(--surface)' : 'var(--surface2)' }}>
+            <div className="hero-cell-txt">
+              <p style={{ fontSize: 12, color: 'var(--silver)' }}>{handle}</p>
+              <p style={{ fontSize: 14, fontWeight: 600 }}>{label}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Features */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: 16, marginBottom: 40 }}>
+        {[
+          { Icon: Shield,     title: 'Creator Sovereignty',  desc: 'You own your audience data. No algorithm roulette. Direct connection, always.' },
+          { Icon: TrendingUp, title: 'Sustainable Growth',    desc: 'Tools designed for long-term retention. Predictable, recurring revenue.' },
+          { Icon: Users,      title: 'Dual Dashboards',       desc: 'Tailored UX for users and creators. Data-backed views, streamlined workflows.' },
+        ].map(({ Icon, title, desc }) => (
+          <div key={title} className="tier-card">
+            <div style={{ width: 40, height: 40, background: 'var(--surface)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+              <Icon size={18} style={{ color: 'var(--silver)' }} />
+            </div>
+            <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>{title}</h3>
+            <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.5 }}>{desc}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Tiers */}
+      <p className="sec-title">Subscription Tiers</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(180px,1fr))', gap: 12 }}>
+        {tiers.map(t => (
+          <div key={t.id} className="tier-card">
+            <div style={{ fontSize: 11, color: 'var(--silver)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 }}>{t.name}</div>
+            <div style={{ fontSize: 28, fontWeight: 700, marginBottom: 10 }}>
+              ${t.monthlyPrice}<span style={{ fontSize: 13, color: 'var(--muted)' }}>/mo</span>
+            </div>
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {(t.features || []).map(f => (
+                <li key={f} style={{ fontSize: 13, color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Check size={13} style={{ color: 'var(--silver)', flexShrink: 0 }} />{f}
+                </li>
+              ))}
+            </ul>
+            <button className="btn-primary" onClick={() => onNavigate('auth')} style={{ marginTop: 14, width: '100%', justifyContent: 'center' }}>Get started</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────
+   VIEW: CREATOR DASHBOARD
+───────────────────────────────────────────────── */
+function CreatorView({ session, creatorDash, onRefresh }) {
+  const [activeTab, setActiveTab] = useState('post');
+  const [postTitle,  setPostTitle]  = useState('');
+  const [postBody,   setPostBody]   = useState('');
+  const [postImg,    setPostImg]    = useState('');
+  const [storyText,  setStoryText]  = useState('');
+  const [storyImg,   setStoryImg]   = useState('');
+  const [chanText,   setChanText]   = useState('');
+
+  if (!session || session.role !== 'creator') {
+    return (
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: '80px 12px', textAlign: 'center', color: 'var(--muted)', fontSize: 14 }}>
+        Log in as a creator to use this dashboard.
+      </div>
+    );
+  }
+
+  const acc     = session.account;
+  const dash    = creatorDash || {};
+  const creator = dash.creator || acc;
+
+  async function pubPost() {
+    if (!postTitle.trim() || !postBody.trim()) { showToast('Fill in title and body'); return; }
+    try {
+      await fetch(`${API_BASE}/api/creators/${acc.id}/posts`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: postTitle, body: postBody, imageUrl: postImg }),
+      });
+    } catch {}
+    setPostTitle(''); setPostBody(''); setPostImg('');
+    showToast('Post published!');
+    onRefresh();
+  }
+  async function pubStory() {
+    if (!storyText.trim()) { showToast('Add story text'); return; }
+    try {
+      await fetch(`${API_BASE}/api/creators/${acc.id}/stories`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: storyText, imageUrl: storyImg }),
+      });
+    } catch {}
+    setStoryText(''); setStoryImg('');
+    showToast('Story published!');
+    onRefresh();
+  }
+  async function pubChannel() {
+    if (!chanText.trim()) return;
+    try {
+      await fetch(`${API_BASE}/api/creators/${acc.id}/channel-messages`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: chanText }),
+      });
+    } catch {}
+    setChanText('');
+    showToast('Posted to channel!');
+    onRefresh();
+  }
+
+  function handleImgFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => setPostImg(ev.target.result);
+    reader.readAsDataURL(file);
+  }
+
+  const tabs = [
+    { id: 'post',    label: 'Publish Post' },
+    { id: 'story',   label: 'Story'        },
+    { id: 'channel', label: 'Channel'      },
+    { id: 'myposts', label: 'My Posts'     },
+  ];
+
+  return (
+    <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 12px' }}>
+      {/* Profile header */}
+      <div className="profile-header">
+        <Avatar url={creator.avatarUrl} name={creator.name} size={80} fontSize={22} />
+        <div style={{ flex: 1 }}>
+          <h2 style={{ fontSize: 22, fontWeight: 600, marginBottom: 6 }}>{creator.name}</h2>
+          <div className="chip" style={{ marginBottom: 8 }}>{creator.niche || 'Creator'}</div>
+          <div className="profile-stats">
+            <span><strong>{(dash.posts || []).length}</strong><br /><span style={{ fontSize: 12, color: 'var(--muted)' }}>posts</span></span>
+            <span><strong>{dash.subscriberCount || 0}</strong><br /><span style={{ fontSize: 12, color: 'var(--muted)' }}>subscribers</span></span>
+          </div>
+        </div>
+      </div>
+      <div className="divider" />
+
+      {/* Tab bar */}
+      <div className="tab-bar">
+        {tabs.map(t => (
+          <button key={t.id} className={activeTab === t.id ? 'active' : ''} onClick={() => setActiveTab(t.id)}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Publish Post */}
+      {activeTab === 'post' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <input className="inp" value={postTitle} onChange={e => setPostTitle(e.target.value)} placeholder="Title…" />
+          <textarea className="inp" rows={4} value={postBody} onChange={e => setPostBody(e.target.value)} placeholder="Share something with your subscribers…" />
+          <div className="dropzone" onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); handleImgFile(e.dataTransfer.files?.[0]); }}>
+            <Image size={20} style={{ margin: '0 auto 6px', display: 'block', color: 'var(--muted)' }} />
+            <span>Drag & drop image or{' '}
+              <label htmlFor="post-img-input" style={{ color: 'var(--silver)', cursor: 'pointer', textDecoration: 'underline' }}>browse</label>
+            </span>
+            <input type="file" id="post-img-input" accept="image/*" style={{ display: 'none' }} onChange={e => handleImgFile(e.target.files?.[0])} />
+          </div>
+          {postImg && <img src={postImg} alt="" style={{ width: '100%', borderRadius: 10, maxHeight: 240, objectFit: 'cover' }} />}
+          <button className="btn-primary" onClick={pubPost}><Send size={14} /> Publish Post</button>
+        </div>
+      )}
+
+      {/* Story */}
+      {activeTab === 'story' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <textarea className="inp" rows={3} value={storyText} onChange={e => setStoryText(e.target.value)} placeholder="Add story text…" />
+          <input className="inp" value={storyImg} onChange={e => setStoryImg(e.target.value)} placeholder="Image URL (optional)" />
+          <button className="btn-primary" onClick={pubStory}><Circle size={14} /> Publish Story</button>
+        </div>
+      )}
+
+      {/* Channel */}
+      {activeTab === 'channel' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <textarea className="inp" rows={3} value={chanText} onChange={e => setChanText(e.target.value)} placeholder="Send a message to your subscribers…" />
+          <button className="btn-primary" onClick={pubChannel}><MessageCircle size={14} /> Post to Channel</button>
+          {(dash.channelMessages || []).slice(0, 6).map((m, i) => (
+            <div key={i} className="channel-msg">{m.text}</div>
+          ))}
+        </div>
+      )}
+
+      {/* My Posts */}
+      {activeTab === 'myposts' && (
+        <div className="post-grid">
+          {(dash.posts || []).map(p => (
+            <div key={p.id} className="post-grid-item">
+              {p.imageUrl ? <img src={p.imageUrl} alt={p.title || ''} /> : (p.title || 'Post').slice(0, 24)}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────
+   RIGHT PANEL
+───────────────────────────────────────────────── */
+function RightPanel({ session, tiers, creators, onAvatarUpload }) {
+  const [selectedTier, setSelectedTier] = useState('');
+  const [cardName,     setCardName]     = useState('');
+  const [cardNumber,   setCardNumber]   = useState('');
+  const [payResult,    setPayResult]    = useState('');
+
+  useEffect(() => { if (tiers.length && !selectedTier) setSelectedTier(tiers[0].id); }, [tiers]);
+
+  async function purchase() {
+    if (!session || session.role !== 'user') { showToast('Log in as a user first'); return; }
+    if (!cardName || !cardNumber) { showToast('Fill in card details'); return; }
+    try {
+      const r = await fetch(`${API_BASE}/api/users/${session.account.id}/purchase-tier`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tierId: selectedTier, cardName, cardNumber }),
+      });
+      const d = await r.json();
+      if (!r.ok) { showToast(d.error || 'Payment failed'); return; }
+      setPayResult(`✓ Upgraded! Tx: ${d.payment?.transactionId || 'mock'}`);
+      showToast('Tier upgraded!');
+    } catch {
+      setPayResult('✓ Mock payment accepted!');
+      showToast('Tier upgraded (mock)!');
+    }
+  }
+
+  const acc = session?.account;
+  return (
+    <div className="right-panel">
+      {/* User info */}
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+          <Avatar url={acc?.avatarUrl} name={acc?.name || 'Guest'} size={46} fontSize={15} />
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>{acc?.name || 'Not logged in'}</div>
+            <div style={{ fontSize: 12, color: 'var(--muted)' }}>{acc?.email || ''}</div>
+          </div>
+        </div>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 12px', fontSize: 12, marginBottom: 12 }}>
+          <Star size={12} style={{ color: 'var(--silver)' }} />
+          <span style={{ color: 'var(--silver)' }}>Free tier</span>
+        </div>
+      </div>
+
+      {/* Upgrade */}
+      <div>
+        <p className="sec-title">Upgrade Tier</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {tiers.map(t => (
+            <div key={t.id} className={`tier-card${selectedTier === t.id ? ' selected' : ''}`} onClick={() => setSelectedTier(t.id)}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>{t.name}</span>
+                <span style={{ fontSize: 13, color: 'var(--silver)' }}>${t.monthlyPrice}/mo</span>
               </div>
             </div>
           ))}
         </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+          <input className="inp" value={cardName} onChange={e => setCardName(e.target.value)} placeholder="Cardholder name" />
+          <input className="inp" value={cardNumber} onChange={e => setCardNumber(e.target.value)} placeholder="Card number" />
+          <button className="btn-primary" onClick={purchase}><CreditCard size={14} /> Pay & Upgrade</button>
+          {payResult && <div style={{ fontSize: 12, color: 'var(--silver)' }}>{payResult}</div>}
+        </div>
+      </div>
 
-        {/* Sidebar */}
-        <aside className="space-y-8">
-          <div className="p-6 border border-white/5 bg-white/[0.02] rounded-xl">
-            <div className="flex items-center mb-4 text-[#d6cdc6]">
-              <Lock className="w-5 h-5 mr-2" />
-              <h3 className="font-semibold">Member Benefits</h3>
+      {/* Suggested creators */}
+      <div>
+        <p className="sec-title">Suggested Creators</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {creators.slice(0, 4).map(c => (
+            <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Avatar url={c.avatarUrl} name={c.name} size={36} fontSize={11} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 500 }}>{c.name}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>{c.niche}</div>
+              </div>
+              <button className="btn-ghost btn-sm">Follow</button>
             </div>
-            <ul className="space-y-3">
-              {MOCK_MEMBER_BENEFITS.map((benefit) => (
-                <li key={benefit} className="flex items-start text-sm text-[#889993]">
-                  <Check className="w-4 h-4 mr-3 mt-0.5 text-[#4E9F76]" />
-                  {benefit}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </aside>
+          ))}
+        </div>
+      </div>
+
+      {/* Profile photo */}
+      <div>
+        <p className="sec-title">Profile Photo</p>
+        <button className="btn-ghost" style={{ width: '100%', justifyContent: 'center' }} onClick={() => document.getElementById('rp-avatar-input').click()}>
+          <Upload size={14} /> Upload photo
+        </button>
+        <input type="file" id="rp-avatar-input" accept="image/*" style={{ display: 'none' }} onChange={e => onAvatarUpload('user', e.target.files?.[0])} />
       </div>
     </div>
-  </motion.div>
-);
+  );
+}
 
-const AccessView = ({ users, creators, onAuthenticated }) => {
-  const [mode, setMode] = useState('login');
-  const [role, setRole] = useState('user');
-  const [loginEmail, setLoginEmail] = useState('aria@refluenz.app');
-  const [loginPassword, setLoginPassword] = useState('user123');
-  const [registerId, setRegisterId] = useState('');
-  const [error, setError] = useState('');
-
-  const roleAccounts = role === 'user' ? users : creators;
-
-  useEffect(() => {
-    if (!roleAccounts.length) return;
-    if (!registerId || !roleAccounts.some((account) => account.id === registerId)) {
-      setRegisterId(roleAccounts[0].id);
-    }
-  }, [roleAccounts, registerId]);
-
-  useEffect(() => {
-    if (role === 'user') {
-      setLoginEmail('aria@refluenz.app');
-      setLoginPassword('user123');
-    } else {
-      setLoginEmail('julian@refluenz.app');
-      setLoginPassword('creator123');
-    }
-  }, [role]);
-
-  const handleLogin = async (event) => {
-    event.preventDefault();
-    setError('');
-
-    try {
-      const response = await fetch(`${API_BASE}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role, email: loginEmail, password: loginPassword }),
-      });
-
-      const payload = await response.json();
-      if (!response.ok) {
-        setError(payload.error || 'Invalid credentials');
-        return;
-      }
-
-      onAuthenticated({ role, account: role === 'user' ? payload.user : payload.creator });
-    } catch {
-      setError('Unable to login. Ensure backend is accessible.');
-    }
-  };
-
-  const handleMockRegister = (event) => {
-    event.preventDefault();
-    const account = roleAccounts.find((item) => item.id === registerId);
-    if (!account) {
-      setError('Please choose a mock account.');
-      return;
-    }
-    onAuthenticated({ role, account });
-  };
-
+/* ─────────────────────────────────────────────────
+   SIDEBAR
+───────────────────────────────────────────────── */
+function Sidebar({ view, onNavigate, session }) {
+  const acc = session?.account;
+  const navItems = [
+    { id: 'feed',    Icon: Home,            label: 'Feed'      },
+    { id: 'explore', Icon: Compass,         label: 'Explore'   },
+    { id: 'creator', Icon: LayoutDashboard, label: 'Creator'   },
+    { id: 'landing', Icon: Zap,             label: 'Platform'  },
+    { id: 'auth',    Icon: LogIn,           label: 'Access'    },
+  ];
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-32 pb-20 min-h-screen">
-      <div className="container mx-auto px-6 max-w-3xl">
-        <div className="p-6 md:p-8 border border-white/10 bg-white/[0.02] rounded-xl">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">Login or Register</h1>
-          <p className="text-sm text-[#889993] mb-6">Choose your role and continue with mock IDs, just like an Instagram-style entry flow.</p>
-
-          <div className="flex flex-wrap gap-3 mb-6">
-            <button
-              onClick={() => setMode('login')}
-              className={`px-4 py-2 rounded-sm text-sm border ${mode === 'login' ? 'bg-[#d6cdc6] text-[#050605] border-[#d6cdc6]' : 'border-white/20 text-white'}`}
-            >
-              Login
-            </button>
-            <button
-              onClick={() => setMode('register')}
-              className={`px-4 py-2 rounded-sm text-sm border ${mode === 'register' ? 'bg-[#d6cdc6] text-[#050605] border-[#d6cdc6]' : 'border-white/20 text-white'}`}
-            >
-              Register (Mock)
-            </button>
-          </div>
-
-          <div className="flex gap-3 mb-6">
-            {['user', 'creator'].map((item) => (
-              <button
-                key={item}
-                onClick={() => setRole(item)}
-                className={`px-4 py-2 rounded-sm text-sm capitalize border ${role === item ? 'bg-white/10 border-white/30' : 'border-white/10 text-[#889993]'}`}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-
-          {mode === 'login' ? (
-            <form className="space-y-3" onSubmit={handleLogin}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {roleAccounts.slice(0, 5).map((account) => (
-                  <button
-                    key={account.id}
-                    type="button"
-                    onClick={() => {
-                      setLoginEmail(account.email);
-                      setLoginPassword(role === 'user' ? 'user123' : 'creator123');
-                    }}
-                    className="text-left p-2 rounded-md border border-white/10 hover:border-white/20"
-                  >
-                    <p className="text-sm font-medium">{account.name}</p>
-                    <p className="text-xs text-[#889993]">{account.email}</p>
-                  </button>
-                ))}
-              </div>
-              <input
-                className="w-full bg-[#0e1210] border border-white/10 rounded-md px-4 py-2 text-sm"
-                placeholder="Email"
-                value={loginEmail}
-                onChange={(event) => setLoginEmail(event.target.value)}
-              />
-              <input
-                type="password"
-                className="w-full bg-[#0e1210] border border-white/10 rounded-md px-4 py-2 text-sm"
-                placeholder="Password"
-                value={loginPassword}
-                onChange={(event) => setLoginPassword(event.target.value)}
-              />
-              <p className="text-xs text-[#889993]">Mock password: {role === 'user' ? 'user123' : 'creator123'}</p>
-              {error ? <p className="text-sm text-red-300">{error}</p> : null}
-              <button className="inline-flex items-center bg-[#d6cdc6] text-[#050605] px-4 py-2 rounded-sm font-medium">
-                <Lock className="w-4 h-4 mr-2" />
-                Login as {role}
-              </button>
-            </form>
-          ) : (
-            <form className="space-y-3" onSubmit={handleMockRegister}>
-              <select
-                value={registerId}
-                onChange={(event) => setRegisterId(event.target.value)}
-                className="w-full bg-[#0e1210] border border-white/10 rounded-md px-3 py-2 text-sm"
-              >
-                {roleAccounts.map((account) => (
-                  <option key={account.id} value={account.id}>{account.name} ({account.email})</option>
-                ))}
-              </select>
-              <p className="text-xs text-[#889993]">Mock register uses seeded IDs and continues directly to dashboard/home feed.</p>
-              {error ? <p className="text-sm text-red-300">{error}</p> : null}
-              <button className="inline-flex items-center bg-[#d6cdc6] text-[#050605] px-4 py-2 rounded-sm font-medium">
-                Continue as {role}
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </button>
-            </form>
-          )}
+    <nav className="sidebar">
+      <div className="logo" style={{ fontSize: 24, marginBottom: 32, padding: '0 14px', color: 'var(--text)' }}>
+        REfluenz<span style={{ color: 'var(--silver)' }}>.</span>
+      </div>
+      {navItems.map(({ id, Icon, label }) => (
+        <button key={id} className={`nav-item${view === id ? ' active' : ''}`} onClick={() => onNavigate(id)}>
+          <Icon size={20} />
+          <span>{label}</span>
+        </button>
+      ))}
+      <div style={{ flex: 1 }} />
+      <div className="sidebar-user">
+        <Avatar url={acc?.avatarUrl} name={acc?.name || 'Guest'} size={36} fontSize={13} />
+        <div style={{ flex: 1, overflow: 'hidden' }}>
+          <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{acc?.name || 'Guest'}</div>
+          <div style={{ fontSize: 11, color: 'var(--muted)' }}>{session?.role === 'creator' ? 'Creator' : 'User'}</div>
         </div>
       </div>
-    </motion.div>
+    </nav>
   );
-};
+}
 
-const UserDashboard = ({ creators, tiers, sessionUser, onSessionUserChange }) => {
-  const [loggedInUser, setLoggedInUser] = useState(sessionUser || null);
-  const [dashboard, setDashboard] = useState(null);
-  const [payment, setPayment] = useState({ tierId: '', cardName: '', cardNumber: '' });
-  const [paymentResult, setPaymentResult] = useState(null);
-  const [paymentError, setPaymentError] = useState('');
-  const [avatarError, setAvatarError] = useState('');
-  const [activeStoryId, setActiveStoryId] = useState(null);
-  const [seenStoryIds, setSeenStoryIds] = useState([]);
-  const storyModalRef = useRef(null);
+/* ─────────────────────────────────────────────────
+   APP ROOT
+───────────────────────────────────────────────── */
+export default function App() {
+  const [view,         setView]         = useState('feed');
+  const [users,        setUsers]        = useState(MOCK_USERS);
+  const [creators,     setCreators]     = useState(MOCK_CREATORS);
+  const [tiers,        setTiers]        = useState(MOCK_TIERS);
+  const [session,      setSession]      = useState(null);
+  const [dashboard,    setDashboard]    = useState(null);
+  const [creatorDash,  setCreatorDash]  = useState(null);
+  const [likedPosts,   setLikedPosts]   = useState(new Set());
+  const [seenStories,  setSeenStories]  = useState(new Set());
+  const [storyOpen,    setStoryOpen]    = useState(false);
+  const [storyIdx,     setStoryIdx]     = useState(0);
 
+  /* boot */
   useEffect(() => {
-    setLoggedInUser(sessionUser || null);
-  }, [sessionUser]);
-
-  useEffect(() => {
-    if (!tiers.length || payment.tierId) return;
-    setPayment((current) => ({ ...current, tierId: tiers[0].id }));
-  }, [tiers, payment.tierId]);
-
-  const refreshDashboard = (userId) => {
-    if (!userId) return;
-    fetch(`${API_BASE}/api/dashboard/user/${userId}`)
-      .then((response) => response.json())
-      .then((data) => {
-        setDashboard(data);
-      })
-      .catch(() => setDashboard(null));
-  };
-
-  useEffect(() => {
-    if (loggedInUser?.id) {
-      refreshDashboard(loggedInUser.id);
+    async function boot() {
+      try { const r = await fetch(`${API_BASE}/api/users`);        const d = await r.json(); setUsers(d.users || MOCK_USERS); } catch {}
+      try { const r = await fetch(`${API_BASE}/api/creators`);     const d = await r.json(); setCreators(d.creators || MOCK_CREATORS); } catch {}
+      try { const r = await fetch(`${API_BASE}/api/subscription-tiers`); const d = await r.json(); setTiers(d.tiers || MOCK_TIERS); } catch {}
     }
-  }, [loggedInUser?.id]);
-
-  const handlePurchaseTier = async (event) => {
-    event.preventDefault();
-    if (!loggedInUser) return;
-
-    setPaymentResult(null);
-    setPaymentError('');
-
-    try {
-      const response = await fetch(`${API_BASE}/api/users/${loggedInUser.id}/purchase-tier`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payment),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        setPaymentError(data.error || 'Payment failed');
-        return;
-      }
-
-      setPaymentResult(data.payment);
-      setLoggedInUser(data.user);
-      onSessionUserChange(data.user);
-      refreshDashboard(loggedInUser.id);
-    } catch {
-      setPaymentError('Payment request failed.');
-    }
-  };
-
-  const handleAvatarUpload = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file || !loggedInUser) return;
-
-    setAvatarError('');
-
-    try {
-      const avatarUrl = await toDataUrl(file);
-      const response = await fetch(`${API_BASE}/api/users/${loggedInUser.id}/avatar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ avatarUrl }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setAvatarError(data.error || 'Unable to upload profile picture.');
-        return;
-      }
-      setLoggedInUser(data.user);
-      onSessionUserChange(data.user);
-      refreshDashboard(loggedInUser.id);
-    } catch {
-      setAvatarError('Unable to upload profile picture.');
-    }
-  };
-
-  if (!loggedInUser) {
-    return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-32 pb-20 min-h-screen">
-        <div className="container mx-auto px-6 max-w-xl">
-          <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
-            <h1 className="text-3xl font-bold mb-4">User Access Needed</h1>
-            <p className="text-sm text-[#889993]">Open the Access page and login/register as a user to continue.</p>
-          </div>
-        </div>
-      </motion.div>
-    );
-  }
-
-  const stories = (dashboard?.feed || []).filter((item) => item.type === 'story');
-  const activeStory = stories.find((story) => story.id === activeStoryId) || null;
-  const activeStoryIndex = stories.findIndex((story) => story.id === activeStoryId);
-  const openStory = useCallback((story) => {
-    setActiveStoryId(story.id);
-    setSeenStoryIds((current) => (current.includes(story.id) ? current : [...current, story.id]));
+    boot();
   }, []);
-  const openStoryAtIndex = useCallback((index) => {
-    if (!stories.length) return;
-    const boundedIndex = wrapIndex(index, stories.length);
-    openStory(stories[boundedIndex]);
-  }, [openStory, stories]);
 
+  /* keyboard shortcuts for story */
   useEffect(() => {
-    if (!activeStory || !stories.length) return undefined;
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        setActiveStoryId(null);
-      } else if (event.key === 'ArrowRight') {
-        openStoryAtIndex(activeStoryIndex + 1);
-      } else if (event.key === 'ArrowLeft') {
-        openStoryAtIndex(activeStoryIndex - 1);
-      }
+    const handler = e => {
+      if (e.key === 'Escape') setStoryOpen(false);
+      if (e.key === 'ArrowRight' && storyOpen) advanceStory(1);
+      if (e.key === 'ArrowLeft'  && storyOpen) advanceStory(-1);
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeStory, activeStoryIndex, openStoryAtIndex, stories.length]);
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [storyOpen, storyIdx, stories]);
 
-  useEffect(() => {
-    if (activeStory && storyModalRef.current) {
-      storyModalRef.current.focus();
-    }
-  }, [activeStory]);
+  const feed    = dashboard?.feed || buildMockFeed(creators);
+  const stories = feed.filter(i => i.type === 'story');
 
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-32 pb-20 min-h-screen">
-      <div className="container mx-auto px-6 max-w-6xl">
-        <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-          <h1 className="text-4xl font-bold">User Home Feed</h1>
-          <div className="flex items-center gap-3">
-            <Avatar url={loggedInUser.avatarUrl} alt={loggedInUser.name} />
-            <div>
-              <p className="font-semibold">{loggedInUser.name}</p>
-              <p className="text-sm text-[#889993]">{loggedInUser.email}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-5">
-            <h2 className="text-2xl font-semibold border-b border-white/10 pb-3">Scrollytelling Feed (Following)</h2>
-            <div className="lg:hidden">
-              <div className="flex items-center gap-3 overflow-x-auto pb-2">
-                {stories.map((story) => {
-                  const seen = seenStoryIds.includes(story.id);
-                  return (
-                    <button
-                      key={story.id}
-                      onClick={() => openStory(story)}
-                      aria-label={`View story from ${story.creator?.name || 'creator'}`}
-                      className="flex-shrink-0"
-                    >
-                      <span
-                        className="p-[2px] rounded-full transition-colors block"
-                        style={{ border: '2px solid', borderColor: seen ? 'var(--story-ring-seen)' : 'var(--story-ring-unseen)' }}
-                      >
-                        <Avatar url={story.creator?.avatarUrl} alt={story.creator?.name || 'Story creator'} />
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            {(dashboard?.feed || []).filter((item) => item.type === 'post').map((item) => (
-              <article key={item.id} className="p-5 border border-white/10 bg-white/[0.02] rounded-lg">
-                <div className="flex items-center gap-3 mb-3">
-                  {item.creator?.avatarUrl ? <Avatar url={item.creator.avatarUrl} alt={item.creator.name} /> : null}
-                  <div>
-                    <p className="text-xs uppercase tracking-wider text-[#d6cdc6]">@{item.creator?.name} • followed creator</p>
-                    <p className="text-xs text-[#889993]">{item.creator?.niche}</p>
-                  </div>
-                </div>
-                <h3 className="text-xl font-semibold mb-2">{item.title || item.text}</h3>
-                {item.body ? <p className="text-[#889993] mb-3">{item.body}</p> : null}
-                {item.imageUrl ? <FeedImage src={item.imageUrl} alt={item.title || item.text} className="w-full max-h-[420px] object-cover rounded-md" /> : null}
-              </article>
-            ))}
-          </div>
-
-          <aside className="space-y-5">
-            <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
-              <h3 className="font-semibold mb-3">Profile Picture</h3>
-              <input type="file" accept="image/*" onChange={handleAvatarUpload} className="w-full text-sm text-[#889993]" />
-              <p className="text-xs text-[#889993] mt-2">Upload your own profile image or use mock avatars.</p>
-              {avatarError ? <p className="text-sm text-red-300 mt-2">{avatarError}</p> : null}
-            </div>
-
-            <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
-              <div className="flex items-center mb-3 text-[#d6cdc6]">
-                <Lock className="w-5 h-5 mr-2" />
-                <h3 className="font-semibold">Current Tier</h3>
-              </div>
-              <p className="text-2xl font-semibold">{dashboard?.tier?.name || '-'}</p>
-            </div>
-
-            <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
-              <h3 className="font-semibold mb-3">Upgrade Tier (Mock Payment)</h3>
-              <form className="space-y-2" onSubmit={handlePurchaseTier}>
-                <select
-                  value={payment.tierId}
-                  onChange={(event) => setPayment((current) => ({ ...current, tierId: event.target.value }))}
-                  className="w-full bg-[#0e1210] border border-white/10 rounded-md px-3 py-2 text-sm"
-                >
-                  {tiers.map((tier) => (
-                    <option key={tier.id} value={tier.id}>{tier.name} — ${tier.monthlyPrice}/mo</option>
-                  ))}
-                </select>
-                <input
-                  className="w-full bg-[#0e1210] border border-white/10 rounded-md px-3 py-2 text-sm"
-                  placeholder="Cardholder name"
-                  value={payment.cardName}
-                  onChange={(event) => setPayment((current) => ({ ...current, cardName: event.target.value }))}
-                />
-                <input
-                  className="w-full bg-[#0e1210] border border-white/10 rounded-md px-3 py-2 text-sm"
-                  placeholder="Card number"
-                  value={payment.cardNumber}
-                  onChange={(event) => setPayment((current) => ({ ...current, cardNumber: event.target.value }))}
-                />
-                {paymentError ? <p className="text-sm text-red-300">{paymentError}</p> : null}
-                {paymentResult ? <p className="text-sm text-[#4E9F76]">Paid mock transaction {paymentResult.transactionId}.</p> : null}
-                <button className="inline-flex items-center bg-[#d6cdc6] text-[#050605] px-4 py-2 rounded-sm font-medium text-sm">
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  Pay & Upgrade
-                </button>
-              </form>
-            </div>
-
-            <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
-              <h3 className="font-semibold mb-3">Subscribed Creators</h3>
-              <ul className="space-y-3">
-                {(dashboard?.subscribedCreators || creators).map((creator) => (
-                  <li key={creator.id} className="flex items-center gap-2 text-sm text-[#889993]">
-                    <Avatar url={creator.avatarUrl} alt={creator.name} />
-                    <span>{creator.name} • {creator.niche}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </aside>
-        </div>
-
-        <aside className="hidden lg:flex fixed right-2 top-28 bottom-8 z-40">
-          <div
-            tabIndex={0}
-            role="region"
-            aria-label="Story rail"
-            className="w-[66px] rounded-full border border-white/10 backdrop-blur-sm py-3 px-2 overflow-y-auto space-y-3"
-            style={{ backgroundColor: 'var(--color-surface)' }}
-          >
-            {stories.map((story) => {
-              const seen = seenStoryIds.includes(story.id);
-              return (
-                <button
-                  key={story.id}
-                  onClick={() => openStory(story)}
-                  onFocus={(event) => event.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest' })}
-                  title={story.creator?.name || 'Story'}
-                  aria-label={`View story from ${story.creator?.name || 'creator'}`}
-                  className="w-full flex justify-center"
-                >
-                  <span
-                    className="p-[2px] rounded-full transition-colors"
-                    style={{ border: '2px solid', borderColor: seen ? 'var(--story-ring-seen)' : 'var(--story-ring-unseen)' }}
-                  >
-                    <Avatar url={story.creator?.avatarUrl} alt={story.creator?.name || 'Story creator'} />
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </aside>
-      </div>
-
-      {activeStory ? (
-        <div
-          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-md flex items-center justify-center p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Story viewer"
-          onClick={() => setActiveStoryId(null)}
-        >
-          <div
-            className="w-full max-w-md rounded-2xl border border-white/20 overflow-hidden"
-            style={{ backgroundColor: 'var(--color-surface)' }}
-            onClick={(event) => event.stopPropagation()}
-            tabIndex={0}
-            ref={storyModalRef}
-            onKeyDown={(event) => {
-              if (event.key !== 'Tab') return;
-              const focusable = Array.from(
-                event.currentTarget.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
-              );
-              if (!focusable.length) {
-                event.preventDefault();
-                return;
-              }
-              const first = focusable[0];
-              const last = focusable[focusable.length - 1];
-              if (event.shiftKey && document.activeElement === first) {
-                event.preventDefault();
-                last.focus();
-              } else if (!event.shiftKey && document.activeElement === last) {
-                event.preventDefault();
-                first.focus();
-              }
-            }}
-          >
-            <div className="flex justify-end p-2">
-              <button
-                type="button"
-                onClick={() => setActiveStoryId(null)}
-                aria-label="Close story viewer"
-                className="rounded-full p-1 border border-white/20"
-              >
-                <X size={16} />
-              </button>
-            </div>
-            {activeStory.imageUrl ? (
-              <FeedImage src={activeStory.imageUrl} alt={activeStory.text || 'Story'} className="w-full h-80 object-cover" />
-            ) : null}
-            <div className="p-4">
-              <p className="text-sm mb-2" style={{ color: 'var(--color-text-muted)' }}>{activeStory.creator?.name}</p>
-              <p className="text-base" style={{ color: 'var(--color-text-main)' }}>{activeStory.text || 'Story'}</p>
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </motion.div>
-  );
-};
-
-const CreatorDashboard = ({ sessionCreator, onSessionCreatorChange }) => {
-  const [selectedCreatorId, setSelectedCreatorId] = useState(sessionCreator?.id || '');
-  const [dashboard, setDashboard] = useState(null);
-  const [postTitle, setPostTitle] = useState('');
-  const [postBody, setPostBody] = useState('');
-  const [postImageData, setPostImageData] = useState('');
-  const [storyText, setStoryText] = useState('');
-  const [storyImageUrl, setStoryImageUrl] = useState('');
-  const [channelText, setChannelText] = useState('');
-  const [uploadHint, setUploadHint] = useState('Drop image here or select from device');
-  const [avatarError, setAvatarError] = useState('');
-
-  useEffect(() => {
-    setSelectedCreatorId(sessionCreator?.id || '');
-  }, [sessionCreator?.id]);
-
-  const refreshDashboard = (creatorId) => {
-    fetch(`${API_BASE}/api/dashboard/creator/${creatorId}`)
-      .then((response) => response.json())
-      .then(setDashboard)
-      .catch(() => setDashboard(null));
-  };
-
-  useEffect(() => {
-    if (selectedCreatorId) {
-      refreshDashboard(selectedCreatorId);
-    }
-  }, [selectedCreatorId]);
-
-  const handlePostImageFile = async (file) => {
-    if (!file) return;
-    try {
-      const dataUrl = await toDataUrl(file);
-      setPostImageData(dataUrl);
-      setUploadHint(`Selected: ${file.name}`);
-    } catch {
-      setUploadHint('Unable to read file');
-    }
-  };
-
-  const handleCreatePost = async (event) => {
-    event.preventDefault();
-    if (!postTitle.trim() || !postBody.trim()) return;
-
-    try {
-      const response = await fetch(`${API_BASE}/api/creators/${selectedCreatorId}/posts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: postTitle, body: postBody, imageUrl: postImageData }),
-      });
-      if (!response.ok) {
-        return;
-      }
-      setPostTitle('');
-      setPostBody('');
-      setPostImageData('');
-      setUploadHint('Drop image here or select from device');
-      refreshDashboard(selectedCreatorId);
-    } catch {
-      return;
-    }
-  };
-
-  const handleCreateStory = async (event) => {
-    event.preventDefault();
-    if (!storyText.trim()) return;
-
-    try {
-      const response = await fetch(`${API_BASE}/api/creators/${selectedCreatorId}/stories`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: storyText, imageUrl: storyImageUrl }),
-      });
-      if (!response.ok) {
-        return;
-      }
-      setStoryText('');
-      setStoryImageUrl('');
-      refreshDashboard(selectedCreatorId);
-    } catch {
-      return;
-    }
-  };
-
-  const handleChannelPost = async (event) => {
-    event.preventDefault();
-    if (!channelText.trim()) return;
-
-    try {
-      const response = await fetch(`${API_BASE}/api/creators/${selectedCreatorId}/channel-messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: channelText }),
-      });
-      if (!response.ok) return;
-      setChannelText('');
-      refreshDashboard(selectedCreatorId);
-    } catch {
-      return;
-    }
-  };
-
-  const handleAvatarUpload = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file || !selectedCreatorId) return;
-
-    setAvatarError('');
-
-    try {
-      const avatarUrl = await toDataUrl(file);
-      const response = await fetch(`${API_BASE}/api/creators/${selectedCreatorId}/avatar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ avatarUrl }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setAvatarError(data.error || 'Unable to upload profile picture.');
-        return;
-      }
-      onSessionCreatorChange(data.creator);
-      refreshDashboard(selectedCreatorId);
-    } catch {
-      setAvatarError('Unable to upload profile picture.');
-    }
-  };
-
-  if (!selectedCreatorId) {
-    return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-32 pb-20 min-h-screen">
-        <div className="container mx-auto px-6 max-w-xl">
-          <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
-            <h1 className="text-3xl font-bold mb-4">Creator Access Needed</h1>
-            <p className="text-sm text-[#889993]">Open the Access page and login/register as a creator to continue.</p>
-          </div>
-        </div>
-      </motion.div>
-    );
+  function advanceStory(dir) {
+    const next = storyIdx + dir;
+    if (next < 0 || next >= stories.length) setStoryOpen(false);
+    else setStoryIdx(next);
   }
 
+  function openStory(idx) { setStoryIdx(idx); setStoryOpen(true); }
+
+  function toggleLike(id) {
+    setLikedPosts(prev => {
+      const s = new Set(prev);
+      s.has(id) ? s.delete(id) : s.add(id);
+      return s;
+    });
+  }
+
+  function markSeen(id) {
+    setSeenStories(prev => new Set([...prev, id]));
+  }
+
+  async function loadUserDash(uid) {
+    try {
+      const r = await fetch(`${API_BASE}/api/dashboard/user/${uid}`);
+      setDashboard(await r.json());
+    } catch {
+      setDashboard({ feed: buildMockFeed(creators), tier: { name: 'Explorer' }, subscribedCreators: creators });
+    }
+  }
+
+  async function loadCreatorDash(cid) {
+    try {
+      const r = await fetch(`${API_BASE}/api/dashboard/creator/${cid}`);
+      setCreatorDash(await r.json());
+    } catch {
+      setCreatorDash({ creator: session?.account, posts: [], stories: [], channelMessages: [], subscriberCount: 0 });
+    }
+  }
+
+  function onAuthenticated(role, account) {
+    const sess = { role, account };
+    setSession(sess);
+    if (role === 'user') {
+      loadUserDash(account.id).then(() => setView('feed'));
+    } else {
+      loadCreatorDash(account.id).then(() => setView('creator'));
+    }
+    showToast(`Welcome back, ${account.name.split(' ')[0]}!`);
+  }
+
+  async function onAvatarUpload(type, file) {
+    if (!file || !session) return;
+    const reader = new FileReader();
+    reader.onload = async ev => {
+      const avatarUrl = ev.target.result;
+      const acc = session.account;
+      const endpoint = type === 'user'
+        ? `${API_BASE}/api/users/${acc.id}/avatar`
+        : `${API_BASE}/api/creators/${acc.id}/avatar`;
+      try {
+        const r = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ avatarUrl }) });
+        const d = await r.json();
+        if (r.ok) setSession(s => ({ ...s, account: type === 'user' ? d.user : d.creator }));
+      } catch {
+        setSession(s => ({ ...s, account: { ...s.account, avatarUrl } }));
+      }
+      showToast('Photo updated!');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function navigate(v) { setView(v); window.scrollTo(0, 0); }
+
+  const bottomNavItems = [
+    { id: 'feed',    Icon: Home        },
+    { id: 'explore', Icon: Compass     },
+    { id: 'creator', Icon: PlusSquare  },
+    { id: 'auth',    Icon: User        },
+  ];
+
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-32 pb-20 min-h-screen">
-      <div className="container mx-auto px-6 max-w-6xl">
-        <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-          <h1 className="text-4xl font-bold">Creator Dashboard</h1>
-          {dashboard?.creator ? (
-            <div className="flex items-center gap-3">
-              <Avatar url={dashboard.creator.avatarUrl} alt={dashboard.creator.name} />
-              <div>
-                <p className="font-semibold">{dashboard.creator.name}</p>
-                <p className="text-sm text-[#889993]">{dashboard.creator.niche}</p>
-              </div>
-            </div>
-          ) : null}
+    <>
+      <Sidebar view={view} onNavigate={navigate} session={session} />
+
+      {/* Topbar (mobile) */}
+      <div className="topbar">
+        <div className="logo" style={{ fontSize: 22, color: 'var(--text)' }}>
+          REfluenz<span style={{ color: 'var(--silver)' }}>.</span>
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <section className="lg:col-span-2 space-y-8">
-            <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
-              <h2 className="text-xl font-semibold mb-4">Publish Post</h2>
-              <form className="space-y-3" onSubmit={handleCreatePost}>
-                <input
-                  className="w-full bg-[#0e1210] border border-white/10 rounded-md px-4 py-2 text-sm"
-                  placeholder="Post title"
-                  value={postTitle}
-                  onChange={(event) => setPostTitle(event.target.value)}
-                />
-                <textarea
-                  className="w-full bg-[#0e1210] border border-white/10 rounded-md px-4 py-2 text-sm h-24"
-                  placeholder="Post body"
-                  value={postBody}
-                  onChange={(event) => setPostBody(event.target.value)}
-                />
-                <label
-                  className="block border border-dashed border-white/20 rounded-md p-4 text-sm text-[#889993]"
-                  onDrop={(event) => {
-                    event.preventDefault();
-                    handlePostImageFile(event.dataTransfer.files?.[0]);
-                  }}
-                  onDragOver={(event) => event.preventDefault()}
-                >
-                  <div className="flex items-center gap-2 mb-2 text-white">
-                    <ImagePlus className="w-4 h-4" />
-                    Post image upload
-                  </div>
-                  <p>{uploadHint}</p>
-                  <input type="file" accept="image/*" className="mt-3 text-xs" onChange={(event) => handlePostImageFile(event.target.files?.[0])} />
-                  {postImageData ? <FeedImage src={postImageData} alt="Upload preview" className="w-full h-40 object-cover rounded-md mt-3" /> : null}
-                </label>
-                <button className="inline-flex items-center bg-[#d6cdc6] text-[#050605] px-4 py-2 rounded-sm font-medium">
-                  <PlusCircle className="w-4 h-4 mr-2" />
-                  Publish Post
-                </button>
-              </form>
-            </div>
-
-            <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
-              <h2 className="text-xl font-semibold mb-4">Publish Story</h2>
-              <form className="space-y-3" onSubmit={handleCreateStory}>
-                <textarea
-                  className="w-full bg-[#0e1210] border border-white/10 rounded-md px-4 py-2 text-sm h-20"
-                  placeholder="Story text"
-                  value={storyText}
-                  onChange={(event) => setStoryText(event.target.value)}
-                />
-                <input
-                  className="w-full bg-[#0e1210] border border-white/10 rounded-md px-4 py-2 text-sm"
-                  placeholder="Story image URL"
-                  value={storyImageUrl}
-                  onChange={(event) => setStoryImageUrl(event.target.value)}
-                />
-                <button className="inline-flex items-center border border-white/20 px-4 py-2 rounded-sm font-medium">
-                  <PlusCircle className="w-4 h-4 mr-2" />
-                  Publish Story
-                </button>
-              </form>
-            </div>
-
-            <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
-              <div className="flex items-center gap-2 mb-4">
-                <MessageSquare className="w-5 h-5 text-[#d6cdc6]" />
-                <h2 className="text-xl font-semibold">Creator Text Channel</h2>
-              </div>
-              <form className="space-y-3" onSubmit={handleChannelPost}>
-                <textarea
-                  className="w-full bg-[#0e1210] border border-white/10 rounded-md px-4 py-2 text-sm h-20"
-                  placeholder="Share an update with your channel"
-                  value={channelText}
-                  onChange={(event) => setChannelText(event.target.value)}
-                />
-                <button className="inline-flex items-center border border-white/20 px-4 py-2 rounded-sm font-medium">
-                  <Upload className="w-4 h-4 mr-2" />
-                  Post to Channel
-                </button>
-              </form>
-              <ul className="space-y-3 mt-4">
-                {(dashboard?.channelMessages || []).slice(0, 6).map((message) => (
-                  <li key={message.id} className="text-sm border border-white/10 rounded-md p-3 text-[#889993]">
-                    {message.text}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </section>
-
-          <aside className="space-y-5">
-            <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
-              <h3 className="font-semibold mb-3">Profile Picture</h3>
-              <input type="file" accept="image/*" onChange={handleAvatarUpload} className="w-full text-sm text-[#889993]" />
-              <p className="text-xs text-[#889993] mt-2">Upload your own profile image or use the seeded mock profile pictures.</p>
-              {avatarError ? <p className="text-sm text-red-300 mt-2">{avatarError}</p> : null}
-            </div>
-
-            <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
-              <h3 className="font-semibold mb-3">Recent Posts</h3>
-              <ul className="space-y-4">
-                {(dashboard?.posts || []).slice(0, 5).map((post) => (
-                  <li key={post.id} className="text-sm text-[#889993]">
-                    {post.imageUrl ? <FeedImage src={post.imageUrl} alt={post.title} className="w-full h-24 object-cover rounded-md mb-2" /> : null}
-                    <p className="text-white">{post.title}</p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="p-6 border border-white/10 bg-white/[0.02] rounded-xl">
-              <h3 className="font-semibold mb-3">Recent Stories</h3>
-              <ul className="space-y-4">
-                {(dashboard?.stories || []).slice(0, 5).map((story) => (
-                  <li key={story.id} className="text-sm text-[#889993]">
-                    {story.imageUrl ? <FeedImage src={story.imageUrl} alt={story.text} className="w-full h-24 object-cover rounded-md mb-2" /> : null}
-                    {story.text}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </aside>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <Search size={20} style={{ color: 'var(--silver)', cursor: 'pointer' }} />
+          <Send    size={20} style={{ color: 'var(--silver)', cursor: 'pointer' }} />
         </div>
       </div>
-    </motion.div>
-  );
-};
 
-const App = () => {
-  const [view, setView] = useState('landing');
-  const [theme, setTheme] = useState('dark');
-  const [users, setUsers] = useState([]);
-  const [creators, setCreators] = useState([]);
-  const [tiers, setTiers] = useState([]);
-  const [session, setSession] = useState(null);
+      {/* Bottom nav (mobile) */}
+      <div className="bottomnav">
+        {bottomNavItems.map(({ id, Icon }) => (
+          <button key={id} className={`bnav-item${view === id ? ' active' : ''}`} onClick={() => navigate(id)}>
+            <Icon size={22} />
+          </button>
+        ))}
+      </div>
 
-  useEffect(() => {
-    Promise.all([
-      fetch(`${API_BASE}/api/users`).then((response) => response.json()),
-      fetch(`${API_BASE}/api/creators`).then((response) => response.json()),
-      fetch(`${API_BASE}/api/subscription-tiers`).then((response) => response.json()),
-    ])
-      .then(([usersData, creatorsData, tiersData]) => {
-        setUsers(usersData.users || []);
-        setCreators(creatorsData.creators || []);
-        setTiers(tiersData.tiers || []);
-      })
-      .catch(() => {
-        setUsers([]);
-        setCreators([]);
-        setTiers([]);
-      });
-  }, []);
-
-  useEffect(() => {
-    const tokens = THEME_TOKENS[theme] || THEME_TOKENS.dark;
-    Object.entries(tokens).forEach(([key, value]) => {
-      document.documentElement.style.setProperty(key, value);
-    });
-  }, [theme]);
-
-  const viewNode = useMemo(() => {
-    if (view === 'user') {
-      return (
-        <UserDashboard
-          key="user"
-          creators={creators}
-          tiers={tiers}
-          sessionUser={session?.role === 'user' ? session.account : null}
-          onSessionUserChange={(account) => setSession({ role: 'user', account })}
-        />
-      );
-    }
-    if (view === 'creator') {
-      return (
-        <CreatorDashboard
-          key="creator"
-          sessionCreator={session?.role === 'creator' ? session.account : null}
-          onSessionCreatorChange={(account) => setSession({ role: 'creator', account })}
-        />
-      );
-    }
-    if (view === 'profile') {
-      return <ProfileView key="profile" onSubscribe={() => setView('auth')} />;
-    }
-    if (view === 'landing') {
-      return <LandingView key="landing" onViewChange={setView} tiers={tiers} />;
-    }
-    return (
-      <AccessView
-        key="auth"
-        users={users}
-        creators={creators}
-        onAuthenticated={(nextSession) => {
-          setSession(nextSession);
-          setView(nextSession.role === 'user' ? 'user' : 'creator');
-        }}
-      />
-    );
-  }, [view, creators, tiers, users, session]);
-
-  return (
-    <div className="min-h-screen">
-      <Navbar onViewChange={setView} currentView={view} theme={theme} onThemeChange={setTheme} />
-      <AnimatePresence mode="wait">{viewNode}</AnimatePresence>
-      <footer className="py-12 border-t border-white/5 mt-auto">
-        <div className="container mx-auto px-6 text-center text-[#889993] text-sm">
-          <p>© 2026 REfluenz. All rights reserved.</p>
+      {/* Main content */}
+      <div className={`main-content has-right`}>
+        <div className={`view${view === 'feed'    ? ' active fade-in' : ''}`}>
+          <FeedView feed={feed} likedPosts={likedPosts} onLike={toggleLike} onOpenStory={openStory} seenStories={seenStories} />
         </div>
-      </footer>
-    </div>
-  );
-};
+        <div className={`view${view === 'explore' ? ' active fade-in' : ''}`}>
+          <ExploreView creators={creators} feed={feed} />
+        </div>
+        <div className={`view${view === 'creator' ? ' active fade-in' : ''}`}>
+          <CreatorView session={session} creatorDash={creatorDash} onRefresh={() => session?.account?.id && loadCreatorDash(session.account.id)} />
+        </div>
+        <div className={`view${view === 'auth'    ? ' active fade-in' : ''}`}>
+          <AuthView users={users} creators={creators} onAuthenticated={onAuthenticated} />
+        </div>
+        <div className={`view${view === 'landing' ? ' active fade-in' : ''}`}>
+          <LandingView tiers={tiers} onNavigate={navigate} />
+        </div>
+      </div>
 
-export default App;
+      {/* Right panel */}
+      <RightPanel session={session} tiers={tiers} creators={creators} onAvatarUpload={onAvatarUpload} />
+
+      {/* Story modal */}
+      {storyOpen && (
+        <StoryModal
+          stories={stories}
+          idx={storyIdx}
+          seenIds={seenStories}
+          onClose={() => setStoryOpen(false)}
+          onNext={() => advanceStory(1)}
+          onPrev={() => advanceStory(-1)}
+          onSeen={markSeen}
+        />
+      )}
+
+      <ToastPortal />
+    </>
+  );
+}

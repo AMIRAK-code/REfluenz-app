@@ -16,7 +16,7 @@ import {
   X,
 } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://refluenz-app.onrender.com';
 const FALLBACK_IMAGE = '/mock/post-concrete.svg';
 const FALLBACK_AVATAR = '/mock/user-aria.svg';
 const wrapIndex = (index, length) => ((index % length) + length) % length;
@@ -430,7 +430,7 @@ const AccessView = ({ users, creators, onAuthenticated }) => {
 
       onAuthenticated({ role, account: role === 'user' ? payload.user : payload.creator });
     } catch {
-      setError('Unable to login. Ensure backend is running on port 4000.');
+      setError('Unable to login. Ensure backend is accessible.');
     }
   };
 

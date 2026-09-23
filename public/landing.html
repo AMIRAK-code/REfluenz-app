@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Refluenz — The Digital Atelier</title>
+<meta name="description" content="The ad-free, algorithm-independent digital atelier where elite fashion, beauty, and wellness creators share deep value directly with their core circles."/>
+
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@100..900&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+<!-- Lenis smooth scroll -->
+<script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+<!-- GSAP + ScrollTrigger for scrollytelling -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    "surface-tint": "#5f5e5e",
+                    "on-primary": "#ffffff",
+                    "on-secondary-fixed-variant": "#57441e",
+                    "tertiary-fixed-dim": "#cac6c4",
+                    "inverse-primary": "#c8c6c5",
+                    "tertiary-container": "#1c1b1a",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-highest": "#e4e2e2",
+                    "on-tertiary-container": "#868382",
+                    "secondary-fixed": "#fddeac",
+                    "on-surface-variant": "#444748",
+                    "on-error-container": "#93000a",
+                    "primary-fixed-dim": "#c8c6c5",
+                    "on-secondary": "#ffffff",
+                    "surface-bright": "#fbf9f9",
+                    "on-tertiary-fixed": "#1c1b1a",
+                    "inverse-surface": "#303031",
+                    "on-secondary-fixed": "#271900",
+                    "on-error": "#ffffff",
+                    "inverse-on-surface": "#f2f0f0",
+                    "surface-container": "#efeded",
+                    "primary-container": "#1c1b1b",
+                    "tertiary": "#000000",
+                    "error": "#ba1a1a",
+                    "surface-variant": "#e4e2e2",
+                    "secondary-container": "#fddeac",
+                    "on-primary-fixed-variant": "#474746",
+                    "error-container": "#ffdad6",
+                    "tertiary-fixed": "#e6e2df",
+                    "on-primary-container": "#858383",
+                    "on-surface": "#1b1c1c",
+                    "surface-container-low": "#f5f3f3",
+                    "primary": "#000000",
+                    "surface-container-high": "#e9e8e7",
+                    "secondary-fixed-dim": "#dfc392",
+                    "on-tertiary": "#ffffff",
+                    "on-background": "#1b1c1c",
+                    "secondary": "#715b33",
+                    "surface-dim": "#dbdad9",
+                    "outline-variant": "#c4c7c7",
+                    "primary-fixed": "#e5e2e1",
+                    "on-tertiary-fixed-variant": "#484645",
+                    "outline": "#747878",
+                    "surface": "#fbf9f9",
+                    "on-secondary-container": "#776139",
+                    "on-primary-fixed": "#1c1b1b",
+                    "background": "#fbf9f9"
+                },
+                borderRadius: { "DEFAULT": "0px", "lg": "0px", "xl": "0px", "full": "0px" },
+                spacing: {
+                    "margin-desktop": "80px", "gutter": "32px", "stack-sm": "8px",
+                    "stack-md": "24px", "margin-mobile": "20px", "stack-xl": "120px",
+                    "baseline": "4px", "stack-lg": "64px"
+                },
+                fontFamily: {
+                    "label-caps": ["Hanken Grotesk"], "headline-lg": ["Hanken Grotesk"],
+                    "subheading": ["Hanken Grotesk"], "caption": ["Hanken Grotesk"],
+                    "headline-xl": ["Hanken Grotesk"], "headline-lg-mobile": ["Hanken Grotesk"],
+                    "body-md": ["Hanken Grotesk"], "body-lg": ["Hanken Grotesk"]
+                },
+                fontSize: {
+                    "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "600" }],
+                    "headline-lg": ["48px", { "lineHeight": "48px", "letterSpacing": "-0.03em", "fontWeight": "700" }],
+                    "subheading": ["14px", { "lineHeight": "20px", "letterSpacing": "0.15em", "fontWeight": "500" }],
+                    "caption": ["12px", { "lineHeight": "18px", "letterSpacing": "0.02em", "fontWeight": "400" }],
+                    "headline-xl": ["80px", { "lineHeight": "72px", "letterSpacing": "-0.04em", "fontWeight": "800" }],
+                    "headline-lg-mobile": ["32px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                    "body-md": ["16px", { "lineHeight": "24px", "letterSpacing": "0.01em", "fontWeight": "300" }],
+                    "body-lg": ["18px", { "lineHeight": "28px", "letterSpacing": "0.01em", "fontWeight": "300" }]
+                }
+            }
+        }
+    }
+</script>
+
+<style>
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    .fill-icon { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    .hover-bronze-shift:hover { background-color: rgba(26, 26, 26, 0.05); }
+
+    /* ---- Lenis ---- */
+    html.lenis, html.lenis body { height: auto; }
+    .lenis.lenis-smooth { scroll-behavior: auto !important; }
+    .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+    .lenis.lenis-stopped { overflow: hidden; }
+
+    /* ---- Scroll progress bar ---- */
+    #scroll-progress {
+        position: fixed; top: 0; left: 0; height: 2px; width: 0%;
+        background: #715b33; z-index: 60; transition: none; will-change: width;
+    }
+
+    /* ---- Custom cursor ---- */
+    @media (hover: hover) and (pointer: fine) {
+        * { cursor: none !important; }
+        #cursor {
+            position: fixed; top: 0; left: 0; width: 8px; height: 8px;
+            background: #1A1A1A; border-radius: 50%; pointer-events: none;
+            z-index: 9999; transform: translate(-50%, -50%); mix-blend-mode: difference;
+        }
+        #cursor-ring {
+            position: fixed; top: 0; left: 0; width: 40px; height: 40px;
+            border: 1px solid #715b33; border-radius: 50%; pointer-events: none;
+            z-index: 9998; transform: translate(-50%, -50%);
+            transition: width .3s ease, height .3s ease, background-color .3s ease, opacity .3s ease;
+        }
+        #cursor-ring.hovering { width: 64px; height: 64px; background: rgba(113,91,51,0.08); }
+    }
+
+    /* ---- Reveal primitives (JS-driven, but safe defaults) ---- */
+    .reveal-line { display: block; overflow: hidden; }
+    .reveal-line > span { display: block; will-change: transform; }
+    [data-fade] { will-change: transform, opacity; }
+
+    /* Marquee for the seam between sections */
+    .marquee-track { display: inline-flex; white-space: nowrap; will-change: transform; }
+
+    /* Magnetic wrapper */
+    .magnetic { display: inline-block; will-change: transform; }
+
+    /* Grain overlay for editorial texture */
+    #grain {
+        position: fixed; inset: 0; z-index: 55; pointer-events: none; opacity: .035;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        * { cursor: auto !important; }
+        #cursor, #cursor-ring, #grain { display: none !important; }
+    }
+</style>
+
+<style> body { min-height: max(884px, 100dvh); } </style>
+</head>
+
+<body class="bg-surface text-primary antialiased pt-16 selection:bg-secondary selection:text-surface overflow-x-hidden">
+
+<div id="scroll-progress"></div>
+<div id="grain"></div>
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- TopAppBar -->
+<header id="topbar" class="fixed top-0 w-full z-50 bg-surface/90 backdrop-blur-sm border-b border-outline-variant flex justify-between items-center px-margin-mobile py-4 md:px-margin-desktop transition-transform duration-500">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary hover:text-secondary transition-colors duration-300 cursor-target" data-icon="menu">menu</span>
+</div>
+<div class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg tracking-tighter text-primary cursor-target">REFLUENZ</div>
+<div class="flex items-center gap-4 hidden md:flex">
+<nav class="flex gap-8 items-center mr-8">
+<a class="font-label-caps text-label-caps text-secondary border-b border-secondary pb-1 cursor-target" href="#hero">HOME</a>
+<a class="font-label-caps text-label-caps text-on-surface hover:text-secondary transition-colors duration-300 cursor-target" href="#atelier">ATELIER</a>
+<a class="font-label-caps text-label-caps text-on-surface hover:text-secondary transition-colors duration-300 cursor-target" href="#gateway">CIRCLE</a>
+</nav>
+<span class="material-symbols-outlined text-primary hover:text-secondary transition-colors duration-300 cursor-target" data-icon="shopping_bag">shopping_bag</span>
+</div>
+<div class="md:hidden">
+<span class="material-symbols-outlined text-primary hover:text-secondary transition-colors duration-300" data-icon="shopping_bag">shopping_bag</span>
+</div>
+</header>
+
+<main>
+<!-- Section 1: Hero Canvas -->
+<section id="hero" class="min-h-screen pt-stack-xl pb-stack-lg px-margin-mobile md:px-margin-desktop border-b border-outline-variant">
+<div class="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-gutter h-full items-center">
+<div class="md:col-span-6 flex flex-col justify-center pr-0 md:pr-12 pt-12 md:pt-0 order-2 md:order-1">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-xl md:text-headline-xl text-primary mb-stack-md uppercase" data-split-lines>
+    Own your aesthetic. Own your audience.
+</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-stack-lg max-w-lg" data-fade>
+    The ad-free, algorithm-independent digital atelier where elite fashion, beauty, and wellness creators share deep value directly with their core circles.
+</p>
+<form class="flex flex-col sm:flex-row gap-4 max-w-md" data-fade data-form>
+<input class="flex-grow bg-transparent border-b border-primary text-primary font-label-caps text-label-caps py-3 px-2 focus:outline-none focus:border-secondary transition-colors placeholder:text-outline cursor-target" placeholder="ENTER YOUR EMAIL" required type="email"/>
+<button class="magnetic bg-primary text-on-primary font-label-caps text-label-caps px-8 py-4 uppercase hover:bg-secondary transition-colors whitespace-nowrap cursor-target" type="submit">Request Early Access</button>
+</form>
+</div>
+<div class="md:col-span-6 h-[530px] md:h-[707px] w-full bg-surface-container border border-outline-variant relative overflow-hidden order-1 md:order-2" data-tilt>
+<img alt="Fashion aesthetic image" class="absolute inset-0 w-full h-[120%] -top-[10%] object-cover filter grayscale opacity-90 mix-blend-multiply" data-parallax="0.15" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8wvOfhpd-o6bUkEgeDhp7EG7qWDQX8Wk66LvVbXGB9eKgKx7RAJ1GXi-oEFP3JFlwS-P8s18MNaP57yFiCcUhSDwlm11kOfLhXIiN--k0zH7Y8LEfnZk_vlFvdt0WiOHTy0eLt9FgekALB-nfp_f6DwM5o9RQYORHZGlXr96z_YahMKfzeR1z-5uhcLMXS1C-BNHQVrFk3NOczK_PN0S20NYXi5k8edqkFXo3Y5S0nQKdD6UamjHGg6Q0slwduMe0Yh796BlRESty"/>
+<div class="absolute inset-0 border border-primary m-4 pointer-events-none"></div>
+<div class="absolute bottom-6 left-6 font-label-caps text-label-caps text-primary mix-blend-difference text-white/0">ED. 001 — ATELIER</div>
+</div>
+</div>
+<!-- scroll cue -->
+<div class="hidden md:flex items-center gap-3 mt-stack-lg max-w-[1440px] mx-auto" data-fade>
+<span class="material-symbols-outlined text-secondary animate-pulse">arrow_downward</span>
+<span class="font-label-caps text-label-caps text-outline uppercase">Scroll to enter</span>
+</div>
+</section>
+
+<!-- Marquee seam -->
+<div class="overflow-hidden border-b border-outline-variant bg-primary text-surface py-4 select-none">
+    <div class="marquee-track font-label-caps text-label-caps uppercase tracking-widest">
+        <span class="mx-8">No Ads</span><span class="mx-8 text-secondary-fixed-dim">✦</span>
+        <span class="mx-8">No Algorithm</span><span class="mx-8 text-secondary-fixed-dim">✦</span>
+        <span class="mx-8">Pure Signal</span><span class="mx-8 text-secondary-fixed-dim">✦</span>
+        <span class="mx-8">Own Your Circle</span><span class="mx-8 text-secondary-fixed-dim">✦</span>
+        <span class="mx-8">No Ads</span><span class="mx-8 text-secondary-fixed-dim">✦</span>
+        <span class="mx-8">No Algorithm</span><span class="mx-8 text-secondary-fixed-dim">✦</span>
+        <span class="mx-8">Pure Signal</span><span class="mx-8 text-secondary-fixed-dim">✦</span>
+        <span class="mx-8">Own Your Circle</span><span class="mx-8 text-secondary-fixed-dim">✦</span>
+    </div>
+</div>
+
+<!-- Section 2: The Core Contrast — scrollytelling word reveal -->
+<section id="contrast" class="py-stack-xl px-margin-mobile md:px-margin-desktop border-b border-outline-variant bg-surface-bright">
+<div class="max-w-4xl mx-auto text-center relative px-8 md:px-16">
+<span class="absolute top-0 left-0 font-headline-xl text-headline-xl text-secondary opacity-30 leading-none -mt-4">"</span>
+<blockquote class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-primary relative z-10 py-8" data-scroll-words>
+    63% of digital audiences are fatigued by hidden corporate sponsorships. 59% feel alienated by chaotic public algorithms. <span class="text-secondary">Refluenz removes the noise to bring back pure, high-fidelity content.</span>
+</blockquote>
+<span class="absolute bottom-0 right-0 font-headline-xl text-headline-xl text-secondary opacity-30 leading-none -mb-8">"</span>
+</div>
+</section>
+
+<!-- Section 3: Digital Atelier Preview -->
+<section id="atelier" class="py-stack-xl px-margin-mobile md:px-margin-desktop border-b border-outline-variant relative">
+<div class="max-w-[1440px] mx-auto">
+<div class="text-center mb-stack-xl">
+<h2 class="font-label-caps text-label-caps text-secondary mb-stack-sm tracking-widest uppercase" data-fade>The Interface</h2>
+<p class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-primary uppercase" data-split-lines>Digital Atelier Preview</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-0 border border-outline-variant bg-surface-container-lowest" data-fade data-atelier>
+<!-- Left Sidebar -->
+<div class="md:col-span-3 border-r border-outline-variant p-8 hidden md:block">
+<div class="w-16 h-16 rounded-full bg-surface-variant mb-8 overflow-hidden">
+<img alt="Creator avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuARcMd7p4KwaxCIOhDfmUaWX8-eEHbqgFSlmnDorqcJebI9tRYGu2MnXSWGPPdveeuMdv_yMUPnLIQ497vrCFCPcQyeQY-NI0JLmOa5tdJ5nTVoIwGrNSruXuHcpaPdoYDoP35HB4eGh-nUuY_BXXswJUK8R6vQjic1POHdJXe1u6aLfcxx13j2Va7xPsxc6N_IrRy-0e1Up7kmht3mGtCHuwcqNf7Id4pwrI9APsV5BvZ92t-rn1JZHVt0MgXB_PcC46U7oryYsWpp"/>
+</div>
+<div class="font-label-caps text-label-caps text-primary mb-1 uppercase">Elena V.</div>
+<div class="font-caption text-caption text-outline mb-8">Curator / Stylist</div>
+<ul class="space-y-1">
+<li><button type="button" data-tab="grid" class="w-full text-left font-label-caps text-label-caps text-primary border-l-2 border-secondary pl-4 py-1 uppercase transition-colors cursor-target">The Broadcast Grid</button></li>
+<li><button type="button" data-tab="inbox" class="w-full text-left flex items-center justify-between font-label-caps text-label-caps text-outline border-l-2 border-transparent pl-4 py-1 hover:text-primary transition-colors cursor-target uppercase">The VIP Priority Inbox <span data-unread class="bg-secondary text-on-secondary text-[10px] leading-none px-1.5 py-1 ml-2">2</span></button></li>
+<li><button type="button" data-tab="archive" class="w-full text-left font-label-caps text-label-caps text-outline border-l-2 border-transparent pl-4 py-1 hover:text-primary transition-colors cursor-target uppercase">Private Archive</button></li>
+</ul>
+<div class="mt-10 pt-6 border-t border-outline-variant font-caption text-caption text-outline uppercase">Live preview — try it</div>
+</div>
+<!-- Main Content -->
+<div class="md:col-span-9 p-8 md:p-16">
+<!-- Mobile tab strip -->
+<div class="flex md:hidden gap-2 mb-8 overflow-x-auto" data-lenis-prevent>
+<button type="button" data-tab="grid" class="font-label-caps text-label-caps uppercase whitespace-nowrap px-4 py-2 border border-primary bg-primary text-on-primary">Grid</button>
+<button type="button" data-tab="inbox" class="font-label-caps text-label-caps uppercase whitespace-nowrap px-4 py-2 border border-outline-variant text-outline">Inbox</button>
+<button type="button" data-tab="archive" class="font-label-caps text-label-caps uppercase whitespace-nowrap px-4 py-2 border border-outline-variant text-outline">Archive</button>
+</div>
+
+<div class="flex justify-between items-center mb-8 border-b border-outline-variant pb-4">
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile text-primary uppercase" data-panel-title>The Broadcast Grid</h3>
+<button type="button" data-filter-toggle title="Filter" class="material-symbols-outlined text-outline hover:text-primary transition-colors cursor-target">tune</button>
+</div>
+
+<!-- Filter chips (toggled by tune) -->
+<div data-filters class="hidden flex-wrap gap-2 mb-8">
+<button type="button" data-filter="all" class="font-label-caps text-label-caps uppercase px-4 py-2 border border-primary bg-primary text-on-primary cursor-target">All</button>
+<button type="button" data-filter="masterclass" class="font-label-caps text-label-caps uppercase px-4 py-2 border border-outline-variant text-outline hover:text-primary hover:border-primary transition-colors cursor-target">Masterclass</button>
+<button type="button" data-filter="guide" class="font-label-caps text-label-caps uppercase px-4 py-2 border border-outline-variant text-outline hover:text-primary hover:border-primary transition-colors cursor-target">Guide</button>
+<button type="button" data-filter="vip" class="font-label-caps text-label-caps uppercase px-4 py-2 border border-outline-variant text-outline hover:text-primary hover:border-primary transition-colors cursor-target">VIP</button>
+</div>
+
+<!-- PANEL: Broadcast Grid -->
+<div data-panel="grid">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8" data-grid>
+<!-- Card 1 -->
+<button type="button" class="group cursor-target text-left" data-card data-cat="masterclass"
+    data-title="Fall Lookbook '24" data-meta="Masterclass • 12 Min"
+    data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuAfEL7VovyLwvCGc-2-Zy6_BCasIvk_Q0ml6DXNbbY2oUaAKtxSeH2-RXnslS0maHnVGS8mr_UIeOUZEcbrNJirK5PZWSf-LgOJshwRuALjfJC9YywxULRREPdpmU-GsdivMFkU6sz7VqQVQFnwZU7iX_Kjr5vAY01PgyJuL7chf_SibI9Bs8-8mVj2iEvmStDL_VWrA4F8QeugD4eszLOn6_xtutqhIiFPqU69scC81IAcUgWijm0iXI9joi8dx0LfEX44dEzPX6XM"
+    data-desc="A frame-by-frame deconstruction of the season's defining silhouettes. Elena walks through fabric selection, structural tailoring, and the styling logic behind each look.">
+<div class="aspect-[3/4] bg-surface-variant mb-4 overflow-hidden border border-transparent group-hover:border-primary transition-colors">
+<img alt="Lookbook" class="w-full h-full object-cover grayscale mix-blend-multiply opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfEL7VovyLwvCGc-2-Zy6_BCasIvk_Q0ml6DXNbbY2oUaAKtxSeH2-RXnslS0maHnVGS8mr_UIeOUZEcbrNJirK5PZWSf-LgOJshwRuALjfJC9YywxULRREPdpmU-GsdivMFkU6sz7VqQVQFnwZU7iX_Kjr5vAY01PgyJuL7chf_SibI9Bs8-8mVj2iEvmStDL_VWrA4F8QeugD4eszLOn6_xtutqhIiFPqU69scC81IAcUgWijm0iXI9joi8dx0LfEX44dEzPX6XM"/>
+</div>
+<div class="font-label-caps text-label-caps text-primary mb-1 uppercase">Fall Lookbook '24</div>
+<div class="font-caption text-caption text-outline uppercase">Masterclass • 12 Min</div>
+</button>
+<!-- Card 2 -->
+<button type="button" class="group cursor-target text-left" data-card data-cat="guide"
+    data-title="Skincare Architect" data-meta="Guide • 5 Min Read"
+    data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuCo8P8rAnra1wyfxwK2qIkFuNnuwchnXm-G8rOGmZorC4XQBGVamjPXD80RC6ySB-DN8ZNMicVneEBqDo8T3u551jKrhf_b5i_xjd9zuCqCXT4KJEfuqGjtxoBmHuIXZXG0Y8ReE0bKs8PB9xR5SHDPkA20vzOdaje59ikWH3DmXYvNcTk_oM6ci9leZXm4ilBV2wyUX6Poo-VrxA08PkNmM8UPaxwmB6uLnhTAbeBv_T61HZvzuYcQQceXTQaVyZxVo5B3Muleow8_"
+    data-desc="The structural approach to a minimalist routine — what each step actually does, the order that matters, and the three products Elena never travels without.">
+<div class="aspect-[3/4] bg-surface-variant mb-4 overflow-hidden border border-transparent group-hover:border-primary transition-colors">
+<img alt="Beauty flatlay" class="w-full h-full object-cover grayscale mix-blend-multiply opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCo8P8rAnra1wyfxwK2qIkFuNnuwchnXm-G8rOGmZorC4XQBGVamjPXD80RC6ySB-DN8ZNMicVneEBqDo8T3u551jKrhf_b5i_xjd9zuCqCXT4KJEfuqGjtxoBmHuIXZXG0Y8ReE0bKs8PB9xR5SHDPkA20vzOdaje59ikWH3DmXYvNcTk_oM6ci9leZXm4ilBV2wyUX6Poo-VrxA08PkNmM8UPaxwmB6uLnhTAbeBv_T61HZvzuYcQQceXTQaVyZxVo5B3Muleow8_"/>
+</div>
+<div class="font-label-caps text-label-caps text-primary mb-1 uppercase">Skincare Architect</div>
+<div class="font-caption text-caption text-outline uppercase">Guide • 5 Min Read</div>
+</button>
+<!-- Card 3 -->
+<button type="button" class="group cursor-target text-left" data-card data-cat="vip" data-locked
+    data-title="VIP Consulting" data-meta="Direct Access"
+    data-desc="One-to-one styling and brand consultation, reserved for founding circle members. Unlock direct access by joining the Pioneer Queue.">
+<div class="aspect-[3/4] bg-surface-variant mb-4 overflow-hidden border border-transparent group-hover:border-primary transition-colors flex items-center justify-center">
+<div class="text-center px-6">
+<span class="material-symbols-outlined text-outline text-4xl mb-4 group-hover:text-secondary transition-colors">lock</span>
+<div class="font-label-caps text-label-caps text-primary uppercase">Exclusive Access</div>
+</div>
+</div>
+<div class="font-label-caps text-label-caps text-primary mb-1 uppercase">VIP Consulting</div>
+<div class="font-caption text-caption text-outline uppercase">Direct Access</div>
+</button>
+</div>
+<p data-grid-empty class="hidden font-body-md text-body-md text-outline py-12 text-center">No entries in this category yet.</p>
+</div>
+
+<!-- PANEL: VIP Inbox -->
+<div data-panel="inbox" hidden>
+<div class="divide-y divide-outline-variant border-t border-outline-variant">
+<div data-msg data-unread-msg class="group cursor-target">
+<button type="button" data-msg-toggle class="w-full flex items-center gap-4 py-5 text-left">
+<span class="w-2 h-2 bg-secondary shrink-0" data-dot></span>
+<div class="flex-grow">
+<div class="font-label-caps text-label-caps text-primary uppercase">The Atelier Team</div>
+<div class="font-caption text-caption text-outline">Welcome to your priority channel — no algorithms, just signal.</div>
+</div>
+<span class="font-caption text-caption text-outline whitespace-nowrap">2h</span>
+<span class="material-symbols-outlined text-outline transition-transform" data-chevron>expand_more</span>
+</button>
+<div data-msg-body hidden class="pb-6 pl-6 font-body-md text-body-md text-on-surface-variant">
+This inbox bypasses public comment noise entirely. Replies here go straight to Elena's core circle — every message is read in order of arrival.
+<form data-reply class="flex gap-3 mt-4">
+<input type="text" placeholder="WRITE A REPLY" class="flex-grow bg-transparent border-b border-primary text-primary font-label-caps text-label-caps py-2 px-1 focus:outline-none focus:border-secondary transition-colors placeholder:text-outline cursor-target"/>
+<button type="submit" class="bg-primary text-on-primary font-label-caps text-label-caps px-5 py-2 uppercase hover:bg-secondary transition-colors cursor-target">Send</button>
+</form>
+</div>
+</div>
+<div data-msg data-unread-msg class="group cursor-target">
+<button type="button" data-msg-toggle class="w-full flex items-center gap-4 py-5 text-left">
+<span class="w-2 h-2 bg-secondary shrink-0" data-dot></span>
+<div class="flex-grow">
+<div class="font-label-caps text-label-caps text-primary uppercase">Elena V.</div>
+<div class="font-caption text-caption text-outline">New masterclass drops Friday — early access for the circle.</div>
+</div>
+<span class="font-caption text-caption text-outline whitespace-nowrap">5h</span>
+<span class="material-symbols-outlined text-outline transition-transform" data-chevron>expand_more</span>
+</button>
+<div data-msg-body hidden class="pb-6 pl-6 font-body-md text-body-md text-on-surface-variant">
+I'm finishing a deep-dive on structural tailoring. Circle members get it 48 hours before anyone else — reply here if you want a topic covered.
+<form data-reply class="flex gap-3 mt-4">
+<input type="text" placeholder="WRITE A REPLY" class="flex-grow bg-transparent border-b border-primary text-primary font-label-caps text-label-caps py-2 px-1 focus:outline-none focus:border-secondary transition-colors placeholder:text-outline cursor-target"/>
+<button type="submit" class="bg-primary text-on-primary font-label-caps text-label-caps px-5 py-2 uppercase hover:bg-secondary transition-colors cursor-target">Send</button>
+</form>
+</div>
+</div>
+<div data-msg class="group cursor-target">
+<button type="button" data-msg-toggle class="w-full flex items-center gap-4 py-5 text-left">
+<span class="w-2 h-2 bg-transparent shrink-0" data-dot></span>
+<div class="flex-grow">
+<div class="font-label-caps text-label-caps text-primary uppercase">Studio Notes</div>
+<div class="font-caption text-caption text-outline">Your Private Archive now holds 14 saved files.</div>
+</div>
+<span class="font-caption text-caption text-outline whitespace-nowrap">1d</span>
+<span class="material-symbols-outlined text-outline transition-transform" data-chevron>expand_more</span>
+</button>
+<div data-msg-body hidden class="pb-6 pl-6 font-body-md text-body-md text-on-surface-variant">
+Everything you bookmark lives in your Private Archive, owned by you — exportable any time. Never held hostage by a platform.
+</div>
+</div>
+</div>
+</div>
+
+<!-- PANEL: Private Archive -->
+<div data-panel="archive" hidden>
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-px bg-outline-variant border border-outline-variant">
+<div class="aspect-square bg-surface-container-lowest overflow-hidden cursor-target group">
+<img alt="Saved" class="w-full h-full object-cover grayscale mix-blend-multiply opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfEL7VovyLwvCGc-2-Zy6_BCasIvk_Q0ml6DXNbbY2oUaAKtxSeH2-RXnslS0maHnVGS8mr_UIeOUZEcbrNJirK5PZWSf-LgOJshwRuALjfJC9YywxULRREPdpmU-GsdivMFkU6sz7VqQVQFnwZU7iX_Kjr5vAY01PgyJuL7chf_SibI9Bs8-8mVj2iEvmStDL_VWrA4F8QeugD4eszLOn6_xtutqhIiFPqU69scC81IAcUgWijm0iXI9joi8dx0LfEX44dEzPX6XM"/>
+</div>
+<div class="aspect-square bg-surface-container-lowest overflow-hidden cursor-target group">
+<img alt="Saved" class="w-full h-full object-cover grayscale mix-blend-multiply opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCo8P8rAnra1wyfxwK2qIkFuNnuwchnXm-G8rOGmZorC4XQBGVamjPXD80RC6ySB-DN8ZNMicVneEBqDo8T3u551jKrhf_b5i_xjd9zuCqCXT4KJEfuqGjtxoBmHuIXZXG0Y8ReE0bKs8PB9xR5SHDPkA20vzOdaje59ikWH3DmXYvNcTk_oM6ci9leZXm4ilBV2wyUX6Poo-VrxA08PkNmM8UPaxwmB6uLnhTAbeBv_T61HZvzuYcQQceXTQaVyZxVo5B3Muleow8_"/>
+</div>
+<div class="aspect-square bg-surface-container-lowest overflow-hidden cursor-target group">
+<img alt="Saved" class="w-full h-full object-cover grayscale mix-blend-multiply opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuARcMd7p4KwaxCIOhDfmUaWX8-eEHbqgFSlmnDorqcJebI9tRYGu2MnXSWGPPdveeuMdv_yMUPnLIQ497vrCFCPcQyeQY-NI0JLmOa5tdJ5nTVoIwGrNSruXuHcpaPdoYDoP35HB4eGh-nUuY_BXXswJUK8R6vQjic1POHdJXe1u6aLfcxx13j2Va7xPsxc6N_IrRy-0e1Up7kmht3mGtCHuwcqNf7Id4pwrI9APsV5BvZ92t-rn1JZHVt0MgXB_PcC46U7oryYsWpp"/>
+</div>
+<div class="aspect-square bg-surface-container-lowest overflow-hidden cursor-target group">
+<img alt="Saved" class="w-full h-full object-cover grayscale mix-blend-multiply opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8wvOfhpd-o6bUkEgeDhp7EG7qWDQX8Wk66LvVbXGB9eKgKx7RAJ1GXi-oEFP3JFlwS-P8s18MNaP57yFiCcUhSDwlm11kOfLhXIiN--k0zH7Y8LEfnZk_vlFvdt0WiOHTy0eLt9FgekALB-nfp_f6DwM5o9RQYORHZGlXr96z_YahMKfzeR1z-5uhcLMXS1C-BNHQVrFk3NOczK_PN0S20NYXi5k8edqkFXo3Y5S0nQKdD6UamjHGg6Q0slwduMe0Yh796BlRESty"/>
+</div>
+<div class="aspect-square bg-primary flex items-center justify-center cursor-target">
+<div class="text-center px-2"><span class="material-symbols-outlined text-secondary-fixed-dim mb-1">add</span><div class="font-label-caps text-[10px] text-surface uppercase">Save more</div></div>
+</div>
+<div class="aspect-square bg-surface-container-lowest flex items-center justify-center cursor-target group">
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">lock</span>
+</div>
+</div>
+<div class="font-caption text-caption text-outline uppercase mt-4">14 files • Owned by you • Export anytime</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- Section 4: The Two-Sided Gateway -->
+<section id="gateway" class="py-stack-xl px-margin-mobile md:px-margin-desktop border-b border-outline-variant">
+<div class="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-0 border border-outline-variant">
+<!-- Fan Side -->
+<div class="p-8 md:p-16 border-b md:border-b-0 md:border-r border-outline-variant hover-bronze-shift transition-colors" data-gate="left">
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-primary mb-stack-md uppercase">Step Inside<br/>The Circle</h3>
+<ul class="space-y-6">
+<li class="flex items-start gap-4" data-gate-item><span class="material-symbols-outlined text-secondary mt-1">diamond</span><div><div class="font-label-caps text-label-caps text-primary mb-1 uppercase">Daily Files</div><div class="font-body-md text-body-md text-on-surface-variant">Unfiltered access to the daily routines, references, and raw thoughts of elite creators.</div></div></li>
+<li class="flex items-start gap-4" data-gate-item><span class="material-symbols-outlined text-secondary mt-1">school</span><div><div class="font-label-caps text-label-caps text-primary mb-1 uppercase">Masterclasses</div><div class="font-body-md text-body-md text-on-surface-variant">Deep-dive structural knowledge on aesthetic curation, personal branding, and wellness.</div></div></li>
+<li class="flex items-start gap-4" data-gate-item><span class="material-symbols-outlined text-secondary mt-1">forum</span><div><div class="font-label-caps text-label-caps text-primary mb-1 uppercase">Direct Interaction</div><div class="font-body-md text-body-md text-on-surface-variant">Priority communication channels bypassing the noise of public comment sections.</div></div></li>
+</ul>
+</div>
+<!-- Creator Side -->
+<div class="p-8 md:p-16 bg-primary text-surface hover:bg-[#111111] transition-colors" data-gate="right">
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-surface mb-stack-md uppercase">Reclaim Your<br/>Autonomy</h3>
+<ul class="space-y-6">
+<li class="flex items-start gap-4" data-gate-item><span class="material-symbols-outlined text-secondary mt-1">database</span><div><div class="font-label-caps text-label-caps text-surface mb-1 uppercase">Audience Data</div><div class="font-body-md text-body-md text-tertiary-fixed-dim">You own your mailing list and subscriber data. Never be held hostage by algorithm shifts.</div></div></li>
+<li class="flex items-start gap-4" data-gate-item><span class="material-symbols-outlined text-secondary mt-1">verified_user</span><div><div class="font-label-caps text-label-caps text-surface mb-1 uppercase">Brand-Safe Environment</div><div class="font-body-md text-body-md text-tertiary-fixed-dim">A pristine, ad-free canvas that respects the premium nature of your output.</div></div></li>
+<li class="flex items-start gap-4" data-gate-item><span class="material-symbols-outlined text-secondary mt-1">account_balance_wallet</span><div><div class="font-label-caps text-label-caps text-surface mb-1 uppercase">Subscription Income</div><div class="font-body-md text-body-md text-tertiary-fixed-dim">Predictable, recurring revenue directly from your most dedicated circle.</div></div></li>
+</ul>
+</div>
+</div>
+</section>
+
+<!-- Section 5: The Final Urgency Frame -->
+<section id="queue" class="py-stack-xl px-margin-mobile md:px-margin-desktop bg-surface-container">
+<div class="max-w-2xl mx-auto text-center">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-xl md:text-headline-xl text-primary mb-stack-sm uppercase" data-split-lines>The Pioneer Queue</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mb-stack-lg max-w-lg mx-auto" data-fade>Access is granted sequentially. Founding members bypass future wait times and unlock exclusive first-month offers and private access windows.</p>
+<form class="flex flex-col sm:flex-row gap-4 justify-center" data-fade data-form>
+<input class="w-full sm:w-64 bg-transparent border-b border-primary text-primary font-label-caps text-label-caps py-3 px-2 focus:outline-none focus:border-secondary transition-colors placeholder:text-outline text-center sm:text-left cursor-target" placeholder="ENTER YOUR EMAIL" required type="email"/>
+<button class="magnetic bg-primary text-on-primary font-label-caps text-label-caps px-8 py-4 uppercase hover:bg-secondary transition-colors cursor-target" type="submit">Join The Queue</button>
+</form>
+</div>
+</section>
+
+<!-- Section 6: Infinite Album — endless editorial gallery -->
+<section id="album" class="py-stack-xl border-b border-outline-variant overflow-hidden bg-surface-bright">
+<div class="px-margin-mobile md:px-margin-desktop mb-stack-lg flex items-end justify-between max-w-[1440px] mx-auto">
+<div>
+<h2 class="font-label-caps text-label-caps text-secondary mb-stack-sm tracking-widest uppercase" data-fade>The Archive</h2>
+<p class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-primary uppercase" data-split-lines>An Endless Atelier</p>
+</div>
+<span class="hidden md:inline font-caption text-caption text-outline uppercase" data-fade>∞ Curated daily</span>
+</div>
+
+<!-- Row 1 — scrolls left -->
+<div class="album-rail flex gap-6 mb-6" data-album-dir="-1">
+<!-- 6 unique tiles; JS clones the set for a seamless loop -->
+<figure class="album-tile group relative shrink-0 w-[260px] md:w-[340px] aspect-[3/4] overflow-hidden border border-outline-variant bg-surface-variant cursor-target">
+<img alt="Editorial" class="w-full h-full object-cover grayscale mix-blend-multiply opacity-85 group-hover:opacity-100 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8wvOfhpd-o6bUkEgeDhp7EG7qWDQX8Wk66LvVbXGB9eKgKx7RAJ1GXi-oEFP3JFlwS-P8s18MNaP57yFiCcUhSDwlm11kOfLhXIiN--k0zH7Y8LEfnZk_vlFvdt0WiOHTy0eLt9FgekALB-nfp_f6DwM5o9RQYORHZGlXr96z_YahMKfzeR1z-5uhcLMXS1C-BNHQVrFk3NOczK_PN0S20NYXi5k8edqkFXo3Y5S0nQKdD6UamjHGg6Q0slwduMe0Yh796BlRESty"/>
+<figcaption class="absolute bottom-3 left-3 font-label-caps text-label-caps text-white mix-blend-difference uppercase opacity-0 group-hover:opacity-100 transition-opacity">Atelier 001</figcaption>
+</figure>
+<figure class="album-tile group relative shrink-0 w-[260px] md:w-[340px] aspect-[3/4] overflow-hidden border border-outline-variant bg-surface-variant cursor-target">
+<img alt="Lookbook" class="w-full h-full object-cover grayscale mix-blend-multiply opacity-85 group-hover:opacity-100 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfEL7VovyLwvCGc-2-Zy6_BCasIvk_Q0ml6DXNbbY2oUaAKtxSeH2-RXnslS0maHnVGS8mr_UIeOUZEcbrNJirK5PZWSf-LgOJshwRuALjfJC9YywxULRREPdpmU-GsdivMFkU6sz7VqQVQFnwZU7iX_Kjr5vAY01PgyJuL7chf_SibI9Bs8-8mVj2iEvmStDL_VWrA4F8QeugD4eszLOn6_xtutqhIiFPqU69scC81IAcUgWijm0iXI9joi8dx0LfEX44dEzPX6XM"/>
+<figcaption class="absolute bottom-3 left-3 font-label-caps text-label-caps text-white mix-blend-difference uppercase opacity-0 group-hover:opacity-100 transition-opacity">Fall '24</figcaption>
+</figure>
+<figure class="album-tile group relative shrink-0 w-[260px] md:w-[340px] aspect-[3/4] overflow-hidden border border-outline-variant bg-surface-variant cursor-target">
+<img alt="Skincare" class="w-full h-full object-cover grayscale mix-blend-multiply opacity-85 group-hover:opacity-100 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCo8P8rAnra1wyfxwK2qIkFuNnuwchnXm-G8rOGmZorC4XQBGVamjPXD80RC6ySB-DN8ZNMicVneEBqDo8T3u551jKrhf_b5i_xjd9zuCqCXT4KJEfuqGjtxoBmHuIXZXG0Y8ReE0bKs8PB9xR5SHDPkA20vzOdaje59ikWH3DmXYvNcTk_oM6ci9leZXm4ilBV2wyUX6Poo-VrxA08PkNmM8UPaxwmB6uLnhTAbeBv_T61HZvzuYcQQceXTQaVyZxVo5B3Muleow8_"/>
+<figcaption class="absolute bottom-3 left-3 font-label-caps text-label-caps text-white mix-blend-difference uppercase opacity-0 group-hover:opacity-100 transition-opacity">Skincare</figcaption>
+</figure>
+<figure class="album-tile group relative shrink-0 w-[260px] md:w-[340px] aspect-[3/4] overflow-hidden border border-outline-variant bg-surface-variant cursor-target">
+<img alt="Portrait" class="w-full h-full object-cover grayscale mix-blend-multiply opacity-85 group-hover:opacity-100 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuARcMd7p4KwaxCIOhDfmUaWX8-eEHbqgFSlmnDorqcJebI9tRYGu2MnXSWGPPdveeuMdv_yMUPnLIQ497vrCFCPcQyeQY-NI0JLmOa5tdJ5nTVoIwGrNSruXuHcpaPdoYDoP35HB4eGh-nUuY_BXXswJUK8R6vQjic1POHdJXe1u6aLfcxx13j2Va7xPsxc6N_IrRy-0e1Up7kmht3mGtCHuwcqNf7Id4pwrI9APsV5BvZ92t-rn1JZHVt0MgXB_PcC46U7oryYsWpp"/>
+<figcaption class="absolute bottom-3 left-3 font-label-caps text-label-caps text-white mix-blend-difference uppercase opacity-0 group-hover:opacity-100 transition-opacity">Elena V.</figcaption>
+</figure>
+<figure class="album-tile group relative shrink-0 w-[260px] md:w-[340px] aspect-[3/4] overflow-hidden border border-outline-variant bg-primary flex items-center justify-center cursor-target">
+<div class="text-center px-6"><span class="material-symbols-outlined text-secondary-fixed-dim text-4xl mb-3">lock</span><div class="font-label-caps text-label-caps text-surface uppercase">VIP Only</div></div>
+</figure>
+<figure class="album-tile group relative shrink-0 w-[260px] md:w-[340px] aspect-[3/4] overflow-hidden border border-outline-variant bg-surface-variant cursor-target">
+<img alt="Editorial" class="w-full h-full object-cover grayscale mix-blend-multiply opacity-85 group-hover:opacity-100 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8wvOfhpd-o6bUkEgeDhp7EG7qWDQX8Wk66LvVbXGB9eKgKx7RAJ1GXi-oEFP3JFlwS-P8s18MNaP57yFiCcUhSDwlm11kOfLhXIiN--k0zH7Y8LEfnZk_vlFvdt0WiOHTy0eLt9FgekALB-nfp_f6DwM5o9RQYORHZGlXr96z_YahMKfzeR1z-5uhcLMXS1C-BNHQVrFk3NOczK_PN0S20NYXi5k8edqkFXo3Y5S0nQKdD6UamjHGg6Q0slwduMe0Yh796BlRESty"/>
+<figcaption class="absolute bottom-3 left-3 font-label-caps text-label-caps text-white mix-blend-difference uppercase opacity-0 group-hover:opacity-100 transition-opacity">Atelier 006</figcaption>
+</figure>
+</div>
+
+<!-- Row 2 — scrolls right (opposite direction) -->
+<div class="album-rail flex gap-6" data-album-dir="1">
+<figure class="album-tile group relative shrink-0 w-[260px] md:w-[340px] aspect-[3/4] overflow-hidden border border-outline-variant bg-surface-variant cursor-target">
+<img alt="Skincare" class="w-full h-full object-cover grayscale mix-blend-multiply opacity-85 group-hover:opacity-100 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCo8P8rAnra1wyfxwK2qIkFuNnuwchnXm-G8rOGmZorC4XQBGVamjPXD80RC6ySB-DN8ZNMicVneEBqDo8T3u551jKrhf_b5i_xjd9zuCqCXT4KJEfuqGjtxoBmHuIXZXG0Y8ReE0bKs8PB9xR5SHDPkA20vzOdaje59ikWH3DmXYvNcTk_oM6ci9leZXm4ilBV2wyUX6Poo-VrxA08PkNmM8UPaxwmB6uLnhTAbeBv_T61HZvzuYcQQceXTQaVyZxVo5B3Muleow8_"/>
+<figcaption class="absolute bottom-3 left-3 font-label-caps text-label-caps text-white mix-blend-difference uppercase opacity-0 group-hover:opacity-100 transition-opacity">Flatlay</figcaption>
+</figure>
+<figure class="album-tile group relative shrink-0 w-[260px] md:w-[340px] aspect-[3/4] overflow-hidden border border-outline-variant bg-surface-variant cursor-target">
+<img alt="Portrait" class="w-full h-full object-cover grayscale mix-blend-multiply opacity-85 group-hover:opacity-100 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuARcMd7p4KwaxCIOhDfmUaWX8-eEHbqgFSlmnDorqcJebI9tRYGu2MnXSWGPPdveeuMdv_yMUPnLIQ497vrCFCPcQyeQY-NI0JLmOa5tdJ5nTVoIwGrNSruXuHcpaPdoYDoP35HB4eGh-nUuY_BXXswJUK8R6vQjic1POHdJXe1u6aLfcxx13j2Va7xPsxc6N_IrRy-0e1Up7kmht3mGtCHuwcqNf7Id4pwrI9APsV5BvZ92t-rn1JZHVt0MgXB_PcC46U7oryYsWpp"/>
+<figcaption class="absolute bottom-3 left-3 font-label-caps text-label-caps text-white mix-blend-difference uppercase opacity-0 group-hover:opacity-100 transition-opacity">Portrait</figcaption>
+</figure>
+<figure class="album-tile group relative shrink-0 w-[260px] md:w-[340px] aspect-[3/4] overflow-hidden border border-outline-variant bg-surface-variant cursor-target">
+<img alt="Editorial" class="w-full h-full object-cover grayscale mix-blend-multiply opacity-85 group-hover:opacity-100 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8wvOfhpd-o6bUkEgeDhp7EG7qWDQX8Wk66LvVbXGB9eKgKx7RAJ1GXi-oEFP3JFlwS-P8s18MNaP57yFiCcUhSDwlm11kOfLhXIiN--k0zH7Y8LEfnZk_vlFvdt0WiOHTy0eLt9FgekALB-nfp_f6DwM5o9RQYORHZGlXr96z_YahMKfzeR1z-5uhcLMXS1C-BNHQVrFk3NOczK_PN0S20NYXi5k8edqkFXo3Y5S0nQKdD6UamjHGg6Q0slwduMe0Yh796BlRESty"/>
+<figcaption class="absolute bottom-3 left-3 font-label-caps text-label-caps text-white mix-blend-difference uppercase opacity-0 group-hover:opacity-100 transition-opacity">Atelier 002</figcaption>
+</figure>
+<figure class="album-tile group relative shrink-0 w-[260px] md:w-[340px] aspect-[3/4] overflow-hidden border border-outline-variant bg-surface-variant cursor-target">
+<img alt="Lookbook" class="w-full h-full object-cover grayscale mix-blend-multiply opacity-85 group-hover:opacity-100 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfEL7VovyLwvCGc-2-Zy6_BCasIvk_Q0ml6DXNbbY2oUaAKtxSeH2-RXnslS0maHnVGS8mr_UIeOUZEcbrNJirK5PZWSf-LgOJshwRuALjfJC9YywxULRREPdpmU-GsdivMFkU6sz7VqQVQFnwZU7iX_Kjr5vAY01PgyJuL7chf_SibI9Bs8-8mVj2iEvmStDL_VWrA4F8QeugD4eszLOn6_xtutqhIiFPqU69scC81IAcUgWijm0iXI9joi8dx0LfEX44dEzPX6XM"/>
+<figcaption class="absolute bottom-3 left-3 font-label-caps text-label-caps text-white mix-blend-difference uppercase opacity-0 group-hover:opacity-100 transition-opacity">Fall '24</figcaption>
+</figure>
+<figure class="album-tile group relative shrink-0 w-[260px] md:w-[340px] aspect-[3/4] overflow-hidden border border-outline-variant bg-surface-variant cursor-target">
+<img alt="Editorial" class="w-full h-full object-cover grayscale mix-blend-multiply opacity-85 group-hover:opacity-100 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8wvOfhpd-o6bUkEgeDhp7EG7qWDQX8Wk66LvVbXGB9eKgKx7RAJ1GXi-oEFP3JFlwS-P8s18MNaP57yFiCcUhSDwlm11kOfLhXIiN--k0zH7Y8LEfnZk_vlFvdt0WiOHTy0eLt9FgekALB-nfp_f6DwM5o9RQYORHZGlXr96z_YahMKfzeR1z-5uhcLMXS1C-BNHQVrFk3NOczK_PN0S20NYXi5k8edqkFXo3Y5S0nQKdD6UamjHGg6Q0slwduMe0Yh796BlRESty"/>
+<figcaption class="absolute bottom-3 left-3 font-label-caps text-label-caps text-white mix-blend-difference uppercase opacity-0 group-hover:opacity-100 transition-opacity">Atelier 003</figcaption>
+</figure>
+<figure class="album-tile group relative shrink-0 w-[260px] md:w-[340px] aspect-[3/4] overflow-hidden border border-outline-variant bg-surface-variant cursor-target">
+<img alt="Skincare" class="w-full h-full object-cover grayscale mix-blend-multiply opacity-85 group-hover:opacity-100 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCo8P8rAnra1wyfxwK2qIkFuNnuwchnXm-G8rOGmZorC4XQBGVamjPXD80RC6ySB-DN8ZNMicVneEBqDo8T3u551jKrhf_b5i_xjd9zuCqCXT4KJEfuqGjtxoBmHuIXZXG0Y8ReE0bKs8PB9xR5SHDPkA20vzOdaje59ikWH3DmXYvNcTk_oM6ci9leZXm4ilBV2wyUX6Poo-VrxA08PkNmM8UPaxwmB6uLnhTAbeBv_T61HZvzuYcQQceXTQaVyZxVo5B3Muleow8_"/>
+<figcaption class="absolute bottom-3 left-3 font-label-caps text-label-caps text-white mix-blend-difference uppercase opacity-0 group-hover:opacity-100 transition-opacity">Flatlay</figcaption>
+</figure>
+</div>
+</section>
+</main>
+
+<!-- Atelier detail modal -->
+<div id="atelier-modal" class="fixed inset-0 z-[70] hidden items-center justify-center p-margin-mobile md:p-margin-desktop">
+<div data-modal-overlay class="absolute inset-0 bg-primary/70 backdrop-blur-sm"></div>
+<div data-modal-card class="relative bg-surface border border-primary max-w-3xl w-full grid grid-cols-1 md:grid-cols-2 max-h-[85vh] overflow-hidden">
+<div class="bg-surface-variant overflow-hidden hidden md:block" data-modal-imgwrap>
+<img data-modal-img alt="" class="w-full h-full object-cover grayscale mix-blend-multiply"/>
+</div>
+<div data-modal-locked-art class="hidden md:flex items-center justify-center bg-primary"><span class="material-symbols-outlined text-secondary-fixed-dim text-6xl">lock</span></div>
+<div class="p-8 md:p-12 flex flex-col">
+<button type="button" data-modal-close class="self-end material-symbols-outlined text-outline hover:text-primary transition-colors cursor-target mb-4">close</button>
+<div data-modal-meta class="font-label-caps text-label-caps text-secondary uppercase mb-stack-sm"></div>
+<h3 data-modal-title class="font-headline-lg-mobile text-headline-lg-mobile text-primary uppercase mb-stack-md"></h3>
+<p data-modal-desc class="font-body-md text-body-md text-on-surface-variant mb-stack-lg flex-grow overflow-y-auto" data-lenis-prevent></p>
+<button type="button" data-modal-cta class="bg-primary text-on-primary font-label-caps text-label-caps px-8 py-4 uppercase hover:bg-secondary transition-colors cursor-target w-full">Open Entry</button>
+</div>
+</div>
+</div>
+
+<!-- Footer -->
+<footer class="bg-surface border-t border-outline-variant w-full flex flex-col items-center gap-stack-sm py-stack-lg px-margin-mobile">
+<div class="font-label-caps text-label-caps tracking-widest text-primary uppercase mb-4">REFLUENZ</div>
+<div class="flex gap-8 mb-4">
+<a class="font-caption text-caption text-on-surface-variant hover:text-secondary transition-colors uppercase cursor-target" href="#">PRIVACY</a>
+<a class="font-caption text-caption text-on-surface-variant hover:text-secondary transition-colors uppercase cursor-target" href="#">TERMS</a>
+<a class="font-caption text-caption text-on-surface-variant hover:text-secondary transition-colors uppercase cursor-target" href="#">MANIFESTO</a>
+</div>
+<div class="font-caption text-caption text-on-surface-variant uppercase">© 2024 REFLUENZ. ALL RIGHTS RESERVED.</div>
+</footer>
+
+<!-- BottomNavBar (Mobile only) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 flex justify-around items-center h-16 bg-surface border-t border-outline-variant">
+<a class="flex flex-col items-center justify-center text-primary font-bold scale-95 active:scale-90 transition-transform" href="#hero"><span class="material-symbols-outlined fill-icon mb-1">home</span><span class="font-label-caps text-label-caps uppercase text-[10px]">HOME</span></a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary scale-95 active:scale-90 transition-transform" href="#atelier"><span class="material-symbols-outlined mb-1">palette</span><span class="font-label-caps text-label-caps uppercase text-[10px]">ATELIER</span></a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary scale-95 active:scale-90 transition-transform" href="#gateway"><span class="material-symbols-outlined mb-1">group</span><span class="font-label-caps text-label-caps uppercase text-[10px]">CIRCLE</span></a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary scale-95 active:scale-90 transition-transform" href="#queue"><span class="material-symbols-outlined mb-1">format_list_numbered</span><span class="font-label-caps text-label-caps uppercase text-[10px]">QUEUE</span></a>
+</nav>
+
+<script>
+(function () {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+    /* ---------------------------------------------------------------
+       1. LENIS SMOOTH SCROLL  +  GSAP ScrollTrigger sync
+    ----------------------------------------------------------------*/
+    gsap.registerPlugin(ScrollTrigger);
+
+    let lenis;
+    if (!reduceMotion) {
+        lenis = new Lenis({
+            duration: 1.15,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            smoothWheel: true,
+            wheelMultiplier: 1,
+            touchMultiplier: 1.5,
+        });
+
+        lenis.on('scroll', ScrollTrigger.update);
+        gsap.ticker.add((time) => lenis.raf(time * 1000));
+        gsap.ticker.lagSmoothing(0);
+    }
+
+    /* Anchor links → Lenis smooth scroll */
+    document.querySelectorAll('a[href^="#"]').forEach((a) => {
+        a.addEventListener('click', (e) => {
+            const id = a.getAttribute('href');
+            if (id.length < 2) return;
+            const target = document.querySelector(id);
+            if (!target) return;
+            e.preventDefault();
+            if (lenis) lenis.scrollTo(target, { offset: -80 });
+            else target.scrollIntoView({ behavior: 'smooth' });
+        });
+    });
+
+    /* ---------------------------------------------------------------
+       2. SCROLL PROGRESS BAR
+    ----------------------------------------------------------------*/
+    const bar = document.getElementById('scroll-progress');
+    const updateBar = () => {
+        const h = document.documentElement.scrollHeight - window.innerHeight;
+        const p = h > 0 ? (window.scrollY / h) * 100 : 0;
+        bar.style.width = p + '%';
+    };
+    (lenis ? lenis.on('scroll', updateBar) : window.addEventListener('scroll', updateBar, { passive: true }));
+    updateBar();
+
+    /* ---------------------------------------------------------------
+       3. HIDE / SHOW TOPBAR ON SCROLL DIRECTION
+    ----------------------------------------------------------------*/
+    const topbar = document.getElementById('topbar');
+    let lastY = 0;
+    const onDir = (y) => {
+        if (y > lastY && y > 200) topbar.style.transform = 'translateY(-100%)';
+        else topbar.style.transform = 'translateY(0)';
+        lastY = y;
+    };
+    (lenis ? lenis.on('scroll', ({ scroll }) => onDir(scroll)) : window.addEventListener('scroll', () => onDir(window.scrollY), { passive: true }));
+
+    /* ---------------------------------------------------------------
+       4. CUSTOM CURSOR (desktop only)
+    ----------------------------------------------------------------*/
+    if (fine && !reduceMotion) {
+        const dot = document.getElementById('cursor');
+        const ring = document.getElementById('cursor-ring');
+        let mx = window.innerWidth / 2, my = window.innerHeight / 2;
+        let rx = mx, ry = my;
+        window.addEventListener('mousemove', (e) => { mx = e.clientX; my = e.clientY; });
+        const renderCursor = () => {
+            dot.style.left = mx + 'px'; dot.style.top = my + 'px';
+            rx += (mx - rx) * 0.18; ry += (my - ry) * 0.18;
+            ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+            requestAnimationFrame(renderCursor);
+        };
+        renderCursor();
+        const setHover = (state) => ring.classList.toggle('hovering', state);
+        document.querySelectorAll('.cursor-target, a, button, input, [data-card]').forEach((el) => {
+            el.addEventListener('mouseenter', () => setHover(true));
+            el.addEventListener('mouseleave', () => setHover(false));
+        });
+    }
+
+    /* ---------------------------------------------------------------
+       5. MAGNETIC BUTTONS
+    ----------------------------------------------------------------*/
+    if (fine && !reduceMotion) {
+        document.querySelectorAll('.magnetic').forEach((el) => {
+            el.addEventListener('mousemove', (e) => {
+                const r = el.getBoundingClientRect();
+                const x = e.clientX - r.left - r.width / 2;
+                const y = e.clientY - r.top - r.height / 2;
+                gsap.to(el, { x: x * 0.35, y: y * 0.45, duration: 0.4, ease: 'power3.out' });
+            });
+            el.addEventListener('mouseleave', () => {
+                gsap.to(el, { x: 0, y: 0, duration: 0.6, ease: 'elastic.out(1, 0.4)' });
+            });
+        });
+    }
+
+    /* ---------------------------------------------------------------
+       6. SPLIT HEADINGS INTO LINES / WORDS (for masked reveal)
+    ----------------------------------------------------------------*/
+    // Wrap each word in a line-masked span so it can slide up.
+    document.querySelectorAll('[data-split-lines]').forEach((el) => {
+        const text = el.textContent.trim();
+        el.textContent = '';
+        const words = text.split(/\s+/);
+        words.forEach((w) => {
+            const wrap = document.createElement('span');
+            wrap.className = 'reveal-line';
+            wrap.style.display = 'inline-block';
+            wrap.style.marginRight = '0.22em';
+            const inner = document.createElement('span');
+            inner.textContent = w;
+            inner.style.display = 'inline-block';
+            inner.style.transform = 'translateY(110%)';
+            wrap.appendChild(inner);
+            el.appendChild(wrap);
+        });
+    });
+
+    /* ---------------------------------------------------------------
+       7. ENTRANCE ANIMATIONS (ScrollTrigger batch)
+    ----------------------------------------------------------------*/
+    if (!reduceMotion) {
+        // Hero lines animate on load
+        const heroLines = document.querySelectorAll('#hero [data-split-lines] .reveal-line > span');
+        gsap.to(heroLines, { y: 0, duration: 1, ease: 'power4.out', stagger: 0.06, delay: 0.15 });
+        gsap.fromTo('#hero [data-fade]', { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: 'power3.out', stagger: 0.12, delay: 0.4 });
+
+        // Other split-lines headings reveal on scroll
+        document.querySelectorAll('[data-split-lines]').forEach((el) => {
+            if (el.closest('#hero')) return;
+            gsap.to(el.querySelectorAll('.reveal-line > span'), {
+                y: 0, duration: 0.9, ease: 'power4.out', stagger: 0.05,
+                scrollTrigger: { trigger: el, start: 'top 85%' }
+            });
+        });
+
+        // Generic fades
+        document.querySelectorAll('[data-fade]').forEach((el) => {
+            if (el.closest('#hero')) return;
+            gsap.fromTo(el, { y: 40, opacity: 0 }, {
+                y: 0, opacity: 1, duration: 1, ease: 'power3.out',
+                scrollTrigger: { trigger: el, start: 'top 88%' }
+            });
+        });
+
+        // Cards stagger
+        gsap.fromTo('[data-card]', { y: 60, opacity: 0 }, {
+            y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', stagger: 0.12,
+            scrollTrigger: { trigger: '#atelier', start: 'top 70%' }
+        });
+
+        // Gateway panels slide in from opposite sides
+        gsap.fromTo('[data-gate="left"]', { x: -60, opacity: 0 }, {
+            x: 0, opacity: 1, duration: 1.1, ease: 'power3.out',
+            scrollTrigger: { trigger: '#gateway', start: 'top 75%' }
+        });
+        gsap.fromTo('[data-gate="right"]', { x: 60, opacity: 0 }, {
+            x: 0, opacity: 1, duration: 1.1, ease: 'power3.out',
+            scrollTrigger: { trigger: '#gateway', start: 'top 75%' }
+        });
+        gsap.fromTo('[data-gate-item]', { y: 24, opacity: 0 }, {
+            y: 0, opacity: 1, duration: 0.7, ease: 'power2.out', stagger: 0.1,
+            scrollTrigger: { trigger: '#gateway', start: 'top 60%' }
+        });
+    }
+
+    /* ---------------------------------------------------------------
+       8. SCROLLYTELLING — quote words light up as you scroll through
+    ----------------------------------------------------------------*/
+    document.querySelectorAll('[data-scroll-words]').forEach((el) => {
+        // Split into word spans while preserving the highlighted <span>
+        const highlight = el.querySelector('span');
+        const highlightText = highlight ? highlight.textContent : '';
+        const fullText = el.textContent;
+        const plain = highlight ? fullText.replace(highlightText, '').trim() : fullText.trim();
+
+        el.innerHTML = '';
+        const makeWords = (str, isHighlight) => {
+            str.split(/\s+/).forEach((w) => {
+                const s = document.createElement('span');
+                s.textContent = w + ' ';
+                s.style.display = 'inline';
+                s.style.transition = 'color .3s ease, opacity .3s ease';
+                s.style.opacity = '0.18';
+                if (isHighlight) s.dataset.hl = '1';
+                el.appendChild(s);
+            });
+        };
+        makeWords(plain, false);
+        if (highlight) makeWords(highlightText, true);
+
+        const wordSpans = el.querySelectorAll('span');
+        if (reduceMotion) {
+            wordSpans.forEach((s) => { s.style.opacity = '1'; if (s.dataset.hl) s.style.color = '#715b33'; });
+            return;
+        }
+
+        ScrollTrigger.create({
+            trigger: el,
+            start: 'top 80%',
+            end: 'bottom 55%',
+            scrub: true,
+            onUpdate: (self) => {
+                const total = wordSpans.length;
+                const active = Math.floor(self.progress * total * 1.15);
+                wordSpans.forEach((s, i) => {
+                    const on = i < active;
+                    s.style.opacity = on ? '1' : '0.18';
+                    if (s.dataset.hl) s.style.color = on ? '#715b33' : '#444748';
+                });
+            }
+        });
+    });
+
+    /* ---------------------------------------------------------------
+       9. PARALLAX on hero image
+    ----------------------------------------------------------------*/
+    if (!reduceMotion) {
+        document.querySelectorAll('[data-parallax]').forEach((el) => {
+            const speed = parseFloat(el.getAttribute('data-parallax')) || 0.15;
+            gsap.to(el, {
+                yPercent: speed * 100,
+                ease: 'none',
+                scrollTrigger: { trigger: el.closest('section'), start: 'top top', end: 'bottom top', scrub: true }
+            });
+        });
+    }
+
+    /* ---------------------------------------------------------------
+       10. 3D TILT on hero frame
+    ----------------------------------------------------------------*/
+    if (fine && !reduceMotion) {
+        document.querySelectorAll('[data-tilt]').forEach((el) => {
+            el.style.transformStyle = 'preserve-3d';
+            el.addEventListener('mousemove', (e) => {
+                const r = el.getBoundingClientRect();
+                const px = (e.clientX - r.left) / r.width - 0.5;
+                const py = (e.clientY - r.top) / r.height - 0.5;
+                gsap.to(el, { rotateY: px * 6, rotateX: -py * 6, duration: 0.5, ease: 'power2.out', transformPerspective: 900 });
+            });
+            el.addEventListener('mouseleave', () => gsap.to(el, { rotateY: 0, rotateX: 0, duration: 0.8, ease: 'power3.out' }));
+        });
+    }
+
+    /* ---------------------------------------------------------------
+       11. INFINITE MARQUEE
+    ----------------------------------------------------------------*/
+    if (!reduceMotion) {
+        document.querySelectorAll('.marquee-track').forEach((track) => {
+            gsap.to(track, { xPercent: -50, duration: 22, ease: 'none', repeat: -1 });
+        });
+    }
+
+    /* ---------------------------------------------------------------
+       12. INFINITE ALBUM — seamless looping rails, scroll-reactive
+    ----------------------------------------------------------------*/
+    document.querySelectorAll('.album-rail').forEach((rail) => {
+        const dir = parseFloat(rail.getAttribute('data-album-dir')) || -1; // -1 left, 1 right
+        const originals = Array.from(rail.children);
+
+        // Clone the set until the rail is at least 2x the viewport, so the
+        // wrap point is always off-screen → seamless loop.
+        const fill = () => {
+            while (rail.scrollWidth < window.innerWidth * 2) {
+                originals.forEach((node) => rail.appendChild(node.cloneNode(true)));
+            }
+        };
+        fill();
+
+        // One "set" = width of the original tiles + gaps.
+        const gap = parseFloat(getComputedStyle(rail).columnGap) || 24;
+        const setWidth = originals.reduce((sum, n) => sum + n.offsetWidth + gap, 0);
+
+        if (reduceMotion) return;
+
+        let pos = dir === 1 ? -setWidth : 0; // right-moving rail starts shifted
+        const baseSpeed = 0.6; // px per frame
+        let velocity = 0;      // extra push from scroll
+
+        const tick = () => {
+            pos += dir * baseSpeed + velocity;
+            // wrap within [-setWidth, 0)
+            if (pos <= -setWidth) pos += setWidth;
+            if (pos >= 0) pos -= setWidth;
+            rail.style.transform = `translateX(${pos}px)`;
+            velocity *= 0.9; // decay the scroll boost
+            requestAnimationFrame(tick);
+        };
+        tick();
+
+        // Scroll velocity nudges the rails for an interactive feel
+        const boost = (v) => { velocity += dir * Math.min(Math.abs(v), 60) * 0.06; };
+        if (lenis) lenis.on('scroll', ({ velocity: v }) => boost(v));
+        else window.addEventListener('wheel', (e) => boost(e.deltaY), { passive: true });
+    });
+
+    /* ---------------------------------------------------------------
+       13. DIGITAL ATELIER — functional tabbed interface
+    ----------------------------------------------------------------*/
+    const atelier = document.querySelector('[data-atelier]');
+    if (atelier) {
+        const titles = { grid: 'The Broadcast Grid', inbox: 'The VIP Priority Inbox', archive: 'Private Archive' };
+        const tabBtns = atelier.querySelectorAll('[data-tab]');
+        const panels = atelier.querySelectorAll('[data-panel]');
+        const panelTitle = atelier.querySelector('[data-panel-title]');
+        const filterToggle = atelier.querySelector('[data-filter-toggle]');
+        const filters = atelier.querySelector('[data-filters]');
+
+        const setTab = (name) => {
+            panels.forEach((p) => { p.hidden = p.getAttribute('data-panel') !== name; });
+            panelTitle.textContent = titles[name];
+            // filter bar only relevant to grid
+            if (name !== 'grid') filters.classList.add('hidden');
+            filterToggle.style.visibility = name === 'grid' ? 'visible' : 'hidden';
+
+            // sync sidebar + mobile tab styling
+            tabBtns.forEach((b) => {
+                const active = b.getAttribute('data-tab') === name;
+                if (b.closest('.md\\:hidden')) {
+                    b.classList.toggle('bg-primary', active);
+                    b.classList.toggle('text-on-primary', active);
+                    b.classList.toggle('border-primary', active);
+                    b.classList.toggle('text-outline', !active);
+                    b.classList.toggle('border-outline-variant', !active);
+                } else {
+                    b.classList.toggle('text-primary', active);
+                    b.classList.toggle('border-secondary', active);
+                    b.classList.toggle('text-outline', !active);
+                    b.classList.toggle('border-transparent', !active);
+                }
+            });
+
+            // animate the incoming panel
+            const incoming = atelier.querySelector('[data-panel="' + name + '"]');
+            if (incoming && !reduceMotion) {
+                gsap.fromTo(incoming.children, { y: 24, opacity: 0 },
+                    { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out', stagger: 0.05, overwrite: true });
+            }
+            // entering the inbox clears the unread badge
+            if (name === 'inbox') {
+                const badge = atelier.querySelector('[data-unread]');
+                if (badge) badge.style.display = 'none';
+            }
+        };
+        tabBtns.forEach((b) => b.addEventListener('click', () => setTab(b.getAttribute('data-tab'))));
+
+        // Filter bar toggle
+        filterToggle.addEventListener('click', () => {
+            filters.classList.toggle('hidden');
+            filters.classList.toggle('flex');
+        });
+
+        // Filter chips
+        const filterChips = atelier.querySelectorAll('[data-filter]');
+        const cards = atelier.querySelectorAll('[data-card]');
+        const emptyMsg = atelier.querySelector('[data-grid-empty]');
+        filterChips.forEach((chip) => {
+            chip.addEventListener('click', () => {
+                const cat = chip.getAttribute('data-filter');
+                filterChips.forEach((c) => {
+                    const on = c === chip;
+                    c.classList.toggle('bg-primary', on);
+                    c.classList.toggle('text-on-primary', on);
+                    c.classList.toggle('border-primary', on);
+                    c.classList.toggle('text-outline', !on);
+                    c.classList.toggle('border-outline-variant', !on);
+                });
+                let shown = 0;
+                cards.forEach((card) => {
+                    const match = cat === 'all' || card.getAttribute('data-cat') === cat;
+                    card.style.display = match ? '' : 'none';
+                    if (match) shown++;
+                });
+                emptyMsg.classList.toggle('hidden', shown > 0);
+                if (!reduceMotion && shown > 0) {
+                    gsap.fromTo([...cards].filter((c) => c.style.display !== 'none'),
+                        { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: 'power2.out', stagger: 0.04, overwrite: true });
+                }
+            });
+        });
+
+        // Inbox accordions
+        atelier.querySelectorAll('[data-msg-toggle]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const msg = btn.closest('[data-msg]');
+                const body = msg.querySelector('[data-msg-body]');
+                const chev = btn.querySelector('[data-chevron]');
+                const dot = btn.querySelector('[data-dot]');
+                const open = body.hidden;
+                body.hidden = !open;
+                if (chev) chev.style.transform = open ? 'rotate(180deg)' : '';
+                if (open && dot) dot.classList.replace('bg-secondary', 'bg-transparent'); // mark read
+                if (open && !reduceMotion) gsap.fromTo(body, { y: -8, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: 'power2.out' });
+            });
+        });
+
+        // Inbox reply forms
+        atelier.querySelectorAll('[data-reply]').forEach((form) => {
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const input = form.querySelector('input');
+                const btn = form.querySelector('button');
+                if (!input.value.trim()) return;
+                const orig = btn.textContent;
+                btn.textContent = 'Sent ✓';
+                input.value = '';
+                input.placeholder = 'DELIVERED TO THE CIRCLE';
+                setTimeout(() => { btn.textContent = orig; }, 2000);
+            });
+        });
+
+        /* ---- Detail modal ---- */
+        const modal = document.getElementById('atelier-modal');
+        const mImg = modal.querySelector('[data-modal-img]');
+        const mImgWrap = modal.querySelector('[data-modal-imgwrap]');
+        const mLockedArt = modal.querySelector('[data-modal-locked-art]');
+        const mTitle = modal.querySelector('[data-modal-title]');
+        const mMeta = modal.querySelector('[data-modal-meta]');
+        const mDesc = modal.querySelector('[data-modal-desc]');
+        const mCta = modal.querySelector('[data-modal-cta]');
+        const mCard = modal.querySelector('[data-modal-card]');
+
+        const openModal = (card) => {
+            const locked = card.hasAttribute('data-locked');
+            mTitle.textContent = card.getAttribute('data-title') || '';
+            mMeta.textContent = card.getAttribute('data-meta') || '';
+            mDesc.textContent = card.getAttribute('data-desc') || '';
+            const img = card.getAttribute('data-img');
+            if (locked || !img) { mImgWrap.classList.add('hidden'); mLockedArt.classList.remove('hidden'); }
+            else { mImgWrap.classList.remove('hidden'); mLockedArt.classList.add('hidden'); mImg.src = img; }
+            mCta.textContent = locked ? 'Join The Queue To Unlock' : 'Open Entry';
+            mCta.dataset.locked = locked ? '1' : '';
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            if (lenis) lenis.stop();
+            document.body.style.overflow = 'hidden';
+            if (!reduceMotion) {
+                gsap.fromTo(modal.querySelector('[data-modal-overlay]'), { opacity: 0 }, { opacity: 1, duration: 0.3 });
+                gsap.fromTo(mCard, { y: 40, opacity: 0, scale: 0.98 }, { y: 0, opacity: 1, scale: 1, duration: 0.45, ease: 'power3.out' });
+            }
+        };
+        const closeModal = () => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            if (lenis) lenis.start();
+            document.body.style.overflow = '';
+        };
+        cards.forEach((card) => card.addEventListener('click', () => openModal(card)));
+        modal.querySelector('[data-modal-close]').addEventListener('click', closeModal);
+        modal.querySelector('[data-modal-overlay]').addEventListener('click', closeModal);
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+        mCta.addEventListener('click', () => {
+            closeModal();
+            const target = document.getElementById('queue');
+            if (mCta.dataset.locked && target) { lenis ? lenis.scrollTo(target, { offset: -80 }) : target.scrollIntoView({ behavior: 'smooth' }); }
+        });
+
+        // init
+        setTab('grid');
+    }
+
+    /* ---------------------------------------------------------------
+       14. FORM micro-interaction (no backend — just feedback)
+    ----------------------------------------------------------------*/
+    document.querySelectorAll('[data-form]').forEach((form) => {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const btn = form.querySelector('button');
+            const original = btn.textContent;
+            btn.textContent = '✓ You\'re in the queue';
+            btn.style.background = '#715b33';
+            form.querySelector('input').value = '';
+            setTimeout(() => { btn.textContent = original; btn.style.background = ''; }, 2600);
+        });
+    });
+
+    // Refresh after fonts load to keep triggers accurate
+    window.addEventListener('load', () => ScrollTrigger.refresh());
+})();
+</script>
+</body>
+</html>

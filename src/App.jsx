@@ -753,6 +753,9 @@ export default function App() {
     boot();
   }, []);
 
+  const feed    = dashboard?.feed || buildMockFeed(creators);
+  const stories = feed.filter(i => i.type === 'story');
+
   /* keyboard shortcuts for story */
   useEffect(() => {
     const handler = e => {
@@ -763,9 +766,6 @@ export default function App() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [storyOpen, storyIdx, stories]);
-
-  const feed    = dashboard?.feed || buildMockFeed(creators);
-  const stories = feed.filter(i => i.type === 'story');
 
   function advanceStory(dir) {
     const next = storyIdx + dir;

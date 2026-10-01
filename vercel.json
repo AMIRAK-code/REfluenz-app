@@ -2,6 +2,10 @@
     "version": 2,
     "rewrites": [
         {
+            "source": "/",
+            "destination": "/landing.html"
+        },
+        {
             "source": "/(.*)",
             "destination": "/index.html"
         }

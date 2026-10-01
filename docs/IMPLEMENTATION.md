@@ -1,0 +1,40 @@
+# Atelier platform — implementation and verification ledger
+
+## Constraints
+- `index.html` is the visual source of truth: #fbf9f9 paper, #000 ink,
+  #715b33 bronze, Hanken Grotesk, square geometry, hairline rules, editorial scale.
+- Preserve landing composition and core positioning. No new accent palette.
+- Demo is explicitly local, with no real payments, accounts, messages or analytics.
+- Work in `feature/atelier-platform`. Verify each round, update this ledger, commit.
+- Do not push or merge. Upstream Git history was not in the supplied ZIP.
+- README read in full. No CLAUDE.md, AGENTS.md or handoff found in the archive.
+
+## Rounds
+- [x] 0. Audit archive, record design contract, preserve baseline, create feature branch.
+  Verified: archive file inventory, current app and API, entrypoints and deployment config.
+  Found: inert controls, false-success network fallbacks, remote-only assets, catch-all routing.
+- [ ] 1. Ship self-contained landing and editorial platform shell with meaningful demo links.
+  Verify: desktop/mobile screenshots, local assets, routing, unchanged palette/composition.
+- [ ] 2. Complete member flows: discovery/filter/search, article reader, bookmarks, follows,
+  tier access, membership changes, conversation history, account preferences, data export/reset.
+  Verify: functional flows and reload persistence, empty states, accessible dialogs.
+- [ ] 3. Complete creator studio: draft, preview, publish, edit/delete, circle broadcast,
+  member CSV, transparent sample metrics; harden storage and validation.
+  Verify: publishing appears in member feed, access rules, escaping, storage failures.
+- [ ] 4. Run desktop/mobile and keyboard QA, fix issues, document real deployment boundaries.
+  Verify: production build, browser tests, no console errors or broken assets.
+- [ ] 5. Produce 30-second motion film with the same art direction; integrate into landing.
+  Verify: duration, resolution, representative frames, playback, reduced-motion behavior.
+- [ ] 6. Final clean build, round commits, portable patches and source ZIP; handoff for one push.
+
+## Architecture decision
+Dependency downloads, old external images and CDNs are unavailable in this workspace.
+Use native ES modules and a dependency-free Node static build/server for the pitch demo.
+This deliberately replaces the unfinished React shell while retaining the original in Git.
+Existing backend remains a separate mock development API, not a production service.
+No app flow silently falls back from a failed server call to invented success.
+
+## Release scope
+This is a polished, functional browser-local demonstration. Production auth, database,
+payment processing, moderation, email delivery and cross-device sync require integration.
+No claim of production readiness will be made without those services.

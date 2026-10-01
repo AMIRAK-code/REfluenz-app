@@ -9,7 +9,7 @@ A platform for creators who value depth over reach.
 - **Typography**: Outfit (Headings), Inter (Body).
 
 ## Tech Stack
-
+gg
 - **Framework**: React + Vite
 - **Styling**: Vanilla CSS (Variables + Flexbox/Grid) + Framer Motion (Animations)
 - **Icons**: Lucide React

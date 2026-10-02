@@ -191,7 +191,7 @@ async function handleAction(name,id,target) {
     case 'open-contact':contact=id;go('circle');break;
     case 'membership':readerId='';membership(id);break;
     case 'select-tier':membership(membershipCreator,id);break;
-    case 'activate-membership':if(update(s=>{s.memberships[id]=selectedTier;if(!s.following.includes(id))s.following.push(id)},'Demo membership active. No payment was taken.')){closeModal();go('memberships')}break;
+    case 'activate-membership':if(state().memberships[id]===selectedTier){toast('This demo membership is already active.');break;}if(update(s=>{s.memberships[id]=selectedTier;if(!s.following.includes(id))s.following.push(id)},'Demo membership active. No payment was taken.')){closeModal();go('memberships')}break;
     case 'cancel-membership':openModal('Leave this demo circle?',`<div class="dialog-body"><p>Your saved entries will stay in your archive. Member-only entries will return to preview access.</p><div class="dialog-actions">${btn('Keep membership','membership',id,'button secondary')}${btn('Cancel demo membership','confirm-cancel',id,'button')}</div></div>`);break;
     case 'confirm-cancel':if(update(s=>{delete s.memberships[id]},'Demo membership cancelled.'))closeModal();break;
     case 'share':{

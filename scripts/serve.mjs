@@ -1,0 +1,7 @@
+import { createServer } from 'node:http';
+import { readFile, stat } from 'node:fs/promises';
+import { resolve, extname, sep } from 'node:path';
+const args=process.argv.slice(2),root=resolve(import.meta.dirname,'..',args.includes('--dist')?'dist':'.');
+const p=args.indexOf('--port'),port=Number(p>=0?args[p+1]:process.env.PORT||5173);
+const mime={'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp','.jpg':'image/jpeg','.mp4':'video/mp4','.woff2':'font/woff2','.json':'application/json','.vtt':'text/vtt'};
+createServer(async(req,res)=>{try{let path=decodeURIComponent(new URL(req.url,'http://localhost').pathname);if(path==='/')path='/index.html';if(path==='/app')path='/app.html';if(path.split('/').some(p=>p.startsWith('.'))||path.startsWith('/backend'))throw Error('Private path');let file=resolve(root,'.'+path);if(!file.startsWith(root+sep))throw Error('Invalid path');try{await stat(file)}catch{file=resolve(root,'public','.'+path)}if(!file.startsWith(root+sep))throw Error('Invalid path');const data=await readFile(file);res.writeHead(200,{'Content-Type':mime[extname(file)]||'application/octet-stream','Cache-Control':'no-cache','X-Content-Type-Options':'nosniff'});res.end(data)}catch{res.writeHead(404,{'Content-Type':'text/plain'});res.end('Not found')}}).listen(port,'0.0.0.0',()=>console.log(`REFLUENZ → http://localhost:${port}`));

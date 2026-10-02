@@ -33,8 +33,10 @@
   Outstanding gate: actual browser layout, keyboard, screenshots and console checks.
   Chromium installation was denied (HTTP 403); browser suite supplied for local execution.
   See docs/VERIFICATION.md and README for exact limitations and launch boundaries.
-- [ ] 5. Produce 30-second motion film with the same art direction; integrate into landing.
-  Verify: duration, resolution, representative frames, playback, reduced-motion behavior.
+- [x] 5. Produce 30-second motion film with the same art direction; integrate into landing.
+  Verified: six-scene keyframes visually inspected; FFprobe reports exactly 30.000 s,
+  1920×1080, H.264 at 24 fps, AAC stereo at 48 kHz. Full FFmpeg decode passed.
+  Integrated native controls, no autoplay, English captions and a text transcript.
 - [ ] 6. Final clean build, round commits, portable patches and source ZIP; handoff for one push.
 
 ## Architecture decision

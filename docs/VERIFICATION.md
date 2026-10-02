@@ -34,4 +34,6 @@ Do not describe these browser checks as passed. Run the supplied suite before me
 
 ## Film
 The representative six-scene contact sheet was visually inspected before rendering.
-Final encoding/duration/decoding checks are recorded in the implementation ledger.
+FFprobe confirms 30.000 seconds, 1920×1080, H.264 / 24 fps and AAC stereo / 48 kHz.
+The entire final MP4 decoded without reported errors. Final file size is 7,245,848 bytes.
+Native page playback is covered by the outstanding browser gate.

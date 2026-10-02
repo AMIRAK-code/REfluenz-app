@@ -23,9 +23,11 @@
   Verified: unit tests for reload persistence, membership access hierarchy, corrupt storage,
   atomic storage failures, safe text output and data export. Native dialog semantics used.
   Supplied browser journey suite; execution remains blocked by missing Chromium.
-- [ ] 3. Complete creator studio: draft, preview, publish, edit/delete, circle broadcast,
+- [x] 3. Complete creator studio: draft, preview, publish, edit/delete, circle broadcast,
   member CSV, transparent sample metrics; harden storage and validation.
-  Verify: publishing appears in member feed, access rules, escaping, storage failures.
+  Verified: lightweight interface integration tests mount all seven views, run member actions,
+  save/publish/delete a creator entry, switch roles, and publish a circle note.
+  10 tests pass. These tests do not substitute for browser layout or keyboard verification.
 - [ ] 4. Run desktop/mobile and keyboard QA, fix issues, document real deployment boundaries.
   Verify: production build, browser tests, no console errors or broken assets.
 - [ ] 5. Produce 30-second motion film with the same art direction; integrate into landing.

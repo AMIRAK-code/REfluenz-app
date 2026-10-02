@@ -34,7 +34,7 @@ function update(fn, message, redraw=true) {
   try { store.update(fn); if(redraw) render(); if(message) toast(message); return true; }
   catch(error) { toast(error.message); return false; }
 }
-function go(view) { closeModal(); if(location.hash === `#${view}`) render(); else location.hash = view; }
+function go(view) { if(!closeModal()) return; if(location.hash === `#${view}`) render(); else location.hash = view; }
 function openModal(title, body, className='') {
   modal.className = className;
   modal.innerHTML = `<div class="dialog-head"><h2 id="modal-title">${title}</h2><button class="icon-button" ${action('close')} aria-label="Close dialog">${icon('close')}</button></div>${body}`;
@@ -133,7 +133,10 @@ function studioView() {
 }
 function render() {
   const view=route(), views={atelier:atelierView,discover:discoverView,archive:archiveView,circle:circleView,memberships:membershipsView,settings:settingsView,studio:studioView};
+  const focused=document.activeElement;
+  const focusAction=focused?.dataset?.action, focusId=focused?.dataset?.id;
   app.innerHTML=shell((views[view]||atelierView)());
+  if(focusAction && globalThis.CSS) document.querySelector(`[data-action="${CSS.escape(focusAction)}"][data-id="${CSS.escape(focusId||'')}"]`)?.focus({preventScroll:true});
   document.title=`${pages[view]||'The atelier'} — REFLUENZ`;
 }
 
@@ -222,8 +225,12 @@ document.addEventListener('submit',e=>{
     case 'broadcast':{const text=String(data.text||'').trim();if(!text)return toast('Write a note first.');if(state().role!=='creator')return;if(update(s=>s.messages.push({id:crypto.randomUUID(),creatorId:'elena',from:'creator',text:text.slice(0,2000),date:new Date().toISOString()}),'Your note is published in the demo circle.'))closeModal();break;}
   }
 });
-window.addEventListener('hashchange',()=>{closeModal();render();window.scrollTo(0,0);document.querySelector('#main')?.focus({preventScroll:true});if(route()==='entry'){const id=decodeURIComponent(location.hash.slice(7));readEntry(id)}});
+window.addEventListener('hashchange',()=>{closeModal();render();window.scrollTo(0,0);document.querySelector('#main')?.focus({preventScroll:true});if(route()==='entry'){readSharedEntry()}});
 const params=new URLSearchParams(location.search);
 if(params.get('role')==='creator') {update(s=>s.role='creator','',false);history.replaceState(null,'',`${location.pathname}#studio`);}
 render();
-if(route()==='entry')readEntry(decodeURIComponent(location.hash.slice(7)));
+if(route()==='entry')readSharedEntry();
+function readSharedEntry(){try{readEntry(decodeURIComponent(location.hash.slice(7)))}catch{toast('This entry link is not valid.')}}
+
+// Exported for lightweight integration tests; the browser still mounts automatically above.
+export { handleAction, render };

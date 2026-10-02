@@ -13,8 +13,11 @@
 - [x] 0. Audit archive, record design contract, preserve baseline, create feature branch.
   Verified: archive file inventory, current app and API, entrypoints and deployment config.
   Found: inert controls, false-success network fallbacks, remote-only assets, catch-all routing.
-- [ ] 1. Ship self-contained landing and editorial platform shell with meaningful demo links.
-  Verify: desktop/mobile screenshots, local assets, routing, unchanged palette/composition.
+- [x] 1. Ship self-contained landing and editorial platform shell with meaningful demo links.
+  Verified: dependency-free production build, JavaScript syntax/imports, local page asset paths.
+  Implemented: shared palette, square geometry, editorial landing/demo links, responsive shell.
+  Browser screenshots blocked: Chromium unavailable; download denied by network policy.
+  Hanken Grotesk declaration retained with local Arial fallback; font asset not supplied.
 - [ ] 2. Complete member flows: discovery/filter/search, article reader, bookmarks, follows,
   tier access, membership changes, conversation history, account preferences, data export/reset.
   Verify: functional flows and reload persistence, empty states, accessible dialogs.

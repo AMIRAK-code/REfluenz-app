@@ -1,18 +1,1 @@
-{
-    "version": 2,
-    "rewrites": [
-        {
-            "source": "/(.*)",
-            "destination": "/app.html"
-        }
-    ],
-    "builds": [
-        {
-            "src": "package.json",
-            "use": "@vercel/static-build",
-            "config": {
-                "distDir": "dist"
-            }
-        }
-    ]
-}
+{"buildCommand":"npm run build","outputDirectory":"dist","rewrites":[{"source":"/app","destination":"/app.html"}],"headers":[{"source":"/(.*)","headers":[{"key":"X-Content-Type-Options","value":"nosniff"},{"key":"Referrer-Policy","value":"strict-origin-when-cross-origin"}]}]}

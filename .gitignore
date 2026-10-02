@@ -126,3 +126,9 @@ dist-ssr
 
 # Local Claude Code tooling
 .claude/
+
+# Local verification tools and generated build evidence
+.runtime-tmp/
+.browsers/
+qa/
+video-frames/

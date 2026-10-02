@@ -18,9 +18,11 @@
   Implemented: shared palette, square geometry, editorial landing/demo links, responsive shell.
   Browser screenshots blocked: Chromium unavailable; download denied by network policy.
   Hanken Grotesk declaration retained with local Arial fallback; font asset not supplied.
-- [ ] 2. Complete member flows: discovery/filter/search, article reader, bookmarks, follows,
+- [x] 2. Complete member flows: discovery/filter/search, article reader, bookmarks, follows,
   tier access, membership changes, conversation history, account preferences, data export/reset.
-  Verify: functional flows and reload persistence, empty states, accessible dialogs.
+  Verified: unit tests for reload persistence, membership access hierarchy, corrupt storage,
+  atomic storage failures, safe text output and data export. Native dialog semantics used.
+  Supplied browser journey suite; execution remains blocked by missing Chromium.
 - [ ] 3. Complete creator studio: draft, preview, publish, edit/delete, circle broadcast,
   member CSV, transparent sample metrics; harden storage and validation.
   Verify: publishing appears in member feed, access rules, escaping, storage failures.

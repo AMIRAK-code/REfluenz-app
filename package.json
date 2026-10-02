@@ -1,1 +1,18 @@
-{"name":"refluenz-app","private":true,"version":"0.1.0","type":"module","engines":{"node":">=20"},"scripts":{"dev":"node scripts/serve.mjs","build":"node scripts/build.mjs","preview":"node scripts/serve.mjs --dist","server":"node backend/server.js","test":"node --test tests/*.test.mjs","test:browser":"node tests/browser.mjs","lint":"node scripts/check.mjs"}}
+{
+  "name": "refluenz-app",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "build": "node scripts/build.mjs",
+    "preview": "node scripts/serve.mjs --dist",
+    "server": "node backend/server.js",
+    "test": "node --test --test-isolation=none tests/*.test.mjs",
+    "test:browser": "node tests/browser.mjs",
+    "lint": "node --experimental-vm-modules scripts/check.mjs"
+  }
+}

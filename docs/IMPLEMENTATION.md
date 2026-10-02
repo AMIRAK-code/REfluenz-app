@@ -37,7 +37,9 @@
   Verified: six-scene keyframes visually inspected; FFprobe reports exactly 30.000 s,
   1920×1080, H.264 at 24 fps, AAC stereo at 48 kHz. Full FFmpeg decode passed.
   Integrated native controls, no autoplay, English captions and a text transcript.
-- [ ] 6. Final clean build, round commits, portable patches and source ZIP; handoff for one push.
+- [x] 6. Final clean build, round commits, portable patches and source ZIP; handoff for one push.
+  All available checks pass. Source and ordered post-baseline patches included.
+  Round 4 remains an explicit outstanding browser gate, not a passing check.
 
 ## Architecture decision
 Dependency downloads, old external images and CDNs are unavailable in this workspace.

@@ -29,7 +29,10 @@
   save/publish/delete a creator entry, switch roles, and publish a circle note.
   10 tests pass. These tests do not substitute for browser layout or keyboard verification.
 - [ ] 4. Run desktop/mobile and keyboard QA, fix issues, document real deployment boundaries.
-  Verify: production build, browser tests, no console errors or broken assets.
+  Completed available checks: build, syntax/imports/assets, 10 logic/interface tests.
+  Outstanding gate: actual browser layout, keyboard, screenshots and console checks.
+  Chromium installation was denied (HTTP 403); browser suite supplied for local execution.
+  See docs/VERIFICATION.md and README for exact limitations and launch boundaries.
 - [ ] 5. Produce 30-second motion film with the same art direction; integrate into landing.
   Verify: duration, resolution, representative frames, playback, reduced-motion behavior.
 - [ ] 6. Final clean build, round commits, portable patches and source ZIP; handoff for one push.

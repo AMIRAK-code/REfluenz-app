@@ -12,7 +12,6 @@
     "preview": "node scripts/serve.mjs --dist",
     "server": "node backend/server.js",
     "test": "node --test --test-isolation=none tests/*.test.mjs",
-    "test:browser": "node tests/browser.mjs",
     "lint": "node --experimental-vm-modules scripts/check.mjs"
   }
 }

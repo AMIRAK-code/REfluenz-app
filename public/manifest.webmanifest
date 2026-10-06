@@ -1,0 +1,13 @@
+{
+  "name": "REFLUENZ",
+  "short_name": "REFLUENZ",
+  "description": "A creator-membership platform with an editorial identity.",
+  "start_url": "/app",
+  "scope": "/app",
+  "display": "standalone",
+  "background_color": "#fbf9f9",
+  "theme_color": "#fbf9f9",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

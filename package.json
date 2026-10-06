@@ -11,7 +11,10 @@
     "build": "node scripts/build.mjs",
     "preview": "node scripts/serve.mjs --dist",
     "server": "node backend/server.js",
-    "test": "node --test --test-isolation=none tests/*.test.mjs",
+    "test": "node --test --test-isolation=none \"tests/*.test.mjs\" \"tests/views/*.test.mjs\"",
     "lint": "node --experimental-vm-modules scripts/check.mjs"
+  },
+  "devDependencies": {
+    "happy-dom": "^20.14.5"
   }
 }

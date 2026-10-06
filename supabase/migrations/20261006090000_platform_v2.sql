@@ -31,16 +31,37 @@ language sql immutable set search_path = '' as $$
   select coalesce(n ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/[A-Za-z0-9][A-Za-z0-9._-]{0,127}$', false);
 $$;
 
+-- Absolute http(s) URL without quotes, whitespace, backslashes or userinfo.
+create or replace function app_private.url_ok(u text) returns boolean
+language sql immutable set search_path = '' as $$
+  select coalesce(char_length(u) <= 300 and u ~* '^https?://[a-z0-9]([a-z0-9.-]*[a-z0-9])?(:[0-9]{1,5})?([/?#][-a-z0-9._~!$&()*+,;=:@%/?#]*)?$', false);
+$$;
+
+-- Only the eight known notification types, boolean values only.
+create or replace function app_private.notify_prefs_ok(j jsonb) returns boolean
+language sql immutable set search_path = '' as $$
+  select jsonb_typeof(j) = 'object' and pg_column_size(j) < 512 and not exists (
+    select 1 from jsonb_each(j) e
+    where e.key not in ('new_entry','comment','reply','like','follow','membership','message','note')
+       or jsonb_typeof(e.value) <> 'boolean');
+$$;
+
 -- [{label, url}] with http(s) urls only.
 create or replace function app_private.links_ok(j jsonb) returns boolean
 language sql immutable set search_path = '' as $$
-  select jsonb_typeof(j) = 'array' and jsonb_array_length(j) <= 5 and not exists (
-    select 1 from jsonb_array_elements(j) x
-    where jsonb_typeof(x) <> 'object'
-       or jsonb_typeof(x -> 'url') <> 'string'
-       or char_length(x ->> 'url') > 300
-       or (x ->> 'url') !~* '^https?://[^\s<>"]+$'
-       or char_length(coalesce(x ->> 'label', '')) > 40);
+  select case when jsonb_typeof(j) = 'array' then
+    jsonb_array_length(j) <= 5 and not exists (
+      select 1 from jsonb_array_elements(j) x
+      where case
+        when jsonb_typeof(x) is distinct from 'object' then true
+        when not (x ? 'url') then true
+        when jsonb_typeof(x -> 'url') is distinct from 'string' then true
+        when exists (select 1 from jsonb_object_keys(x) k where k not in ('label','url')) then true
+        when x ? 'label' and jsonb_typeof(x -> 'label') is distinct from 'string' then true
+        when char_length(coalesce(x ->> 'label', '')) > 40 then true
+        when not app_private.url_ok(x ->> 'url') then true
+        else false end)
+  else false end;
 $$;
 
 -- Throttle: raise when the current user inserted at least p_max rows into
@@ -72,6 +93,8 @@ grant execute on function app_private.entry_published(uuid) to anon, authenticat
 grant execute on function app_private.creator_has_owner(uuid) to anon, authenticated;
 grant execute on function app_private.folder_name_ok(text) to anon, authenticated;
 grant execute on function app_private.links_ok(jsonb) to anon, authenticated;
+grant execute on function app_private.url_ok(text) to anon, authenticated;
+grant execute on function app_private.notify_prefs_ok(jsonb) to anon, authenticated;
 -- Guests may browse public posts and their media.
 grant execute on function app_private.can_read_entry(uuid) to anon;
 grant execute on function app_private.try_uuid(text) to anon;
@@ -91,7 +114,7 @@ alter table public.entries add constraint entries_category_check check (category
 -- ---------------------------------------------------------------------------
 alter table public.profiles
   add column avatar_path text,
-  add column website text not null default '' check (char_length(website) <= 200 and (website = '' or website ~* '^https?://[^\s<>"]+$')),
+  add column website text not null default '' check (char_length(website) <= 200 and (website = '' or app_private.url_ok(website))),
   add column updated_at timestamptz not null default now();
 alter table public.profiles add constraint profiles_avatar_path_ok
   check (avatar_path is null or (app_private.folder_name_ok(avatar_path) and split_part(avatar_path, '/', 1) = id::text));
@@ -108,7 +131,7 @@ create table public.user_settings (
   welcome_dismissed boolean not null default false,
   onboarded boolean not null default false,
   notify_prefs jsonb not null default '{"new_entry":true,"comment":true,"reply":true,"like":true,"follow":true,"membership":true,"message":true,"note":true}'::jsonb
-    check (jsonb_typeof(notify_prefs) = 'object'),
+    check (app_private.notify_prefs_ok(notify_prefs)),
   updated_at timestamptz not null default now()
 );
 insert into public.user_settings (user_id, compact, welcome_dismissed, onboarded)
@@ -192,6 +215,9 @@ begin
   new.perks := coalesce((select array_agg(left(trim(p), 80)) from unnest(new.perks) p where trim(p) <> ''), '{}');
   new.updated_at := now();
   -- At least one tier stays open so a circle can always be joined.
+  if tg_op = 'UPDATE' and not new.enabled then
+    perform pg_advisory_xact_lock(hashtextextended('tiers:' || new.creator_id::text, 0));
+  end if;
   if tg_op = 'UPDATE' and not new.enabled and not exists (
       select 1 from public.creator_tiers where creator_id = new.creator_id and tier_id <> new.tier_id and enabled) then
     raise exception 'Keep at least one membership tier open.' using errcode = 'P0001';
@@ -319,11 +345,13 @@ create table public.comments (
   parent_id uuid references public.comments(id) on delete cascade,
   body text not null check (char_length(trim(body)) between 1 and 2000),
   created_at timestamptz not null default now(),
-  edited_at timestamptz
+  edited_at timestamptz,
+  reply_to_author uuid references public.profiles(id) on delete set null
 );
 create index comments_entry_idx on public.comments (entry_id, created_at);
 create index comments_author_idx on public.comments (author_id, created_at);
 create index comments_parent_idx on public.comments (parent_id);
+create index comments_reply_to_idx on public.comments (reply_to_author);
 
 alter table public.comments enable row level security;
 create policy "comments by access" on public.comments for select to anon, authenticated
@@ -350,12 +378,13 @@ begin
     if new.parent_id is not null then
       select * into p from public.comments where id = new.parent_id;
       if p.id is null or p.entry_id <> new.entry_id then raise exception 'Invalid reply.' using errcode = 'P0001'; end if;
+      new.reply_to_author := p.author_id;
       if p.parent_id is not null then new.parent_id := p.parent_id; end if; -- keep threads one level deep
     end if;
     new.created_at := now(); new.edited_at := null;
   else
     new.entry_id := old.entry_id; new.author_id := old.author_id; new.parent_id := old.parent_id;
-    new.created_at := old.created_at; new.edited_at := now();
+    new.reply_to_author := old.reply_to_author; new.created_at := old.created_at; new.edited_at := now();
   end if;
   return new;
 end $$;
@@ -379,45 +408,63 @@ revoke insert, delete on public.likes, public.bookmarks, public.follows from ano
 -- ---------------------------------------------------------------------------
 create or replace function app_private.count_follows() returns trigger
 language plpgsql security definer set search_path = '' as $$
-declare c uuid := coalesce(new.creator_id, old.creator_id);
 begin
-  update public.creators set follower_count = (select count(*) from public.follows where creator_id = c) where id = c;
+  if tg_op = 'INSERT' then
+    update public.creators set follower_count = follower_count + 1 where id = new.creator_id;
+  else
+    update public.creators set follower_count = greatest(follower_count - 1, 0) where id = old.creator_id;
+  end if;
   return null;
 end $$;
 create trigger follows_count after insert or delete on public.follows for each row execute function app_private.count_follows();
 
 create or replace function app_private.count_members() returns trigger
 language plpgsql security definer set search_path = '' as $$
-declare c uuid := coalesce(new.creator_id, old.creator_id);
 begin
-  update public.creators set member_count = (select count(*) from public.memberships where creator_id = c) where id = c;
+  if tg_op = 'INSERT' then
+    update public.creators set member_count = member_count + 1 where id = new.creator_id;
+  else
+    update public.creators set member_count = greatest(member_count - 1, 0) where id = old.creator_id;
+  end if;
   return null;
 end $$;
 create trigger memberships_count after insert or delete on public.memberships for each row execute function app_private.count_members();
 
 create or replace function app_private.count_likes() returns trigger
 language plpgsql security definer set search_path = '' as $$
-declare e uuid := coalesce(new.entry_id, old.entry_id);
 begin
-  update public.entries set like_count = (select count(*) from public.likes where entry_id = e) where id = e;
+  if tg_op = 'INSERT' then
+    update public.entries set like_count = like_count + 1 where id = new.entry_id;
+  else
+    update public.entries set like_count = greatest(like_count - 1, 0) where id = old.entry_id;
+  end if;
   return null;
 end $$;
 create trigger likes_count after insert or delete on public.likes for each row execute function app_private.count_likes();
 
 create or replace function app_private.count_comments() returns trigger
 language plpgsql security definer set search_path = '' as $$
-declare e uuid := coalesce(new.entry_id, old.entry_id);
 begin
-  update public.entries set comment_count = (select count(*) from public.comments where entry_id = e) where id = e;
+  if tg_op = 'INSERT' then
+    update public.entries set comment_count = comment_count + 1 where id = new.entry_id;
+  else
+    update public.entries set comment_count = greatest(comment_count - 1, 0) where id = old.entry_id;
+  end if;
   return null;
 end $$;
 create trigger comments_count after insert or delete on public.comments for each row execute function app_private.count_comments();
 
 create or replace function app_private.count_entries() returns trigger
 language plpgsql security definer set search_path = '' as $$
-declare c uuid := coalesce(new.creator_id, old.creator_id);
+declare
+  was boolean := tg_op <> 'INSERT' and old.status = 'published';
+  now_pub boolean := tg_op <> 'DELETE' and new.status = 'published';
 begin
-  update public.creators set entry_count = (select count(*) from public.entries where creator_id = c and status = 'published') where id = c;
+  if now_pub and not was then
+    update public.creators set entry_count = entry_count + 1 where id = new.creator_id;
+  elsif was and not now_pub then
+    update public.creators set entry_count = greatest(entry_count - 1, 0) where id = old.creator_id;
+  end if;
   return null;
 end $$;
 create trigger entries_count after insert or delete or update of status on public.entries for each row execute function app_private.count_entries();
@@ -446,7 +493,8 @@ revoke insert, update, delete on public.entry_reads from authenticated;
 create function public.record_read(p_entry uuid) returns void
 language plpgsql security definer set search_path = '' as $$
 begin
-  if (select auth.uid()) is null or not app_private.entry_published(p_entry) or not app_private.can_read_entry(p_entry) then return; end if;
+  if (select auth.uid()) is null or not app_private.entry_published(p_entry) or not app_private.can_read_entry(p_entry)
+     or app_private.owns_entry(p_entry) then return; end if;
   insert into public.entry_reads (user_id, entry_id) values ((select auth.uid()), p_entry) on conflict do nothing;
   if found then update public.entries set read_count = read_count + 1 where id = p_entry; end if;
 end $$;
@@ -457,6 +505,7 @@ grant execute on function public.record_read(uuid) to authenticated;
 -- 11. Messages: owned ateliers only, read receipts, inbox, rate limit
 -- ---------------------------------------------------------------------------
 alter table public.messages add column read_at timestamptz;
+update public.messages set read_at = created_at where read_at is null;
 drop policy "send in thread" on public.messages;
 create policy "send in thread" on public.messages for insert to authenticated with check (
   (sender = 'member' and member_id = (select auth.uid()) and not (select app_private.owns_creator(creator_id)) and (select app_private.creator_has_owner(creator_id)))
@@ -532,6 +581,11 @@ end $$;
 create trigger circle_notes_before before insert on public.circle_notes for each row execute function app_private.before_note();
 revoke insert, update, delete on public.circle_notes from anon, authenticated;
 revoke select on public.circle_notes from anon;
+drop policy if exists "notes readable" on public.circle_notes;
+create policy "notes for circle" on public.circle_notes for select to authenticated using (
+  (select app_private.owns_creator(creator_id))
+  or exists (select 1 from public.follows f where f.creator_id = circle_notes.creator_id and f.user_id = (select auth.uid()))
+  or exists (select 1 from public.memberships m where m.creator_id = circle_notes.creator_id and m.user_id = (select auth.uid())));
 grant insert (creator_id, body) on public.circle_notes to authenticated;
 grant delete on public.circle_notes to authenticated;
 
@@ -569,15 +623,21 @@ grant execute on function public.mark_thread_read(uuid, uuid) to authenticated;
 
 create or replace function app_private.wants(p_user uuid, p_type text) returns boolean
 language sql stable security definer set search_path = '' as $$
-  select coalesce((select (notify_prefs ->> p_type)::boolean from public.user_settings where user_id = p_user), true);
+  -- Only an explicit JSON false switches a type off; nothing here can raise.
+  select coalesce((select u.notify_prefs -> p_type is distinct from 'false'::jsonb
+                   from public.user_settings u where u.user_id = p_user), true);
 $$;
 
 create or replace function app_private.notify(p_user uuid, p_type text, p_actor uuid, p_creator uuid, p_entry uuid, p_comment uuid) returns void
 language plpgsql security definer set search_path = '' as $$
 begin
   if p_user is null or p_user is not distinct from p_actor or not app_private.wants(p_user, p_type) then return; end if;
-  insert into public.notifications (user_id, type, actor_id, creator_id, entry_id, comment_id)
-  values (p_user, p_type, p_actor, p_creator, p_entry, p_comment);
+  begin
+    insert into public.notifications (user_id, type, actor_id, creator_id, entry_id, comment_id)
+    values (p_user, p_type, p_actor, p_creator, p_entry, p_comment);
+  exception when others then
+    raise warning 'notify(%) failed: %', p_type, sqlerrm;
+  end;
 end $$;
 
 -- Fan-out to followers and members (union, deduplicated), excluding the owner.
@@ -587,11 +647,15 @@ declare
   v_owner uuid;
 begin
   select owner_id into v_owner from public.creators where id = p_creator;
-  insert into public.notifications (user_id, type, actor_id, creator_id, entry_id)
-  select r.user_id, p_type, v_owner, p_creator, p_entry
-  from (select user_id from public.follows where creator_id = p_creator
-        union select user_id from public.memberships where creator_id = p_creator) r
-  where r.user_id is distinct from v_owner and app_private.wants(r.user_id, p_type);
+  begin
+    insert into public.notifications (user_id, type, actor_id, creator_id, entry_id)
+    select r.user_id, p_type, v_owner, p_creator, p_entry
+    from (select user_id from public.follows where creator_id = p_creator
+          union select user_id from public.memberships where creator_id = p_creator) r
+    where r.user_id is distinct from v_owner and app_private.wants(r.user_id, p_type);
+  exception when others then
+    raise warning 'notify_circle(%) failed: %', p_type, sqlerrm;
+  end;
 end $$;
 
 revoke execute on function app_private.notify(uuid, text, uuid, uuid, uuid, uuid) from public, anon, authenticated;
@@ -601,9 +665,8 @@ revoke execute on function app_private.wants(uuid, text) from public, anon, auth
 create or replace function app_private.on_entry_published() returns trigger
 language plpgsql security definer set search_path = '' as $$
 begin
-  -- First publication only; re-publishing after a demotion does not notify again.
-  if new.status = 'published' and (tg_op = 'INSERT' or old.status is distinct from 'published')
-     and not exists (select 1 from public.notifications where type = 'new_entry' and entry_id = new.id) then
+  -- First publication only (save_entry sets published_at in that same update).
+  if new.status = 'published' and (tg_op = 'INSERT' or (old.status is distinct from 'published' and old.published_at is null)) then
     perform app_private.notify_circle(new.creator_id, 'new_entry', new.id);
   end if;
   return null;
@@ -617,7 +680,7 @@ declare
 begin
   select c.owner_id, c.id into v_owner, v_creator from public.entries e join public.creators c on c.id = e.creator_id where e.id = new.entry_id;
   if new.parent_id is not null then
-    select author_id into v_parent_author from public.comments where id = new.parent_id;
+    v_parent_author := coalesce(new.reply_to_author, (select author_id from public.comments where id = new.parent_id));
     perform app_private.notify(v_parent_author, 'reply', new.author_id, v_creator, new.entry_id, new.id);
   end if;
   if v_owner is distinct from v_parent_author then
@@ -643,17 +706,27 @@ create trigger likes_notify after insert on public.likes for each row execute fu
 
 create or replace function app_private.on_follow() returns trigger
 language plpgsql security definer set search_path = '' as $$
+declare
+  o uuid := (select owner_id from public.creators where id = new.creator_id);
 begin
-  perform app_private.notify((select owner_id from public.creators where id = new.creator_id), 'follow', new.user_id, new.creator_id, null, null);
+  if o is not null and not exists (
+      select 1 from public.notifications where user_id = o and type = 'follow' and actor_id = new.user_id
+        and creator_id = new.creator_id and created_at > now() - interval '24 hours') then
+    perform app_private.notify(o, 'follow', new.user_id, new.creator_id, null, null);
+  end if;
   return null;
 end $$;
 create trigger follows_notify after insert on public.follows for each row execute function app_private.on_follow();
 
 create or replace function app_private.on_membership() returns trigger
 language plpgsql security definer set search_path = '' as $$
+declare
+  o uuid := (select owner_id from public.creators where id = new.creator_id);
 begin
-  if tg_op = 'INSERT' or old.tier is distinct from new.tier then
-    perform app_private.notify((select owner_id from public.creators where id = new.creator_id), 'membership', new.user_id, new.creator_id, null, null);
+  if (tg_op = 'INSERT' or old.tier is distinct from new.tier) and o is not null and not exists (
+      select 1 from public.notifications where user_id = o and type = 'membership' and actor_id = new.user_id
+        and creator_id = new.creator_id and created_at > now() - interval '24 hours') then
+    perform app_private.notify(o, 'membership', new.user_id, new.creator_id, null, null);
   end if;
   return null;
 end $$;
@@ -661,11 +734,19 @@ create trigger memberships_notify after insert or update of tier on public.membe
 
 create or replace function app_private.on_message() returns trigger
 language plpgsql security definer set search_path = '' as $$
+declare
+  v_to uuid; v_from uuid;
 begin
   if new.sender = 'member' then
-    perform app_private.notify((select owner_id from public.creators where id = new.creator_id), 'message', new.member_id, new.creator_id, null, null);
+    v_to := (select owner_id from public.creators where id = new.creator_id); v_from := new.member_id;
   else
-    perform app_private.notify(new.member_id, 'message', (select owner_id from public.creators where id = new.creator_id), new.creator_id, null, null);
+    v_to := new.member_id; v_from := (select owner_id from public.creators where id = new.creator_id);
+  end if;
+  -- One unread notification per conversation is enough.
+  if v_to is not null and not exists (
+      select 1 from public.notifications where user_id = v_to and type = 'message' and creator_id = new.creator_id
+        and actor_id is not distinct from v_from and read_at is null) then
+    perform app_private.notify(v_to, 'message', v_from, new.creator_id, null, null);
   end if;
   return null;
 end $$;
@@ -788,3 +869,160 @@ grant execute on function public.creator_stats(uuid) to authenticated;
 -- 16. Realtime
 -- ---------------------------------------------------------------------------
 alter publication supabase_realtime add table public.notifications;
+
+-- ---------------------------------------------------------------------------
+-- 17. Hardening (from the adversarial review)
+-- ---------------------------------------------------------------------------
+
+-- 17.1 Guests see only the public face of people who appear in public:
+-- atelier owners and commenters, and only presentation columns.
+drop policy "profiles are public" on public.profiles;
+create policy "profiles readable by members" on public.profiles for select to authenticated using (true);
+create policy "public profiles (guests)" on public.profiles for select to anon using (
+  exists (select 1 from public.creators c where c.owner_id = profiles.id)
+  or exists (select 1 from public.comments x where x.author_id = profiles.id));
+revoke select on public.profiles from anon;
+grant select (id, display_name, bio, avatar_path, website, created_at) on public.profiles to anon;
+
+-- Never derive a public name from the email address.
+create or replace function public.handle_new_user() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  insert into public.profiles (id, display_name)
+  values (new.id, left(coalesce(nullif(trim(new.raw_user_meta_data->>'display_name'), ''), 'Member'), 60));
+  insert into public.user_settings (user_id) values (new.id);
+  return new;
+end $$;
+
+-- 17.2 Rate limits count attempts in a log users cannot delete from, serialised per user+action.
+create table app_private.rate_log (
+  user_id uuid not null,
+  action text not null,
+  at timestamptz not null default now()
+);
+create index rate_log_lookup_idx on app_private.rate_log (user_id, action, at desc);
+revoke all on app_private.rate_log from public, anon, authenticated;
+
+create or replace function app_private.enforce_rate(p_table text, p_col text, p_max int, p_window interval) returns void
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_uid uuid := (select auth.uid());
+  n int;
+begin
+  if v_uid is null then return; end if;
+  perform pg_advisory_xact_lock(hashtextextended(v_uid::text || ':' || p_table, 0));
+  select count(*) into n from app_private.rate_log where user_id = v_uid and action = p_table and at > now() - p_window;
+  if n >= p_max then
+    raise exception 'You are doing that too often. Please wait a moment and try again.' using errcode = 'P0001';
+  end if;
+  insert into app_private.rate_log (user_id, action) values (v_uid, p_table);
+  delete from app_private.rate_log where user_id = v_uid and action = p_table and at < now() - interval '1 day';
+end $$;
+revoke execute on function app_private.enforce_rate(text, text, int, interval) from public, anon, authenticated;
+
+create or replace function app_private.before_message() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  if new.sender = 'member' and not app_private.creator_has_owner(new.creator_id) then
+    raise exception 'This atelier is not taking messages yet.' using errcode = 'P0001';
+  end if;
+  perform app_private.enforce_rate('messages', 'sender', 20, interval '1 minute');
+  if (select count(*) from public.messages m where m.creator_id = new.creator_id and m.member_id = new.member_id
+        and m.sender = new.sender and m.created_at > now() - interval '1 minute') >= 6 then
+    raise exception 'You are sending messages too quickly. Please wait a moment.' using errcode = 'P0001';
+  end if;
+  new.body := trim(new.body);
+  new.created_at := now(); new.read_at := null;
+  return new;
+end $$;
+
+create or replace function app_private.before_note() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  perform app_private.enforce_rate('circle_notes', 'creator_id', 10, interval '1 hour');
+  new.body := trim(new.body);
+  new.created_at := now();
+  return new;
+end $$;
+
+-- 17.3 Storage quotas: object counts plus byte caps, public buckets only.
+create or replace function app_private.object_count(b text, prefix text) returns bigint
+language sql stable security definer set search_path = '' as $$
+  select case when b in ('avatars','covers')
+    then (select count(*) from storage.objects where bucket_id = b and starts_with(name, prefix)) else 0 end;
+$$;
+create or replace function app_private.object_bytes(b text, prefix text) returns bigint
+language sql stable security definer set search_path = '' as $$
+  select case when b in ('avatars','covers')
+    then (select coalesce(sum((metadata->>'size')::bigint), 0) from storage.objects where bucket_id = b and starts_with(name, prefix)) else 0 end;
+$$;
+revoke execute on function app_private.object_count(text, text) from public, anon;
+revoke execute on function app_private.object_bytes(text, text) from public, anon;
+grant execute on function app_private.object_count(text, text) to authenticated;
+grant execute on function app_private.object_bytes(text, text) to authenticated;
+
+drop policy "avatars: owner uploads" on storage.objects;
+create policy "avatars: owner uploads" on storage.objects for insert to authenticated
+  with check (bucket_id = 'avatars' and app_private.folder_name_ok(name) and (storage.foldername(name))[1] = (select auth.uid())::text
+    and app_private.object_count('avatars', (select auth.uid())::text || '/') < 5
+    and app_private.object_bytes('avatars', (select auth.uid())::text || '/') < 15728640);
+drop policy "covers: owner uploads" on storage.objects;
+create policy "covers: owner uploads" on storage.objects for insert to authenticated
+  with check (bucket_id = 'covers' and app_private.folder_name_ok(name)
+    and app_private.owns_creator(app_private.try_uuid((storage.foldername(name))[1]))
+    and app_private.object_count('covers', (storage.foldername(name))[1] || '/') < 60
+    and app_private.object_bytes('covers', (storage.foldername(name))[1] || '/') < 157286400);
+
+-- 17.4 Server-owned timestamps.
+create or replace function app_private.force_created_at() returns trigger
+language plpgsql set search_path = '' as $$
+begin
+  new.created_at := now();
+  return new;
+end $$;
+create trigger follows_created before insert on public.follows for each row execute function app_private.force_created_at();
+create trigger likes_created before insert on public.likes for each row execute function app_private.force_created_at();
+create trigger bookmarks_created before insert on public.bookmarks for each row execute function app_private.force_created_at();
+
+create or replace function app_private.touch_updated_at() returns trigger
+language plpgsql set search_path = '' as $$
+begin
+  new.updated_at := now();
+  return new;
+end $$;
+create trigger profiles_touch before update on public.profiles for each row execute function app_private.touch_updated_at();
+create trigger creators_touch before update on public.creators for each row execute function app_private.touch_updated_at();
+create trigger user_settings_touch before update on public.user_settings for each row execute function app_private.touch_updated_at();
+
+-- 17.5 While the previous client still writes profiles.compact / welcome_dismissed, mirror them.
+create or replace function app_private.mirror_profile_settings() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  update public.user_settings set compact = new.compact, welcome_dismissed = new.welcome_dismissed
+    where user_id = new.id and (compact is distinct from new.compact or welcome_dismissed is distinct from new.welcome_dismissed);
+  return null;
+end $$;
+create trigger profiles_mirror_settings after update of compact, welcome_dismissed on public.profiles
+  for each row execute function app_private.mirror_profile_settings();
+
+-- 17.6 Explicit EXECUTE hygiene for every helper this migration adds.
+revoke execute on function
+  app_private.entry_published(uuid), app_private.creator_has_owner(uuid),
+  app_private.folder_name_ok(text), app_private.links_ok(jsonb),
+  app_private.prefix_query(text), app_private.like_pattern(text),
+  app_private.url_ok(text), app_private.notify_prefs_ok(jsonb)
+  from public;
+grant execute on function
+  app_private.entry_published(uuid), app_private.creator_has_owner(uuid),
+  app_private.folder_name_ok(text), app_private.links_ok(jsonb),
+  app_private.prefix_query(text), app_private.like_pattern(text),
+  app_private.url_ok(text), app_private.notify_prefs_ok(jsonb)
+  to anon, authenticated;
+revoke execute on function
+  app_private.before_creator_tier(), app_private.default_tiers(), app_private.before_membership(),
+  app_private.before_comment(), app_private.before_message(), app_private.before_note(), app_private.before_report(),
+  app_private.count_follows(), app_private.count_members(), app_private.count_likes(), app_private.count_comments(),
+  app_private.count_entries(), app_private.on_entry_published(), app_private.on_comment(), app_private.on_like(),
+  app_private.on_follow(), app_private.on_membership(), app_private.on_message(), app_private.on_note(),
+  app_private.force_created_at(), app_private.touch_updated_at(), app_private.mirror_profile_settings()
+  from public, anon, authenticated;

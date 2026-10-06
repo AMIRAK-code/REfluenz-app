@@ -1,30 +1,23 @@
-# REFLUENZ production rebuild — task board
+# REFLUENZ task board
 
 Orchestrator: Opus 5.5. Implementers and reviewers: Sonnet subagents. Checkers: Haiku subagents.
-Contract: `docs/ARCHITECTURE.md`. Schema: `supabase/migrations/20261005150000_production_v2.sql`.
 
-## Phase 1 — Database (orchestrator + review workflow)
-- [ ] Write v2 migration: per-creator tiers, text/image/video posts, media, storage, comments, notifications, search, counters, reads, inbox, reports, rate limits
-- [ ] Adversarial review: RLS/security, SQL correctness, data-migration safety; dry-run in a rolled-back transaction
-- [ ] Apply to production; run behavioural RLS tests (rolled back); advisors clean
-- [ ] Deploy `delete-account` edge function
+## Now — post formats: text, image, video (contract: `docs/POST_FORMATS.md`)
 
-## Phase 2 — Foundation (parallel)
-- [ ] API layer `src/api/*` + fake API for tests + edge function source
-- [ ] Core: router, store, UI kit, shell, media helpers, routes, app.html, styles, Vercel rewrites + CSP, dev server fallback, test harness
-- [ ] Integration check: lint + tests green, contract alignment
+- [x] Migration `20261005153611_post_formats.sql`: `entries.kind`, `entry_media`, private `entry-media` + public `previews` buckets, kind-aware `save_entry`
+- [x] Landing page forwards email-confirmation / recovery links to `/app.html`
+- [x] Adversarial migration review (security + correctness) and verification of each finding
+- [x] `src/media.js`: image downscale/re-encode, video metadata + poster, blurred previews
+- [x] `src/api.js`: media queries, signed URLs, uploads with progress, cleanup on delete
+- [x] `src/platform.js`: Text / Image / Video editor, upload progress, cards with badges, gallery and video reader, format filter
+- [x] Rolled-back dry run of the migration with simulated users, then apply to production
+- [x] Integration: lint + tests green across the three modules
+- [x] Code review (security, correctness, UX/mobile) → verify → fix
+- [x] Browser QA on localhost with real image and video uploads (creator + member + locked tier)
+- [ ] Commit, push, deploy
 
-## Phase 3 — Features (parallel, one agent per area)
-- [ ] Auth + onboarding + landing auth-forwarding
-- [ ] Home feed, Discover + search, Library
-- [ ] Creator page + join/tiers dialog + Memberships
-- [ ] Post page: text reader, photo gallery, video player, likes, comments, share, report, lock
-- [ ] Messages + Notifications (realtime)
-- [ ] Studio dashboard: stats, posts, drafts, members, circle notes
-- [ ] Editor: text / photos / video posts, uploads with progress, cover, tags, access, preview, autosave draft
-- [ ] Studio settings (atelier profile, avatar/cover, slug, links, tiers CRUD) + Account settings (profile, avatar, email, password, notifications, export, delete)
+## Paused — production v2 rebuild
 
-## Phase 4 — Review and hardening
-- [ ] Security, correctness/integration, UX/a11y/responsive, error states, performance reviews → verify → fix
-- [ ] Browser QA end to end on localhost (member + creator accounts, all three post kinds)
-- [ ] Docs + README; deploy
+Plan: `docs/ARCHITECTURE.md`. Schema draft (not applied): `docs/drafts/production_v2_schema_draft.sql`.
+Covers per-creator tiers, comments, notifications, search, path routing, account deletion and more.
+Reconcile it with the post-formats schema before resuming.

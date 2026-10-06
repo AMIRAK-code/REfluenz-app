@@ -1,4 +1,6 @@
-# REFLUENZ web app — production architecture (v2)
+# REFLUENZ web app — production architecture (v2, paused draft)
+
+> **Status: paused, not implemented.** The schema draft lives in `docs/drafts/production_v2_schema_draft.sql` and has NOT been applied. Work resumed on the current app with post formats first (see `docs/POST_FORMATS.md`). Reconcile this plan with the post-formats schema before resuming it.
 
 This document is the contract every module is built against. If code and this
 document disagree, fix the code or update this document in the same change.

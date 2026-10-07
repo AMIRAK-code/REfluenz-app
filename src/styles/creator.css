@@ -1,0 +1,122 @@
+/* The atelier page (views/creator.js), its join and report dialogs, and the memberships page (views/memberships.js).
+   Builds on base.css: tabs, tier cards, entry cards, notices, empty and error states come from there. */
+
+/* --- Banner and header ------------------------------------------------------- */
+.atelier-banner { aspect-ratio: 16 / 4.6; min-height: 150px; max-height: 340px; overflow: hidden; background: var(--wash); }
+.atelier-banner img { width: 100%; height: 100%; object-fit: cover; }
+.atelier-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 22px 32px; margin-top: -48px; padding: 0 2px; }
+.atelier-identity { display: flex; align-items: flex-end; gap: 22px; min-width: 0; flex: 1 1 420px; }
+.atelier-avatar { display: block; flex-shrink: 0; padding: 5px; background: var(--paper); line-height: 0; }
+.atelier-names { min-width: 0; padding-bottom: 4px; }
+.atelier-eyebrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; color: var(--bronze); }
+.atelier-names h1 { font-size: clamp(32px, 5.2vw, 52px); letter-spacing: -.05em; line-height: 1.04; margin-top: 8px; overflow-wrap: anywhere; }
+.atelier-descriptor { margin-top: 8px; color: var(--muted); font-size: 16px; line-height: 1.5; }
+
+.atelier-actions { display: grid; gap: 10px; justify-items: end; flex: 0 1 auto; min-width: 0; }
+.atelier-primary { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
+.atelier-primary .follow-button { min-height: 46px; padding: 14px 20px; font-size: 11px; }
+.atelier-state { font-size: 10px; text-align: right; }
+.atelier-utility { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 2px; margin-right: -8px; }
+
+.atelier-intro { display: grid; gap: 18px; margin-top: 26px; padding-bottom: 26px; border-bottom: 1px solid var(--rule); }
+.atelier-bio { max-width: 64ch; font-size: 16px; line-height: 1.7; white-space: pre-line; overflow-wrap: anywhere; }
+.atelier-links { display: flex; flex-wrap: wrap; gap: 8px 22px; }
+.atelier-link { display: inline-flex; align-items: center; gap: 8px; min-height: 28px; border-bottom: 1px solid var(--rule); font-size: 13px; overflow-wrap: anywhere; }
+.atelier-link:hover { color: var(--bronze); border-bottom-color: var(--bronze); }
+.atelier-stats { display: flex; flex-wrap: wrap; gap: 14px 44px; margin: 0; }
+.atelier-stat { display: flex; flex-direction: column-reverse; gap: 2px; }
+.atelier-stat dt { font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.atelier-stat dd { margin: 0; font-size: 28px; font-weight: 500; letter-spacing: -.04em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+
+.atelier-tabs { margin-top: 30px; }
+
+/* --- Posts ------------------------------------------------------------------- */
+.atelier-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+.filter-button { min-height: 38px; padding: 0 16px; border: 1px solid var(--rule); background: transparent; color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; }
+.filter-button:hover { color: var(--ink); border-color: var(--ink); }
+.filter-button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.atelier-lock-note { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin-bottom: 24px; }
+.atelier-lock-note p { font-size: 13px; line-height: 1.6; }
+.atelier-more { display: flex; justify-content: center; margin-top: 36px; }
+.atelier-more:empty { display: none; }
+.atelier-more-error { text-align: center; display: grid; gap: 14px; justify-items: center; }
+.atelier-more-error p { color: var(--danger); font-size: 13px; }
+.atelier-sentinel { height: 1px; }
+
+/* --- Membership tab ------------------------------------------------------------ */
+.atelier-lead { max-width: 60ch; margin-bottom: 24px; color: var(--muted); line-height: 1.7; }
+.atelier-lead .text-link { margin-left: 6px; }
+.tier-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: var(--gap); }
+.tier-grid > * { min-width: 0; }
+.tier-free { font-size: 11px; letter-spacing: .04em; margin-top: 10px; }
+.atelier-early { margin-top: 24px; max-width: 64ch; }
+
+/* --- About tab ----------------------------------------------------------------- */
+.atelier-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 0 var(--gap); margin: 0 0 28px; border-top: 1px solid var(--rule); }
+.atelier-facts > div { padding: 16px 0; border-bottom: 1px solid var(--rule); min-width: 0; }
+.atelier-facts dd { margin: 6px 0 0; line-height: 1.6; overflow-wrap: anywhere; }
+.atelier-about .notice, [data-panel="about"] .notice { max-width: 64ch; }
+
+/* --- Join and report dialogs ---------------------------------------------------- */
+.join-form fieldset, .report-reasons { border: 0; margin: 0 0 18px; padding: 0; min-width: 0; }
+.join-form legend, .report-reasons legend { padding: 0; margin-bottom: 12px; color: var(--muted); }
+.join-option { display: flex; align-items: flex-start; gap: 14px; margin: 0 0 10px; padding: 16px 16px; border: 1px solid var(--rule); background: var(--paper); font-size: 14px; font-weight: 400; letter-spacing: 0; cursor: pointer; }
+.join-option:hover { border-color: var(--ink); }
+.join-option:has(input:checked) { border-color: var(--bronze); box-shadow: inset 0 0 0 1px var(--bronze); background: #f6f2ea; }
+.join-option:has(input:focus-visible) { outline: 2px solid var(--bronze); outline-offset: 3px; }
+.join-option input { margin-top: 3px; }
+.join-option-body { display: grid; gap: 6px; min-width: 0; flex: 1; }
+.join-option-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.join-option-head strong { font-size: 17px; font-weight: 500; letter-spacing: -.02em; }
+.join-option-price { margin-left: auto; font-variant-numeric: tabular-nums; }
+.join-option-text { color: var(--muted); font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; }
+.join-early { margin: 18px 0; }
+.join-form .form-error, .report-dialog .form-error { margin: 0 0 6px; }
+.report-reasons .check-label { margin-bottom: 4px; min-height: 36px; cursor: pointer; }
+.report-dialog textarea { min-height: 96px; }
+#share-url { font-size: 13px; }
+
+/* --- Memberships page ------------------------------------------------------------ */
+.membership-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 20px 40px; padding: 22px 0; margin-bottom: 8px; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+.membership-figure { margin-top: 6px; font-size: 30px; font-weight: 500; letter-spacing: -.04em; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.membership-figure .muted { font-size: 14px; font-weight: 400; letter-spacing: 0; }
+.membership-free { margin-top: 6px; font-size: 13px; }
+.membership-list { display: grid; }
+.membership-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 18px 22px; padding: 24px 0; border-bottom: 1px solid var(--rule); }
+.membership-avatar { display: block; line-height: 0; }
+.membership-main { min-width: 0; }
+.membership-main h3 { font-size: 22px; letter-spacing: -.035em; overflow-wrap: anywhere; }
+.membership-main h3 a:hover { color: var(--bronze); }
+.membership-main .eyebrow { margin-top: 4px; font-size: 10px; }
+.membership-tier { margin-top: 10px; font-size: 14px; }
+.membership-since { margin-top: 4px; font-size: 12px; }
+.membership-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.membership-more { display: flex; justify-content: center; margin-top: 32px; }
+
+/* --- Narrow screens and touch ----------------------------------------------------- */
+@media (max-width: 760px) {
+  .atelier-banner { aspect-ratio: 16 / 7; min-height: 120px; }
+  .atelier-head { margin-top: -38px; gap: 18px; }
+  .atelier-identity { flex-basis: 100%; gap: 16px; }
+  .atelier-avatar .avatar { --avatar-size: 80px !important; }
+  .atelier-actions { justify-items: stretch; width: 100%; }
+  .atelier-primary, .atelier-utility { justify-content: flex-start; }
+  .atelier-primary > * { flex: 1 1 140px; }
+  .atelier-state { text-align: left; }
+  .atelier-utility { margin-left: -8px; margin-right: 0; }
+  .atelier-stats { gap: 12px 30px; }
+  .atelier-stat dd { font-size: 24px; }
+  .membership-row { grid-template-columns: auto minmax(0, 1fr); }
+  .membership-actions { grid-column: 1 / -1; justify-content: flex-start; }
+  .membership-avatar .avatar { --avatar-size: 48px !important; }
+}
+
+@media (max-width: 420px) {
+  .atelier-identity { flex-direction: column; align-items: flex-start; }
+  .join-option-price { margin-left: 0; flex-basis: 100%; }
+}
+
+@media (pointer: coarse) {
+  .filter-button, .atelier-link { min-height: 44px; }
+  .report-reasons .check-label { min-height: 44px; }
+}

@@ -126,6 +126,14 @@ describe('boot', () => {
       });
     }
 
+    it('visits every route of the table, and the catch-all', async () => {
+      const { compileRoutes, matchRoute } = await import('../src/core/router.js');
+      const { routes } = await import('../src/core/routes.js');
+      const compiled = compileRoutes(routes);
+      const reached = new Set(PATHS.map(path => matchRoute(compiled, path.split('?')[0]).route.path));
+      assert.deepEqual(routes.map(route => route.path).filter(path => !reached.has(path)), [], 'routes that no path above reaches');
+    });
+
     it('lands where the guards say', async () => {
       const where = { guest: {}, member: {}, creator: {} };
       for (const [name, api] of Object.entries(PERSONAS)) {

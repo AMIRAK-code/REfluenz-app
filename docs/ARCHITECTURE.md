@@ -32,8 +32,9 @@ Showcase ateliers (`creators.is_showcase`, no owner) are REFLUENZ sample content
   Realtime, Edge Function `delete-account`.
 - supabase-js `https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/+esm` (pinned).
 - Vercel: `npm run build` → `dist/`; `/app` and `/app/*` rewrite to `/app.html`.
-- Tests: `node --test`; view tests use `happy-dom` (devDependency) + `tests/helpers/fake-api.mjs`.
-- Schema: `supabase/migrations/` (latest: `20261006090000_platform_v2.sql`).
+- Tests: `node --test`; view tests use `happy-dom` (devDependency) + `tests/helpers/fake-api.mjs` (see section 8).
+- Schema: `supabase/migrations/` (latest: `20261006231142_platform_v2.sql`, applied to production, and
+  `20261006231241_platform_v2_indexes.sql`).
 
 Storage buckets: `entry-media` (private: originals, posters, card thumbnails — see
 POST_FORMATS), `previews` (public: tiny blurred teasers), `avatars` (public:
@@ -58,7 +59,7 @@ lowercase uuids.
 | `/app/studio/settings` (`?tab=atelier\|tiers`) | `views/studio-settings.js` | creator |
 | `/app/settings` (`?tab=profile\|account\|notifications\|data`) | `views/settings.js` | required |
 | `/app/login`, `/app/signup`, `/app/forgot` | `views/auth.js` | guest |
-| `/app/reset` | `views/auth.js` (new password after a recovery link) | recovery session |
+| `/app/reset` | `views/auth.js` (new password after a recovery link) | recovery |
 | `/app/welcome` | `views/onboarding.js` | required |
 | other `/app/*` | `views/not-found.js` | — |
 
@@ -72,29 +73,34 @@ localStorage (`sb-bwezbxwdmnmfbibpusaf-auth-token`).
 
 Guards: `required` without session → `/app/login?next=<path>` (`next` accepted only if it
 starts with `/app/` or equals `/app`). `guest` with session → `next` or `/app`. `creator` =
-required + an atelier, else `/app/studio`. A signed-in user whose `settings.onboarded`
-is false is sent once to `/app/welcome` (not from `/app/reset`, `/app/settings`, `/app/welcome`).
+required + an atelier, else `/app/studio`. `recovery` (set on the route, which overrides the view's own `auth`)
+passes while `store.state.recovery` is true or a session exists, else → `/app/forgot`. A signed-in user whose
+`settings.onboarded` is false is sent once to `/app/welcome` (not from `/app/reset`, `/app/settings`, `/app/welcome`).
+The route table is `core/routes.js`: `[{path, view: () => import('../views/x.js'), auth?}]`, views load lazily,
+the last entry is `'*'`. `tests/contract.test.mjs` checks the table against this section.
 
 ## 4. Files and ownership
 
 ```
 app.html                       shell document (core)
-src/main.js                    boot: client → api → store → router (core)
+src/main.js                    boot: supabase-js → createApi → startApp (core)
 src/config.js                  Supabase URL + publishable key (keep)
 src/media.js                   media preparation (keep, from post formats; owners: editor)
-src/api.js                     re-export: export { createApi } from './api/index.js'
-src/api/index.js               createApi(client, {url, key, XHR, now, uuid}) composing:
+src/api.js                     at cutover: export { createApi } from './api/index.js' (until then the old api, untouched)
+src/api/index.js               createApi(client, {url, key, XHR, now, uuid, stallMs, fetch}) composing:
 src/api/util.js                check(), friendly(), mappers (toCreator, toEntry, toTier, ...), publicUrl()
 src/api/{auth,viewer,creators,tiers,entries,media,social,memberships,messages,
         notifications,search,reports,account,realtime}.js
 src/core/router.js routes.js store.js ui.js shell.js format.js covers.js
+src/core/app.js                startApp({api, root, store?, routes?, recovery?}): store → shell → router; the one boot path (main.js and tests)
+src/core/paths.js constants.js path builders (`paths.*`, withQuery, parseQuery, safeNext, legacyTarget); categories, kinds, presets, defaults
 src/views/*.js                 one module per row of §3
 src/styles/base.css shell.css  (core)   src/styles/<area>.css (feature owners)
 src/design.css                 tokens (keep)    src/icons.js (core; others may append icons)
 src/landing.js, index.html     landing page (auth agent: CTA changes only)
-supabase/functions/delete-account/index.ts   (api agent)
+supabase/functions/delete-account/index.ts   (api agent; deployed with verify_jwt off, it checks the token itself)
 tests/helpers/dom.mjs (core)   tests/helpers/fake-api.mjs (api agent)
-tests/*.test.mjs, tests/views/*.test.mjs
+tests/*.test.mjs, tests/views/*.test.mjs, tests/contract.test.mjs
 ```
 `src/platform.js`, `src/store.js`, `src/platform.css` are replaced and deleted at the end
 (their behaviour is ported, including everything in POST_FORMATS.md).
@@ -112,19 +118,21 @@ user data in `raw`, never concatenate user data into markup.
 ```js
 export default {
   title: 'Discover',                 // string | (ctx, data) => string
-  auth: 'optional',                  // 'optional' | 'required' | 'guest' | 'creator'
+  auth: 'optional',                  // 'optional' | 'required' | 'guest' | 'creator' (a route may also say 'recovery')
   async load(ctx) { return data },   // optional; throw → error state with Retry
   render(ctx, data) { return html`` },
   mount(el, ctx, data) { return cleanup }   // optional
 }
 ```
-`ctx = { api, store, router, params, query, path, ui, rerender(), navigate(path, opts) }`.
+`ctx = { api, store, router, params, query, path, ui, rerender(nextData?), reload(), navigate(path, opts) }`.
+`rerender()` redraws from the same data (or from `nextData`) and keeps the focused field when it has an `id` or `name`;
+`reload()` runs `load` again. Both do nothing once the person has left the page.
 Router shows `ui.skeleton('page')` while `load` runs, then render → mount. Listeners only
 inside `el` (`ui.delegate`). Cleanup runs on route change. `ctx.router.block = () => message|null`
 lets a view (editor) confirm before leaving; `beforeunload` is wired to the same hook.
 
 ### 5.3 Router (`core/router.js`)
-`createRouter({ routes, outlet, store, api })` → `{ start(), navigate(path, {replace}), current, block }`.
+`createRouter({ routes, outlet, announcer, store, api })` → `{ start(), stop(), navigate(path, {replace, force}), reload(), idle(), onChange(fn), current, block }`.
 Intercepts same-origin `a[href^="/app"]` clicks (no `target`, no modifier keys, not `[data-native]`),
 pushes state, scrolls to top (restores on back/forward), moves focus to `#main`, sets
 `document.title = "<title> — REFLUENZ"`, announces route changes in an `aria-live` region.
@@ -140,7 +148,10 @@ requireAuth(message?) → boolean      // guests: opens a sign-in dialog, return
 canRead(entry) → boolean             // UI hint: own atelier, access 'public', or member level ≥ entry level
 levelOf(tierId) → 0..3               // 'public' → 0
 toggleFollow(creatorId) / toggleSave(entryId) / toggleLike(entry)   // optimistic + rollback + toast; toggleLike adjusts entry.likeCount
-join(creatorId, tierId) / leave(creatorId)
+join(creatorId, tierId) / leave(creatorId)   // not optimistic: errors propagate, the view shows progress and the message
+// also: state.recovery (arrived through a recovery link), state.viewerError (viewer data failed to load), whenReady(),
+// destroy(), update({profile, settings, myCreator, ...}) (merge the result of a write), setRecovery(bool), signOutLocal(),
+// onRealtime(fn) → unsubscribe (events {type: 'message'|'notification', payload}); createStore() makes independent stores for tests.
 ```
 
 ### 5.5 UI kit (`core/ui.js`, `core/format.js`, `core/covers.js`)
@@ -167,8 +178,13 @@ toasts new messages while not on that thread.
 
 ## 6. API contract (`src/api`)
 
-All methods async; return camelCase objects; throw `Error(friendlyMessage)` (keep `err.code`).
-`limit` default 12; cursors are opaque (ISO timestamp of the last item), `nextCursor: null` at the end.
+All methods async (except `onAuthChange`, `previewUrl`, `subscribe`); return camelCase objects; throw `Error(friendlyMessage)`
+(keep `err.code`; messages written by database rules, code `P0001`, are shown as written).
+`limit` default 12; cursors are opaque (ISO timestamp of the last item; `"<likes>|<timestamp>"` for the popular feed), `nextCursor: null` at the end.
+`createApi(client, {url, key, XHR, now, uuid, stallMs, fetch})`: `stallMs` is the upload stall timeout, `fetch` is used by `deleteAccount`.
+Input is validated client-side with friendly sentences (`src/api/util.js` exports the validators `cleanProfile cleanAtelier cleanTier
+cleanComment cleanMessage cleanNote cleanReport`, the constants and the mappers; views may import them for matching checks).
+`tests/contract.test.mjs` checks the method list, the shapes and the callers against this section.
 
 **Shapes**
 - `Creator { id, slug, ownerId, name, initials, category, descriptor, location, image, bio, avatarUrl, avatarPath, coverUrl, coverPath, links:[{label,url}], isShowcase, followerCount, memberCount, entryCount, createdAt }`
@@ -207,6 +223,21 @@ All methods async; return camelCase objects; throw `Error(friendlyMessage)` (kee
 - search: `search(q)→{creators,entries}` · reports: `report({targetType,targetId,reason,details})`
 - account: `exportData()→object deleteAccount()` (edge function) · realtime: `subscribe(userId,{onNotification,onMessage})→unsubscribe`
 
+**Notes** (behaviour the views rely on)
+- `onAuthChange(fn)` returns an unsubscribe function; `fn(event, session)` is deferred with `setTimeout(0)` (calling Supabase from inside
+  its own callback can deadlock). `signUp` rejects an address that is already registered and resolves `{confirmed: Boolean(session)}`.
+- `feed({scope: 'following'})` is empty for guests. It accepts an optional `creatorIds` (the store's followed plus member ids) to skip
+  the lookup, which is otherwise made once per account and cached until a follow, join, leave or account change (capped at 200 creators).
+- `unreadCounts().notifications` counts unread rows of the activity feed **without** type `'message'` (every new message also leaves one, and
+  `messages` has its own badge). `messages` counts unread messages in the viewer's threads. Guests get zeros.
+- `recordRead` never throws and does nothing for guests. `savedEntries` leaves out posts that were unpublished or removed.
+- `deleteEntry` also removes the uploaded cover (covers bucket) next to the media; `deleteAccount` calls the `delete-account` edge function,
+  which removes files (entry-media, previews, covers by `<creator_id>/`, avatars by `<user_id>/`), then the atelier, then the user; every step is idempotent.
+- `sendMessage(creatorId, memberId, from, text)`: `from` must match the viewer's role; creators reply only in threads a member started;
+  showcase ateliers are not messageable.
+- `subscribe` delivers messages for every thread the person can read, including ones sent from another tab: compare `from` and `memberId`
+  with the viewer. `onNotification` receives the full row (actor, atelier, post), as `listNotifications` returns it.
+
 ## 7. Conventions
 - Design: `design.css` tokens, square geometry, fine rules, eyebrow labels, large tight headings,
   no pills/gradients/emoji; editorial presets in monochrome, uploaded media in colour.
@@ -220,3 +251,16 @@ All methods async; return camelCase objects; throw `Error(friendlyMessage)` (kee
 - Copy: calm, editorial, specific; never "demo", "mock", "fake", "lorem".
 - Security: no unescaped user data in markup, no inline scripts/handlers (CSP), external links
   `rel="noopener noreferrer" target="_blank"`, client validation + server RLS.
+
+## 8. Testing
+- `node --test` runs everything in one process (`--test-isolation=none`): `tests/*.test.mjs` and `tests/views/*.test.mjs`. Anything that
+  installs a DOM does it inside `describe` (`before(installDom)`, `after(uninstallDom)`), never at import time.
+- `tests/helpers/fake-api.mjs`: `createFakeApi({signedIn, confirmEmail, db})`, the complete contract of section 6 in memory, with the seed
+  (member Sofia Marchetti, owner of Verne & Co, showcase ateliers Atelier Solene and Casa Verano) and helpers (`signInAs(id, event?)`,
+  `signOut()`, `fail(method, error)`, `emit(user, 'notification'|'message', row)`, `db`, `calls`). Its header documents all of it.
+- `tests/helpers/dom.mjs`: `mountApp({api, path, routes?, recovery?})` boots the real shell, router and store in happy-dom (the default api
+  is a guest on the fake). `stubApi({session, viewer, unread, ...overrides})` is the same fake with the session, viewer and badge counts under
+  the test's control, for store and race tests with opaque ids; it defines no method of its own that section 6 does not have.
+- `tests/contract.test.mjs` fails when section 3 or 6 and the code disagree: method lists of the real and the fake api, the shapes of
+  results, every `api.x(` call in `src/core`, `src/views` and `src/main.js`, and the route table with its guards.
+- `tests/boot.test.mjs` boots the shell as guest, member and creator and visits every route.

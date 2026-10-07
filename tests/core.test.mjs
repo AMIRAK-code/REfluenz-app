@@ -1563,6 +1563,21 @@ describe('core', () => {
       await end();
     });
 
+    it('keeps the focused field in a browser without CSS.escape, for ids and names with odd characters', async () => {
+      const css = globalThis.CSS;
+      globalThis.CSS = undefined;
+      try {
+        await open({ path: '/app', extra: [{ path: '/app/form', view: inline({ title: 'Form', render: () => html`<input id="a.b" name="x:y" value="x">`, mount: (el, ctx) => { el.querySelector('input').addEventListener('input', () => ctx.rerender()); } }) }] });
+        await app.navigate('/app/form');
+        app.find('#view input').focus();
+        app.find('#view input').dispatchEvent(new window.Event('input', { bubbles: true }));
+        assert.equal(app.document.activeElement.id, 'a.b');
+        await end();
+      } finally {
+        globalThis.CSS = css;
+      }
+    });
+
     it('moves focus to the main region and announces after navigation, but not on the first load', async () => {
       await open({ path: '/app' });
       assert.notEqual(app.document.activeElement.id, 'main');

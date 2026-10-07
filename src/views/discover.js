@@ -194,7 +194,7 @@ export default {
 
     const counts = {};
     const announceBrowse = ({ reason, count }, key) => {
-      if (reason !== 'show') return;
+      if (reason !== 'show' && reason !== 'more') return;
       counts[key] = count;
       if (counts.creators !== undefined && counts.entries !== undefined) {
         status.textContent = `${plural(counts.creators, 'creator')} and ${plural(counts.entries, 'post')} shown.`;
@@ -285,6 +285,7 @@ export default {
     const setQuery = value => apply({ q: cleanQuery(value) });
     const typed = debounce(() => setQuery(input.value), SEARCH_DELAY);
 
+    syncControls();
     if (state.q) paintSearch(data.search);
     else startBrowse({ initial: data });
 

@@ -229,7 +229,7 @@ export function previewMarkup(p) {
     ${p.video && html`<div class="ed-article-media"><video controls preload="metadata" playsinline aria-label="${p.title || 'Untitled post'}, video" src="${p.video.src}"${p.video.poster && html` poster="${p.video.poster}"`}></video></div>`}
     ${p.mediaNote && html`<p class="ed-empty-note">${p.mediaNote}</p>`}
     ${p.paragraphs.length > 0
-    ? html`<div class="ed-article-body">${p.paragraphs.map(paragraph => html`<p>${paragraph}</p>`)}</div>`
+    ? html`<div class="ed-article-body">${p.paragraphs.map(paragraph => html`<p>${paragraph.split(/\r?\n/).map((line, index) => (index ? [raw('<br>'), line] : line))}</p>`)}</div>`
     : p.kind === 'text' && html`<p class="ed-empty-note">Nothing written yet.</p>`}
     ${p.lockNote && html`<p class="ed-lock-note">${icon('lock', 16)}<span>${p.lockNote}</span></p>`}
   </article>`;

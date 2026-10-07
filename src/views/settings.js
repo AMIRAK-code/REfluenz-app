@@ -11,10 +11,10 @@ import { tools } from './settings/tools.js';
 import { focusFirstInvalid, formError, formNote, reason, refreshCounter, setError, switchRow, textField, validateEach } from './settings/form.js';
 
 const TABS = [
-  { id: 'profile', label: 'Profile' },
-  { id: 'account', label: 'Account' },
-  { id: 'notifications', label: 'Notifications' },
-  { id: 'data', label: 'Your data' }
+  { id: 'profile', label: 'Profile', title: 'Profile settings' },
+  { id: 'account', label: 'Account', title: 'Account settings' },
+  { id: 'notifications', label: 'Notifications', title: 'Notification settings' },
+  { id: 'data', label: 'Your data', title: 'Your data' }
 ];
 
 // The eight kinds of notification the database knows (user_settings.notify_prefs), in the groups people think in.
@@ -156,7 +156,7 @@ function notificationsPanel(ctx) {
         ${group.items.map(item => switchRow({ id: `pref-${item.key}`, label: item.label, text: item.text, checked: prefs[item.key] !== false, extra: { 'data-pref': item.key } }))}
       </div>
     </section>`)}
-    <p class="settings-foot">Changes are saved as you make them. Notifications appear in your activity feed and the bell, not by email.</p>`;
+    <p class="settings-foot">Changes are saved as you make them. Notifications appear in your activity feed and on the bell.</p>`;
 }
 
 function dataPanel(ctx, data) {
@@ -249,7 +249,7 @@ function deleteDialog(ctx) {
 // --- The view ------------------------------------------------------------------
 
 export default {
-  title: (ctx, data) => `${TABS.find(tab => tab.id === data?.tab)?.label ?? 'Account'} settings`,
+  title: (ctx, data) => TABS.find(tab => tab.id === data?.tab)?.title ?? 'Settings',
   auth: 'required',
 
   async load(ctx) {
@@ -282,6 +282,12 @@ export default {
     const timers = new Set();
 
     const redraw = () => ctx.rerender();
+    // What a form shows is what is sent, also when a browser filled a field without an input event.
+    const syncFields = form => {
+      for (const control of form.elements) {
+        if (control.id && /^(INPUT|TEXTAREA)$/.test(control.tagName) && control.type !== 'checkbox' && control.type !== 'file') data.fields[control.id] = control.value;
+      }
+    };
     // A message of one form: kept for the next drawing and shown at once.
     const say = (kind, name, text) => {
       data[kind][name] = text;
@@ -506,6 +512,7 @@ export default {
       }),
       delegate(el, 'submit', 'form[data-form]', (event, form) => {
         event.preventDefault();
+        syncFields(form);
         forms[form.dataset.form]?.(form);
       }),
       delegate(el, 'click', '[data-action]', (event, control) => {

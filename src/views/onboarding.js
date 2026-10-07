@@ -4,7 +4,7 @@
 //   3. creators to follow (api.suggestedCreators, the shell wires the follow buttons)
 // Finishing or skipping saves settings.onboarded, so the router stops sending the person here.
 
-import { avatar, badge, delegate, errorState, followButton, html, icon, setBusy, skeleton, toast } from '../core/ui.js';
+import { avatar, badge, button, delegate, followButton, html, icon, setBusy, skeleton, toast } from '../core/ui.js';
 import { GUEST_PATHS, paths, safeNext } from '../core/paths.js';
 import { CATEGORIES } from '../api/util.js';
 import { prepareImage, validateFiles } from '../media.js';
@@ -84,10 +84,15 @@ function ordered(items, interests) {
   return { list: chosen.slice(0, SHOWN).map(entry => entry.creator), matched: chosen.some(entry => entry.hit) };
 }
 
+// The same box as ui.errorState, with a Retry that this page handles itself (so it never depends on the page-wide retry registry).
+function suggestionsError(error) {
+  return html`<div class="error-state" role="alert"><span class="empty-icon">${icon('alert', 26)}</span><h3>We could not load suggestions</h3><p>${messageOf(error, 'Check your connection and try again.')}</p>${button('Retry', { variant: 'secondary', attrs: { 'data-retry-suggestions': true } })}</div>`;
+}
+
 function stepThree(ctx, data) {
   const { status, items, error } = data.suggestions;
   let body;
-  if (status === 'error') body = errorState(error, { title: 'We could not load suggestions', retry: () => loadSuggestions(ctx, data, { force: true }) });
+  if (status === 'error') body = suggestionsError(error);
   else if (status !== 'ready') body = skeleton('list', 4);
   else if (!items.length) body = html`<div class="empty"><h3>No suggestions yet</h3><p>Browse Discover to find creators worth following.</p></div>`;
   else {
@@ -114,7 +119,8 @@ const COPY = [
 
 function loadSuggestions(ctx, data, { force = false } = {}) {
   const state = data.suggestions;
-  if (!force && (state.status === 'loading' || state.status === 'ready')) return;
+  // A failure is retried only when the person asks (Retry) or opens the last step again, never by redrawing the page.
+  if (!force && state.status !== 'idle') return;
   state.status = 'loading';
   state.error = null;
   ctx.api.suggestedCreators(SUGGESTIONS).then(
@@ -173,7 +179,7 @@ export default {
     function go(step) {
       data.step = step;
       data.focusHeading = true;
-      if (step === 3) loadSuggestions(ctx, data);
+      if (step === 3) loadSuggestions(ctx, data, { force: data.suggestions.status === 'error' });
       ctx.rerender();
     }
 
@@ -268,6 +274,7 @@ export default {
         else if (data.step === 2) go(3);
         else leave(formEl.querySelector('[type="submit"]'));
       }),
+      delegate(el, 'click', '[data-retry-suggestions]', event => { event.preventDefault(); loadSuggestions(ctx, data, { force: true }); }),
       delegate(el, 'click', '[data-skip]', (event, control) => { event.preventDefault(); leave(control); }),
       delegate(el, 'click', '[data-back]', event => { event.preventDefault(); go(data.step - 1); }),
       delegate(el, 'click', '[data-pick-avatar]', () => el.querySelector('[data-avatar-input]')?.click()),

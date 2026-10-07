@@ -4,7 +4,7 @@
 // The page is drawn once. The pieces that change while it is open (the media after a retry, the comments, the list of
 // more posts) are drawn by their own modules inside it, so a film keeps playing and typed text is never lost.
 
-import { avatar, badge, button, delegate, entryCard, errorState, followButton, html, icon, likeButton, raw, saveButton, setBusy, toast } from '../core/ui.js';
+import { avatar, badge, button, delegate, entryCard, followButton, html, icon, likeButton, raw, saveButton, setBusy, toast } from '../core/ui.js';
 import { hydrateCovers } from '../core/covers.js';
 import { duration, entrySize, formatDate, kindOf, money } from '../core/format.js';
 import { paths } from '../core/paths.js';
@@ -12,6 +12,7 @@ import { TIER_NAMES, presetUrl } from '../core/constants.js';
 import { loadMedia, mediaMarkup, mountMedia } from './entry/media.js';
 import { commentsSection, mountComments } from './entry/comments.js';
 import { openReport, sharePost } from './entry/actions.js';
+import { failureState } from './entry/states.js';
 
 const KIND_LABELS = { text: 'Text', image: 'Images', video: 'Video' };
 const MORE_FIRST = 7; // one more than shown, so the post itself can be left out
@@ -35,6 +36,13 @@ function lockedCover(entry) {
 }
 
 // --- Pieces of the page --------------------------------------------------------------
+
+function loadFailure(data) {
+  return html`<section class="page post-page" aria-labelledby="post-title">
+    <h1 class="visually-hidden" id="post-title">The post could not be loaded</h1>
+    ${failureState(data.failure, { title: 'We could not load this post', attr: 'data-post-reload' })}
+  </section>`;
+}
 
 function notFound() {
   return html`<section class="page post-page" aria-labelledby="post-title">
@@ -125,7 +133,14 @@ function content(ctx, data) {
 
 async function load(ctx) {
   const { api, store } = ctx;
-  const entry = await api.getEntry(ctx.params.id);
+  let entry;
+  try {
+    entry = await api.getEntry(ctx.params.id);
+  } catch (error) {
+    // Drawn by the page itself, with its own retry (see mount): the person stays on a page that explains what happened.
+    console.error(error);
+    return { entry: null, failure: error };
+  }
   // A draft belongs to its author alone: the database hides it from everybody else, and so does the page.
   if (!entry || (entry.status !== 'published' && !isOwner(store, entry))) return { entry: null };
 
@@ -183,9 +198,11 @@ function mountMore(root, ctx, data) {
     } catch (error) {
       if (!alive) return;
       section.hidden = false;
-      section.innerHTML = frame(errorState(error, { title: 'We could not load more from this atelier', retry: first })).value;
+      section.innerHTML = frame(failureState(error, { title: 'We could not load more from this atelier', attr: 'data-more-retry' })).value;
     }
   }
+
+  const offRetry = delegate(section, 'click', '[data-more-retry]', () => first());
 
   const off = delegate(section, 'click', '[data-more-load]', async (event, control) => {
     if (loading) return;
@@ -209,17 +226,19 @@ function mountMore(root, ctx, data) {
   return () => {
     alive = false;
     off();
+    offRetry();
   };
 }
 
 // --- The view ------------------------------------------------------------------------
 
 export default {
-  title: (ctx, data) => (data?.entry ? data.entry.title : 'Post not found'),
+  title: (ctx, data) => (data?.entry ? data.entry.title : data?.failure ? 'Post unavailable' : 'Post not found'),
   auth: 'optional',
   load,
 
   render(ctx, data) {
+    if (data.failure) return loadFailure(data);
     if (!data.entry) return notFound();
     const { entry, readable } = data;
     const canTalk = readable && entry.status === 'published';
@@ -233,6 +252,12 @@ export default {
   },
 
   mount(el, ctx, data) {
+    if (data.failure) {
+      return delegate(el, 'click', '[data-post-reload]', (event, control) => {
+        setBusy(control, true);
+        ctx.reload();
+      });
+    }
     if (!data.entry) return undefined;
     const { api, store } = ctx;
     const { entry } = data;

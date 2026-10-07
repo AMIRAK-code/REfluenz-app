@@ -44,7 +44,7 @@ const PROGRAMMING = [TypeError, ReferenceError, SyntaxError, RangeError];
 export const messageOf = error => (PROGRAMMING.some(type => error instanceof type) ? 'Something went wrong. Try again in a moment.' : error?.message || 'Something went wrong. Try again in a moment.');
 
 // Splits text into paragraphs on blank lines.
-export const paragraphs = text => String(text ?? '').split(/\n{2,}/).map(part => part.trim()).filter(Boolean);
+export const paragraphs = text => String(text ?? '').split(/\r?\n[ \t]*\r?\n/).map(part => part.trim()).filter(Boolean);
 
 export const readingMinutes = text => Math.max(1, Math.ceil((String(text ?? '').trim().split(/\s+/).filter(Boolean).length || 1) / 200));
 
@@ -129,6 +129,7 @@ export function createState(data) {
     kind: data.kind,
     entryId: entry?.id ?? '',
     status: entry?.status ?? 'draft',        // what the post was when the page opened: decides "Update" and "Move to drafts"
+    live: entry?.status === 'published',     // the post was live when the page opened (its buttons read "Update post" and "Move to drafts")
     items: (data.items ?? []).map(item => ({ ...item, key: nextKey(), progress: null })),
     removed: [...(data.strays ?? [])],       // media rows queued for removal when the post is saved
     uploaded: new Set(),                     // ids of media this editing session stored itself
@@ -142,6 +143,7 @@ export function createState(data) {
     },
     mode: 'write',
     saving: false,
+    controller: null,                        // the AbortController of the save in progress (Cancel upload)
     dirty: false,
     finished: false,
     note: '',                                // the message shown in the media section

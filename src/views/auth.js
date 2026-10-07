@@ -427,9 +427,16 @@ export default {
       })
     ];
 
-    if (data.focus === 'title') el.querySelector('#auth-title')?.focus();
-    else if (data.focus) input(data.focus)?.focus();
+    // After a redraw the router puts the focus back where it was; this runs after that, so the new page's own focus target wins.
+    const focusTarget = data.focus;
     data.focus = '';
+    if (focusTarget) {
+      queueMicrotask(() => {
+        if (disposed) return;
+        if (focusTarget === 'title') el.querySelector('#auth-title')?.focus();
+        else input(focusTarget)?.focus();
+      });
+    }
     refreshCooldown();
 
     return () => {

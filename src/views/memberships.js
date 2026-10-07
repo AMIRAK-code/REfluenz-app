@@ -31,7 +31,7 @@ function rowOf(membership) {
   return html`<li class="membership-row" data-membership="${membership.creatorId}">
     <a class="membership-avatar" href="${href}" tabindex="-1" aria-hidden="true">${avatar(creator || { name }, { size: 56 })}</a>
     <div class="membership-main">
-      <h3><a href="${href}">${name}</a></h3>
+      <h2><a href="${href}">${name}</a></h2>
       ${line && html`<p class="eyebrow muted">${line}</p>`}
       <p class="membership-tier"><strong>${tier?.name || 'Member'}</strong> <span class="muted">· ${money(tier?.priceCents ?? 0, tier?.currency)} / month once payments launch</span></p>
       <p class="membership-since muted">Member since ${formatDate(membership.createdAt, { year: true })}. Free during early access.</p>
@@ -107,7 +107,7 @@ export default {
       delegate(el, 'click', '[data-action="more"]', () => {
         const before = Math.min(data.shown, data.items.length);
         ctx.rerender({ ...data, shown: data.shown + PAGE });
-        el.querySelectorAll('.membership-row')[before]?.querySelector('h3 a')?.focus();
+        el.querySelectorAll('.membership-row')[before]?.querySelector('h2 a')?.focus();
       })
     ];
     return () => { for (const remove of removers) remove(); };

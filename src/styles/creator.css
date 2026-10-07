@@ -85,8 +85,8 @@
 .membership-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 18px 22px; padding: 24px 0; border-bottom: 1px solid var(--rule); }
 .membership-avatar { display: block; line-height: 0; }
 .membership-main { min-width: 0; }
-.membership-main h3 { font-size: 22px; letter-spacing: -.035em; overflow-wrap: anywhere; }
-.membership-main h3 a:hover { color: var(--bronze); }
+.membership-main h2 { font-size: 22px; letter-spacing: -.035em; overflow-wrap: anywhere; }
+.membership-main h2 a:hover { color: var(--bronze); }
 .membership-main .eyebrow { margin-top: 4px; font-size: 10px; }
 .membership-tier { margin-top: 10px; font-size: 14px; }
 .membership-since { margin-top: 4px; font-size: 12px; }

@@ -66,15 +66,15 @@ function row(ctx, note) {
   const unread = !note.readAt;
   const href = targetOf(ctx.store, note);
   const body = html`${avatar(note.actor || note.creator || { name: '' }, { size: 40 })}
-    <span class="notice-text">
-      <span class="notice-sentence">${sentence(note)}</span>
-      <span class="notice-meta"><time datetime="${note.createdAt}">${timeAgo(note.createdAt)}</time>${unread ? html`<span class="eyebrow notice-new">New</span>` : ''}</span>
+    <span class="activity-text">
+      <span class="activity-sentence">${sentence(note)}</span>
+      <span class="activity-meta"><time datetime="${note.createdAt}">${timeAgo(note.createdAt)}</time>${unread ? html`<span class="eyebrow activity-new">New</span>` : ''}</span>
     </span>`;
-  return html`<li class="notice${unread ? ' is-unread' : ''}" data-notice="${note.id}">
+  return html`<li class="activity${unread ? ' is-unread' : ''}" data-activity="${note.id}">
     ${href
-      ? html`<a class="notice-main" href="${href}" data-open="${note.id}" data-focus="open:${note.id}">${body}</a>`
-      : html`<div class="notice-main">${body}</div>`}
-    <div class="notice-actions">
+      ? html`<a class="activity-main" href="${href}" data-open="${note.id}" data-focus="open:${note.id}">${body}</a>`
+      : html`<div class="activity-main">${body}</div>`}
+    <div class="activity-actions">
       ${unread ? html`<button type="button" class="icon-button" data-read="${note.id}" data-focus="read:${note.id}" aria-label="Mark as read">${icon('check', 16)}</button>` : ''}
       <button type="button" class="icon-button" data-delete="${note.id}" data-focus="delete:${note.id}" aria-label="Delete this notification">${icon('trash', 16)}</button>
     </div>
@@ -92,11 +92,11 @@ function bodyMarkup(ctx, data) {
   }
   const now = Date.now();
   const groups = GROUPS.map(([key, label]) => [key, label, data.items.filter(note => bucketOf(note.createdAt, now) === key)]).filter(([, , rows]) => rows.length);
-  return html`${groups.map(([key, label, rows]) => html`<section class="notice-group" aria-labelledby="notices-${key}">
-      <div class="section-head"><h2 id="notices-${key}">${label}</h2></div>
-      <ul class="notice-list">${rows.map(note => row(ctx, note))}</ul>
+  return html`${groups.map(([key, label, rows]) => html`<section class="activity-group" aria-labelledby="activities-${key}">
+      <div class="section-head"><h2 id="activities-${key}">${label}</h2></div>
+      <ul class="activity-list">${rows.map(note => row(ctx, note))}</ul>
     </section>`)}
-    ${data.nextCursor || data.moreError ? html`<div class="notices-more">
+    ${data.nextCursor || data.moreError ? html`<div class="activities-more">
       <div data-sentinel></div>
       ${data.moreError ? html`<p class="field-error" role="alert">${data.moreError}</p>` : ''}
       <button type="button" class="button secondary" data-more data-focus="more">${data.moreError ? 'Try again' : 'Load more'}</button>
@@ -115,20 +115,20 @@ export default {
   },
 
   render(ctx, data) {
-    return html`<section class="page notices">
+    return html`<section class="page activities">
       <header class="page-head">
         <div><p class="eyebrow muted">Activity</p><h1>Notifications</h1><p class="page-sub">What is happening around your atelier and the creators you follow.</p></div>
-        <div class="notices-tools">${button('Mark all read', { variant: 'secondary', size: 'small', icon: 'check', attrs: { 'data-mark-all': true, disabled: !data.items.some(note => !note.readAt) && !ctx.store.state.unread.notifications } })}</div>
+        <div class="activities-tools">${button('Mark all read', { variant: 'secondary', size: 'small', icon: 'check', attrs: { 'data-mark-all': true, disabled: !data.items.some(note => !note.readAt) && !ctx.store.state.unread.notifications } })}</div>
       </header>
-      <p class="visually-hidden" id="notices-status" role="status"></p>
-      <div id="notices-body">${bodyMarkup(ctx, data)}</div>
+      <p class="visually-hidden" id="activities-status" role="status"></p>
+      <div id="activities-body">${bodyMarkup(ctx, data)}</div>
     </section>`;
   },
 
   mount(el, ctx, data) {
     const { api, store } = ctx;
-    const body = el.querySelector('#notices-body');
-    const status = el.querySelector('#notices-status');
+    const body = el.querySelector('#activities-body');
+    const status = el.querySelector('#activities-status');
     const markAll = el.querySelector('[data-mark-all]');
     const removers = [];
     const deleting = new Set();
@@ -216,10 +216,10 @@ export default {
 
     // The row is patched, not replaced: the link under the pointer must survive the click that is navigating.
     function showRead(id) {
-      const item = body.querySelector(`[data-notice="${id}"]`);
+      const item = body.querySelector(`[data-activity="${id}"]`);
       if (!item) return;
       item.classList.remove('is-unread');
-      item.querySelector('.notice-new')?.remove();
+      item.querySelector('.activity-new')?.remove();
       const button = item.querySelector('[data-read]');
       if (button) {
         const focusBack = el.ownerDocument.activeElement === button;

@@ -188,17 +188,22 @@ async function loadOpen(ctx, inbox, creatorId, memberId) {
   const open = { creatorId, memberId, role, state: 'ready', error: null, creator: null, member: null, partner: { kind: 'creator', name: '', avatarUrl: '', slug: '' }, blocked: '', messages: [], pending: [] };
   if (!role) return { ...open, state: 'unavailable' };
 
+  const summary = inbox.find(thread => thread.creatorId === creatorId && thread.memberId === memberId);
+
+  // The messages and, for a member, the atelier are asked for together: opening a conversation is one round trip.
   let messages;
+  let creator = null;
   try {
-    messages = await api.thread(creatorId, memberId);
+    [messages, creator] = await Promise.all([
+      api.thread(creatorId, memberId),
+      role === 'member' ? (summary?.creator ?? api.getCreator(creatorId)) : null
+    ]);
   } catch (error) {
     return { ...open, state: 'error', error };
   }
-  const summary = inbox.find(thread => thread.creatorId === creatorId && thread.memberId === memberId);
 
   try {
     if (role === 'member') {
-      const creator = summary?.creator ?? await api.getCreator(creatorId);
       if (!creator) return { ...open, state: 'unavailable' };
       open.creator = creator;
       open.member = { id: me, name: store.state.profile?.name || 'You', avatarUrl: store.state.profile?.avatarUrl || '' };

@@ -135,6 +135,8 @@ export default {
     const { api, store } = ctx;
     const signedIn = Boolean(store.state.user);
     const view = readView(ctx.query, signedIn);
+    // Without the viewer's follows the circle would look empty: ask again, and let the page show the error with Retry if that fails too.
+    if (signedIn && store.state.viewerError) await store.reloadViewer();
     const [page, suggested, rail] = await Promise.all([
       fetchFeedPage(api, store, view, null),
       api.suggestedCreators(SUGGESTIONS).catch(() => []),
@@ -162,12 +164,12 @@ export default {
       <div class="feed-layout">
         <div class="feed-main">
           ${controls(data.view, signedIn)}
-          <div class="feed-notice" role="status" data-feed-notice hidden><span data-notice-text></span> <button type="button" class="text-button" data-feed-refresh>Refresh the feed</button></div>
+          <div role="status" class="feed-notice-region"><p class="feed-notice" data-feed-notice hidden><span data-notice-text></span> <button type="button" class="text-button" data-feed-refresh>Refresh the feed</button></p></div>
           <div class="section-head feed-list-head"><h2 data-feed-heading>${listHeading(data.view, signedIn)}</h2></div>
           <p class="visually-hidden" role="status" data-feed-status></p>
           <div class="feed-list" data-feed-list></div>
         </div>
-        <aside class="feed-rail" aria-label="Your circle and suggestions" data-rail>${railMarkup(data.rail, data.suggested, { signedIn, memberships: state.memberships })}</aside>
+        <aside class="feed-rail${signedIn ? '' : ' is-guest'}" aria-label="${signedIn ? 'Your circle and suggestions' : 'Suggested creators'}" data-rail>${railMarkup(data.rail, data.suggested, { signedIn, memberships: state.memberships })}</aside>
       </div>
     </section>`;
   },
@@ -220,9 +222,8 @@ export default {
       renderLead: entry => entryCard(entry),
       renderEmpty: emptyFeed,
       onChange({ reason, count, done, empty }) {
-        if (reason === 'show' || reason === 'error') {
-          status.textContent = reason === 'error' ? 'The feed could not be loaded.' : empty ? 'No posts to show.' : `Showing ${plural(count, 'post')}${done ? '' : ', more available'}.`;
-        }
+        if (reason === 'error') status.textContent = empty ? 'The feed could not be loaded.' : 'More posts could not be loaded.';
+        else if (reason === 'show' || reason === 'more') status.textContent = empty ? 'No posts to show.' : `Showing ${plural(count, 'post')}${done ? '' : ', more available'}.`;
         syncRailSuggestions();
       }
     });
@@ -276,6 +277,14 @@ export default {
       paintRail();
     }, 400);
 
+    // An empty feed that has just gained someone to read (a follow from the suggestions) fills itself in, once the
+    // person has stopped choosing.
+    const catchUp = debounce(() => {
+      if (!alive) return;
+      hideNotice();
+      pager.reset();
+    }, 500);
+
     // --- Welcome ---------------------------------------------------------------
 
     async function dismissWelcome(control) {
@@ -310,7 +319,9 @@ export default {
         if (key === circleKey) return;
         circleKey = key;
         refreshRail();
-        if (view.tab === 'following') showNotice('Your circle has changed.');
+        if (view.tab !== 'following') return;
+        if (pager.items.length === 0) catchUp();
+        else showNotice('Your circle has changed.');
       }),
       store.onRealtime(event => {
         const type = event.type === 'notification' ? event.payload?.type : '';
@@ -322,6 +333,7 @@ export default {
     return () => {
       alive = false;
       refreshRail.cancel();
+      catchUp.cancel();
       pager.destroy();
       stops.forEach(stop => stop());
     };

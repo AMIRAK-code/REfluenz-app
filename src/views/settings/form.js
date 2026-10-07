@@ -47,6 +47,16 @@ export function switchRow({ id, label, text, checked, extra = {} }) {
 export const formError = (name, text = '') => html`<p class="form-error" role="alert" data-error="${name}">${text}</p>`;
 export const formNote = (name, text = '') => html`<p class="form-note" role="status" data-note="${name}">${text}</p>`;
 
+// say('error' | 'note', name, text): keeps a message of one form in `data` (for the next drawing) and writes it at once into its
+// element (formError / formNote), so a screen reader announces it without the page being drawn again.
+export function messenger(root, data) {
+  return (kind, name, text) => {
+    data[kind][name] = text;
+    const node = root.querySelector(`[data-${kind === 'error' ? 'error' : 'note'}="${name}"]`);
+    if (node) node.textContent = text;
+  };
+}
+
 // Shows or clears the error of one field (the control is marked invalid, the message sits below it).
 export function setError(doc, id, message) {
   const control = doc.getElementById(id);

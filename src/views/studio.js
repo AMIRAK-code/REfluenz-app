@@ -67,7 +67,7 @@ function renderStudio(ctx, st) {
   return html`<section class="page studio" aria-labelledby="studio-title">
     <header class="page-head studio-head">
       <div class="studio-identity">${avatar(creator, { size: 64 })}<div><p class="eyebrow muted">Creator studio</p><h1 id="studio-title">${creator.name}</h1>${line && html`<p class="studio-line muted">${line}</p>`}</div></div>
-      <div class="studio-head-actions">${button('View public page', { variant: 'secondary', size: 'small', href: paths.creator(creator.slug), icon: 'eye' })}${button('Edit atelier', { variant: 'secondary', size: 'small', href: paths.studioSettings(), icon: 'edit' })}</div>
+      <div class="studio-head-actions">${button('View public page', { variant: 'secondary', size: 'small', href: paths.creator(creator.slug), icon: 'arrow' })}${button('Edit atelier', { variant: 'secondary', size: 'small', href: paths.studioSettings(), icon: 'studio' })}</div>
     </header>
     ${newPostChooser()}
     <section class="section studio-overview" aria-labelledby="studio-overview-title">
@@ -411,7 +411,15 @@ function mountStudio(el, ctx, st) {
       selectTab(TABS[next]);
       el.querySelector(`[data-tab="${TABS[next]}"]`)?.focus();
     }),
-    delegate(el, 'click', '[data-more-entries]', (event, control) => loadList(control.dataset.moreEntries, { more: true })),
+    // Retry buttons are routed by the studio itself (the document-wide listener of ui.errorState is not relied on), and the
+    // click stops here so that a request is never made twice.
+    delegate(el, 'click', '[data-retry]', (event, control) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (control.closest('[data-region="stats"]')) loadStats();
+      else if (control.closest('[data-region="results"]')) handlers[st.tab]?.();
+    }),
+    delegate(el, 'click', '[data-more-entries]',(event, control) => loadList(control.dataset.moreEntries, { more: true })),
     delegate(el, 'click', '[data-delete-entry]', (event, control) => deleteEntry(control)),
     delegate(el, 'input', '[data-member-search]', (event, input) => { st.members.query = input.value; filterChanged(); }),
     delegate(el, 'change', '[data-member-tier]', (event, select) => { st.members.tier = select.value; filterChanged(); }),

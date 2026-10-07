@@ -2,11 +2,12 @@
 // reported in place. The list is drawn by this module alone (the page around it is never redrawn), so a film keeps
 // playing and nothing typed is lost when something else changes. Comments are shown only for readable, published posts.
 
-import { avatar, badge, confirmDialog, delegate, emptyState, errorState, html, setBusy, skeleton, toast } from '../../core/ui.js';
+import { avatar, badge, confirmDialog, delegate, emptyState, html, setBusy, skeleton, toast } from '../../core/ui.js';
 import { formatDate, plural, timeAgo } from '../../core/format.js';
 import { paths } from '../../core/paths.js';
 import { cleanComment } from '../../api/util.js';
 import { openReport } from './actions.js';
+import { failureState } from './states.js';
 
 export const COMMENT_MAX = 2000;
 export const PAGE = 20; // conversations shown at first and added by "Show more comments"
@@ -136,7 +137,7 @@ export function mountComments(root, ctx, data) {
 
   function listMarkup() {
     if (status === 'loading') return skeleton('text', 3);
-    if (status === 'error') return errorState(failure, { retry: load, title: 'We could not load the comments' });
+    if (status === 'error') return failureState(failure, { title: 'We could not load the comments', attr: 'data-comments-retry' });
     if (!comments.length) {
       return html`<div class="post-comments-empty">${emptyState({ icon: 'message', title: 'No comments yet', text: viewer() ? 'Be the first to say what this post made you think of.' : 'Sign in to start the conversation.' })}</div>`;
     }
@@ -310,6 +311,7 @@ export function mountComments(root, ctx, data) {
       if (form.dataset.mode !== 'new') drafts.set(`${form.dataset.mode}:${form.dataset.target}`, field.value);
       setError(form, '');
     }),
+    delegate(section, 'click', '[data-comments-retry]', () => load()),
     delegate(section, 'click', '[data-comment-action]', (event, control) => {
       event.preventDefault();
       const { id } = control.dataset;

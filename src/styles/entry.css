@@ -1,0 +1,125 @@
+/* The post page (views/entry.js and views/entry/*): header, words, gallery, film, lock, conversation, more from the atelier.
+   Builds on base.css (badges, buttons, notices, empty and error states, section heads, entry cards). */
+
+.post-page { --post-measure: 68ch; max-width: 1080px; margin: 0 auto; }
+
+/* --- Header ---------------------------------------------------------------- */
+.post-head { max-width: 860px; margin-bottom: 30px; }
+.post-title { font-size: clamp(36px, 6.4vw, 66px); letter-spacing: -.055em; line-height: 1.02; margin-top: 12px; overflow-wrap: anywhere; }
+.post-subtitle { margin-top: 16px; max-width: 56ch; font-size: clamp(17px, 2.2vw, 21px); line-height: 1.5; color: var(--muted); overflow-wrap: anywhere; }
+.post-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.post-byline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 28px; margin-top: 26px; padding: 16px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+.post-author { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; min-width: 0; }
+.post-author-link { display: inline-flex; align-items: center; gap: 12px; min-width: 0; }
+.post-author-text { display: flex; flex-direction: column; min-width: 0; font-size: 12px; line-height: 1.4; }
+.post-author-text strong { font-size: 15px; font-weight: 600; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.post-author-link:hover strong { color: var(--bronze); }
+.post-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; }
+.post-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 14px 0 0 -8px; }
+.post-toolbar .button { margin-left: 8px; }
+.post-draft-note { max-width: 860px; margin-bottom: 28px; }
+.post-draft-note a { text-decoration: underline; text-underline-offset: 3px; }
+
+/* --- Words ------------------------------------------------------------------- */
+.post-content { display: grid; gap: 30px; }
+.post-cover { margin: 0; aspect-ratio: 16 / 8; max-height: 520px; overflow: hidden; background: var(--wash); }
+.post-cover img { width: 100%; height: 100%; object-fit: cover; }
+.post-body { max-width: var(--post-measure); font-size: 18px; line-height: 1.8; }
+.post-body p + p { margin-top: 1.3em; }
+.post-body p { overflow-wrap: anywhere; }
+.post-body p:first-child::first-letter { font-size: 3.1em; font-weight: 500; float: left; line-height: .9; padding: .08em .1em 0 0; color: var(--bronze); letter-spacing: -.04em; }
+.post-note { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; padding: 16px 18px; border: 1px solid var(--rule); background: var(--wash); font-size: 13px; line-height: 1.6; max-width: var(--post-measure); }
+.post-note p { margin: 0; }
+.post-media > .post-note { margin-top: 14px; }
+.post-media > .post-note:first-child { margin-top: 0; }
+
+/* --- Images and film --------------------------------------------------------- */
+.post-gallery { display: grid; gap: 22px; }
+.post-figure { margin: 0; background: var(--wash); }
+.post-figure-open { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; line-height: 0; }
+.post-figure-open:focus-visible { outline-offset: 4px; }
+.post-figure img { width: 100%; height: auto; max-height: 86dvh; object-fit: contain; margin: 0 auto; }
+.post-video { display: block; width: 100%; max-height: 80dvh; background: var(--black); }
+
+/* --- Lightbox ---------------------------------------------------------------- */
+dialog.post-lightbox { width: min(1100px, calc(100% - 24px)); }
+.post-lightbox .dialog-body { padding: 0; }
+.post-lightbox-stage { display: grid; background: var(--black); }
+.post-lightbox-stage img { width: 100%; max-height: 74dvh; object-fit: contain; margin: 0 auto; }
+.post-lightbox-bar { display: flex; align-items: center; justify-content: center; gap: 18px; padding: 8px; background: var(--paper); }
+.post-lightbox-count { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* --- Locked post ------------------------------------------------------------- */
+.post-locked { display: grid; gap: 28px; }
+.post-preview { position: relative; aspect-ratio: 16 / 8; max-height: 520px; overflow: hidden; background: var(--wash); }
+.post-preview img { width: 100%; height: 100%; object-fit: cover; }
+.post-preview.is-preview img { filter: blur(22px) saturate(.7); transform: scale(1.25); }
+.post-preview.is-preset img { filter: grayscale(1); }
+.post-excerpt { max-width: var(--post-measure); font-size: 18px; line-height: 1.8; color: var(--muted); overflow-wrap: anywhere; }
+.post-lock { display: grid; justify-items: start; gap: 12px; max-width: 620px; padding: 30px 28px; border: 1px solid var(--rule); border-top: 2px solid var(--bronze); background: var(--white); }
+.post-lock h2 { font-size: clamp(24px, 3.4vw, 32px); letter-spacing: -.045em; }
+.post-lock p { color: var(--muted); font-size: 14px; line-height: 1.7; }
+.post-lock-price { color: var(--ink) !important; }
+.post-lock-price strong { font-size: 30px; font-weight: 500; letter-spacing: -.04em; }
+.post-lock-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 22px; margin-top: 8px; }
+
+/* --- Missing post ------------------------------------------------------------- */
+.post-missing { max-width: 640px; margin: 8vh auto 0; }
+.post-missing h1 { font-size: clamp(28px, 4.4vw, 40px); letter-spacing: -.045em; margin: 15px 0 12px; }
+
+/* --- Conversation ------------------------------------------------------------- */
+.post-comments { max-width: 760px; margin-top: 56px; }
+.post-comment-form { display: grid; gap: 8px; margin-bottom: 28px; }
+.post-comment-form.is-inline { margin: 12px 0 0; }
+.post-comment-form textarea { min-height: 96px; }
+.post-comment-form .form-error { margin: 0; }
+.post-comment-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px 16px; font-size: 12px; }
+.post-comment-hint { margin-right: auto; font-size: 11px; }
+.post-comment-buttons { display: inline-flex; gap: 8px; margin-left: auto; }
+.post-comment-guest { padding: 16px 18px; margin-bottom: 28px; border: 1px solid var(--rule); background: var(--wash); font-size: 14px; line-height: 1.7; }
+.post-comment-guest a { text-decoration: underline; text-underline-offset: 3px; }
+.post-comment-guest a:hover { color: var(--bronze); }
+.post-comment-list, .post-comment-replies { display: grid; }
+.post-comment { padding: 20px 0; border-top: 1px solid var(--rule); min-width: 0; }
+.post-comment:last-child { border-bottom: 1px solid var(--rule); }
+.post-comment-head { display: flex; align-items: center; gap: 12px; }
+.post-comment-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-width: 0; font-size: 12px; color: var(--muted); }
+.post-comment-author { color: var(--ink); font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.post-comment-body { margin: 10px 0 0 44px; font-size: 15px; line-height: 1.7; white-space: pre-line; overflow-wrap: anywhere; }
+.post-comment-actions { display: flex; flex-wrap: wrap; gap: 0 6px; margin: 4px 0 0 36px; }
+.post-comment-action { min-height: 32px; padding: 0 8px; border: 0; background: none; color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; }
+.post-comment-action:hover { color: var(--bronze); }
+.post-comment > .post-comment-form { margin-left: 44px; }
+.post-comment-replies { margin: 14px 0 0 44px; border-left: 1px solid var(--rule); padding-left: 18px; }
+.post-comment.is-reply { padding: 14px 0 6px; border-top: 0; }
+.post-comment.is-reply:last-child { border-bottom: 0; }
+.post-comment.is-reply .post-comment-body { margin-left: 44px; }
+.post-comment:focus-visible { outline: 2px solid var(--bronze); outline-offset: 4px; }
+.post-comments-more { margin-top: 20px; }
+.post-comments-empty .empty { padding: 36px 20px; }
+.post-comments-empty .empty h3 { font-size: 22px; }
+
+/* --- More from this atelier -------------------------------------------------- */
+.post-more { margin-top: 64px; }
+.post-more-foot { display: flex; justify-content: center; margin-top: 32px; }
+
+/* --- Report and share dialogs -------------------------------------------------- */
+.post-report textarea { min-height: 100px; }
+
+/* --- Narrow screens and touch --------------------------------------------------- */
+@media (max-width: 760px) {
+  .post-head { margin-bottom: 22px; }
+  .post-byline { padding: 14px 0; }
+  .post-body, .post-excerpt { font-size: 17px; line-height: 1.75; }
+  .post-lock { padding: 24px 18px; }
+  .post-comments { margin-top: 44px; }
+  .post-comment-body, .post-comment > .post-comment-form, .post-comment.is-reply .post-comment-body { margin-left: 0; }
+  .post-comment-actions { margin-left: -8px; }
+  .post-comment-replies { margin-left: 12px; padding-left: 14px; }
+  .post-more { margin-top: 48px; }
+}
+
+@media (pointer: coarse) {
+  .post-comment-action { min-height: 44px; padding: 0 12px; }
+  .post-figure-open { min-height: 44px; }
+}

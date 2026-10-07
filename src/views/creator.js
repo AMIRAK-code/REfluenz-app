@@ -11,7 +11,7 @@
 // store (the number the server gave, with the viewer's own follow / membership swapped for what the store says now).
 
 import {
-  avatar, badge, button, confirmDialog, delegate, emptyState, entryCard, errorState, followButton, html, icon, infiniteScroll, modal, raw, safeUrl, setBusy, skeleton, tierCard, toast
+  avatar, badge, button, confirmDialog, delegate, emptyState, entryCard, followButton, html, icon, infiniteScroll, modal, raw, safeUrl, setBusy, skeleton, tierCard, toast
 } from '../core/ui.js';
 import { hydrateCovers } from '../core/covers.js';
 import { compactNumber, formatDate, money, plural } from '../core/format.js';
@@ -256,7 +256,7 @@ export default {
       const body = region('posts-body');
       body.setAttribute('aria-busy', String(posts.loading && posts.items.length === 0));
       if (posts.error && posts.items.length === 0) {
-        body.innerHTML = errorState(posts.error, { title: 'We could not load the posts', retry: () => { load({ reset: true }).catch(() => {}); } }).value;
+        body.innerHTML = html`<div class="error-state" role="alert"><span class="empty-icon">${icon('alert', 26)}</span><h3>We could not load the posts</h3><p>${messageOf(posts.error, 'Something went wrong. Try again in a moment.')}</p>${button('Retry', { variant: 'secondary', attrs: { 'data-action': 'retry-posts' } })}</div>`.value;
       } else if (!posts.loaded) {
         body.innerHTML = skeleton('cards', 3).value;
       } else if (posts.items.length === 0) {
@@ -540,6 +540,7 @@ export default {
         else if (action === 'report') openReport();
         else if (action === 'message') store.requireAuth(`Sign in to message ${creator.name}.`);
         else if (action === 'more') load().then(() => {}, () => {});
+        else if (action === 'retry-posts') load({ reset: true }).catch(() => {});
       })
     ];
 

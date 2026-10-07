@@ -89,3 +89,35 @@
   .topbar-actions .button.small { padding: 9px 10px; }
   .topbar-wordmark { font-size: 21px; }
 }
+
+
+/* High-contrast shell */
+/* Dark sidebar: a strong anchor against the warm paper content. */
+.sidebar { background: var(--night); color: var(--night-text); border-right-color: var(--night); }
+.sidebar .wordmark, .sidebar-wordmark { color: var(--white); }
+.sidebar .muted, .sidebar .eyebrow:not(.bronze), .sidebar-caption { color: var(--night-muted); }
+.sidebar .bronze { color: var(--sand); }
+.nav-link { color: var(--night-muted); }
+.nav-link:hover { color: var(--white); background: var(--night-2); }
+.nav-link.is-active { color: var(--white); background: var(--night-2); border-left-color: var(--sand); }
+.sidebar .nav-count { background: var(--sand); color: var(--night); }
+.sidebar .button { background: var(--sand); border-color: var(--sand); color: var(--night); }
+.sidebar .button:hover { background: var(--white); border-color: var(--white); }
+.sidebar .button.secondary { background: transparent; color: var(--night-text); border-color: var(--night-rule); }
+.sidebar .button.secondary:hover { border-color: var(--night-text); background: var(--night-2); }
+.sidebar .text-link:hover { color: var(--sand); }
+.sidebar-join { border-color: var(--night-rule); background: var(--night-2); }
+.sidebar-join p:not(.eyebrow) { color: var(--night-muted); }
+.profile-link { border-top-color: var(--night-rule); }
+.profile-text small { color: var(--night-muted); }
+.sidebar .avatar { background: var(--sand); color: var(--night); }
+.sidebar .menu-panel { color: var(--ink); }
+
+/* Topbar and mobile bar */
+.topbar { border-bottom-color: var(--ink); }
+.search input { background: var(--white); border-color: var(--rule); }
+.search input:focus { border-color: var(--ink); }
+.mobile-bar { background: var(--night); color: var(--night-muted); border-top-color: var(--night); }
+.mobile-bar .mobile-link, .mobile-bar button { color: var(--night-muted); }
+.mobile-bar .mobile-link.is-active, .mobile-bar [aria-current="page"] { color: var(--sand); }
+

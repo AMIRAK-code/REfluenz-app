@@ -34,8 +34,8 @@ export function entryRow(entry, stats, store) {
       <p class="studio-entry-meta muted"><span>${when}</span><span data-access="${entry.access}">${accessLabel(entry.access, stats)}</span>${!draft && html`<span>${plural(entry.readCount, 'read')} · ${plural(entry.likeCount, 'like')} · ${plural(entry.commentCount, 'comment')}</span>`}</p>
     </div>
     <div class="studio-entry-actions">
-      <a class="button secondary small" href="${paths.studioEdit(entry.id)}" aria-label="Edit ${entry.title}">${icon('studio', 14)}<span>Edit</span></a>
-      <a class="button ghost small" href="${paths.entry(entry.id)}" aria-label="${draft ? 'Preview' : 'View'} ${entry.title}">${icon('arrow', 14)}<span>${draft ? 'Preview' : 'View'}</span></a>
+      <a class="button secondary small" href="${paths.studioEdit(entry.id)}" aria-label="Edit ${entry.title}">${icon('edit', 14)}<span>Edit</span></a>
+      <a class="button ghost small" href="${paths.entry(entry.id)}" aria-label="${draft ? 'Preview' : 'View'} ${entry.title}">${icon('eye', 14)}<span>${draft ? 'Preview' : 'View'}</span></a>
       <button type="button" class="button ghost small studio-delete" data-delete-entry="${entry.id}" aria-label="Delete ${entry.title}">${icon('trash', 14)}<span>Delete</span></button>
     </div>
   </li>`;

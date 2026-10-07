@@ -6,7 +6,7 @@ import { badge, button, confirmDialog, delegate, html, icon, setBusy, toast } fr
 import { TIER_IDS, TIER_NAMES } from '../../core/constants.js';
 import { money, plural } from '../../core/format.js';
 import { CURRENCIES, cleanTier } from '../../api/util.js';
-import { focusFirstInvalid, formError, formNote, messenger, reason, refreshCounter, setError, switchRow, textField, validateEach } from '../settings/form.js';
+import { focusFirstInvalid, formError, formNote, messenger, reason, refreshCounter, setError, switchRow, syncSelects, textField, validateEach } from '../settings/form.js';
 
 export const MAX_PERKS = 8;
 const LIMITS = { name: 40, description: 280, perk: 80 };
@@ -166,6 +166,7 @@ export function mountTiers(el, ctx, data) {
   const state = data.tiers;
   const doc = el.ownerDocument;
   const say = messenger(el, state);
+  syncSelects(el);
   const redraw = () => ctx.rerender();
   const tierOf = id => state.tiers.find(tier => tier.id === id);
 

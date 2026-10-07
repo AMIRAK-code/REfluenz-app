@@ -1,6 +1,7 @@
 import { SUPABASE_URL, SUPABASE_KEY } from './config.js';
 import { createApi } from './api/index.js';
 import { startApp } from './core/app.js';
+import { landOnAuthError, parseAuthError, stashAuthError } from './views/auth/auth-error.js';
 
 const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/+esm';
 const root = document.querySelector('#app');
@@ -26,11 +27,17 @@ function showFatal(error) {
 // supabase-js removes the recovery parameters from the URL while it starts, so they are read first.
 const recovery = /(^|[#?&])type=recovery(&|$)/.test(`${location.hash}${location.search}`);
 
+// An expired or reused email link comes back as /app.html#error=access_denied&error_code=otp_expired&... The router replaces that
+// address with a clean path, so the error is kept for this tab first and the sign-in page shows it once.
+const authError = parseAuthError(location.hash, location.search);
+if (authError) stashAuthError(authError);
+
 try {
   // Loaded here, not imported at the top, so that a CDN failure ends in the message above instead of a blank page.
   const { createClient } = await import(SUPABASE_JS);
   const client = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
-  await startApp({ api: createApi(client), root, recovery });
+  const app = await startApp({ api: createApi(client), root, recovery });
+  await landOnAuthError(app, authError);
 } catch (error) {
   showFatal(error);
 }

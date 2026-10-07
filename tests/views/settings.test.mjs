@@ -43,7 +43,7 @@ describe('settings views', () => {
     return control;
   };
   const type = async (selector, value) => {
-    const control = app.find(selector);
+    const control = typeof selector === 'string' ? app.find(selector) : selector;
     control.value = value;
     return fire(control, 'input');
   };
@@ -58,7 +58,7 @@ describe('settings views', () => {
     return fire(control, 'change');
   };
   const press = async (selector, key) => {
-    app.find(selector).dispatchEvent(new app.window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+    (typeof selector === 'string' ? app.find(selector) : selector).dispatchEvent(new app.window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
     await app.settle();
   };
   const submit = async selector => {
@@ -701,6 +701,853 @@ describe('settings views', () => {
           assert.match(app.text('#delete-error'), /Type DELETE in capitals/);
           assert.equal(callsTo(fake, 'deleteAccount').length, 0);
         });
+      });
+    });
+  });
+
+  // ============================================================================================
+  describe('atelier settings', () => {
+    const FORM = 'form[data-form="atelier"]';
+    const wait = async (ms = 400) => { await tick(ms); await app.settle(); };
+    const slugTyped = async value => { await type('#atelier-slug', value); await wait(); };
+    const linkIds = () => [...app.document.querySelectorAll('.link-row')].map(row => row.dataset.link);
+    const linkValues = () => [...app.document.querySelectorAll('.link-row')].map(row => [row.querySelector('[data-part="label"]').value, row.querySelector('[data-part="url"]').value]);
+
+    describe('who can open it', () => {
+      it('sends a guest to sign in, and a member without an atelier to the studio', async () => {
+        await open(guest(), '/app/studio/settings');
+        assert.equal(app.path, '/app/login?next=%2Fapp%2Fstudio%2Fsettings');
+        await app.destroy();
+        await open(member(), '/app/studio/settings');
+        assert.equal(app.path, '/app/studio');
+      });
+
+      it('opens the atelier tab for the owner, with a heading, tabs and a title', async () => {
+        await open(owner(), '/app/studio/settings');
+        assert.equal(app.document.title, 'Atelier settings — REFLUENZ');
+        assert.equal(app.text('#view h1'), 'Atelier settings');
+        assert.match(app.text('#view .eyebrow'), /Verne & Co/);
+        const tabs = [...app.document.querySelectorAll('#view nav.tabs a')];
+        assert.deepEqual(tabs.map(tab => tab.textContent.trim()), ['Atelier', 'Tiers']);
+        assert.deepEqual(tabs.map(tab => tab.getAttribute('href')), ['/app/studio/settings?tab=atelier', '/app/studio/settings?tab=tiers']);
+        assert.equal(app.find('#view nav.tabs').getAttribute('aria-label'), 'Atelier settings sections');
+        assert.equal(app.find('#view nav.tabs a[aria-current="page"]').textContent.trim(), 'Atelier');
+        assert.equal(app.find('#view .page-actions a').getAttribute('href'), '/app/c/verne-and-co');
+      });
+
+      it('opens the tab named in the address and falls back to the atelier for an unknown one', async () => {
+        await open(owner(), '/app/studio/settings?tab=tiers');
+        assert.equal(app.document.title, 'Tier settings — REFLUENZ');
+        assert.ok(app.exists('[data-tier-form="premium"]'));
+        await app.navigate('/app/studio/settings?tab=nonsense');
+        assert.ok(app.exists('#atelier-name'));
+        await app.click('#view nav.tabs a[href="/app/studio/settings?tab=tiers"]');
+        assert.equal(app.path, '/app/studio/settings?tab=tiers');
+        assert.equal(app.find('#view nav.tabs a[aria-current="page"]').textContent.trim(), 'Tiers');
+      });
+    });
+
+    describe('details', () => {
+      it('shows what is saved, with labels, counters and every category', async () => {
+        await open(owner(), '/app/studio/settings');
+        assert.equal(app.find('#atelier-name').value, 'Verne & Co');
+        assert.equal(app.find('#atelier-slug').value, 'verne-and-co');
+        assert.equal(app.find('#atelier-category').value, 'Writing');
+        assert.equal(app.find('#atelier-descriptor').value, 'Essays on getting started');
+        assert.equal(app.find('#atelier-location').value, 'Turin, Italy');
+        assert.equal(app.find('#atelier-bio').value, 'Short essays and small rules for writers.');
+        assert.equal(app.find('#atelier-image').value, 'ritual');
+        assert.deepEqual([...app.find('#atelier-category').options].map(option => option.value), CATEGORIES);
+        assert.equal(app.text('[data-counter="atelier-bio"]'), '41 / 400');
+        assert.equal(app.find('#atelier-bio').getAttribute('maxlength'), '400');
+        assert.equal(app.find('#atelier-name').required, true);
+        labelled(app.find('#view'));
+        assert.equal(app.exists('[aria-invalid="true"]'), false);
+        assert.deepEqual([...app.document.querySelectorAll('#view h2')].map(node => node.textContent.trim()), ['Preview', 'Pictures', 'Details']);
+        assert.equal(app.find('[data-dirty-status]').textContent, '');
+        assert.equal(app.find('[data-action="discard"]').hidden, true);
+      });
+
+      it('saves the cleaned values, leaves the unchanged address out, and updates the store and the page', async () => {
+        const fake = owner();
+        await open(fake, '/app/studio/settings');
+        await type('#atelier-name', '  Verne Studio  ');
+        await choose('#atelier-category', 'Art');
+        await type('#atelier-descriptor', 'Essays and notes');
+        await type('#atelier-location', 'Lisbon');
+        await type('#atelier-bio', 'A slower kind of writing.');
+        await choose('#atelier-image', 'architecture');
+        assert.equal(app.find('[data-dirty-status]').textContent, 'You have unsaved changes.');
+        assert.match(app.router.block(), /unsaved changes to your atelier/);
+        await submit(FORM);
+        const [call] = callsTo(fake, 'updateAtelier');
+        assert.equal(call.args[0], IDS.verne);
+        assert.deepEqual(call.args[1], {
+          name: 'Verne Studio', category: 'Art', descriptor: 'Essays and notes', location: 'Lisbon', bio: 'A slower kind of writing.', image: 'architecture',
+          links: [{ label: 'Newsletter', url: 'https://example.test/verne' }]
+        });
+        assert.equal(verne(fake).name, 'Verne Studio');
+        assert.equal(app.store.state.myCreator.name, 'Verne Studio');
+        assert.match(toastText(), /Atelier saved\./);
+        assert.match(app.text('[data-note="atelier"]'), /Your atelier was updated/);
+        assert.equal(app.find('#atelier-name').value, 'Verne Studio');
+        assert.equal(app.router.block(), null, 'nothing is left to lose');
+        assert.equal(app.find('[data-dirty-status]').textContent, '');
+        assert.equal(app.find('#atelier-save').disabled, false);
+      });
+
+      it('explains what is wrong and does not call the api', async () => {
+        const fake = owner();
+        await open(fake, '/app/studio/settings');
+        await type('#atelier-name', ' ');
+        await type('#atelier-bio', 'x'.repeat(401));
+        await type('#atelier-descriptor', 'y'.repeat(61));
+        await submit(FORM);
+        assert.equal(callsTo(fake, 'updateAtelier').length, 0);
+        assert.match(app.text('#atelier-name-error'), /atelier name/i);
+        assert.match(app.text('#atelier-bio-error'), /at most 400 characters/);
+        assert.match(app.text('#atelier-descriptor-error'), /at most 60 characters/);
+        assert.equal(app.find('#atelier-name').getAttribute('aria-invalid'), 'true');
+        assert.equal(app.document.activeElement.id, 'atelier-name', 'focus goes to the first wrong field');
+        assert.match(app.text('[data-error="atelier"]'), /Check the highlighted fields/);
+        await type('#atelier-name', 'Verne');
+        assert.equal(app.find('#atelier-name').hasAttribute('aria-invalid'), false, 'the mark goes away as the person types');
+        assert.equal(app.text('#atelier-name-error'), '');
+      });
+
+      it('asks for a category when the atelier has none', async () => {
+        const fake = owner();
+        verne(fake).category = '';
+        await open(fake, '/app/studio/settings');
+        assert.equal(app.find('#atelier-category').options[0].textContent, 'Choose a category');
+        await submit(FORM);
+        assert.equal(callsTo(fake, 'updateAtelier').length, 0);
+        assert.match(app.text('#atelier-category-error'), /Choose a category/);
+      });
+
+      it('keeps everything typed when the save fails, and saves on the second try', async () => {
+        const fake = owner();
+        fake.fail('updateAtelier', 'Your atelier could not be saved right now.');
+        await open(fake, '/app/studio/settings');
+        await type('#atelier-name', 'Better name');
+        await type('#atelier-bio', 'A longer story');
+        await submit(FORM);
+        assert.match(app.text('[data-error="atelier"]'), /could not be saved right now/);
+        assert.match(toastText(), /could not be saved right now/);
+        assert.equal(app.find('#atelier-name').value, 'Better name');
+        assert.equal(app.find('#atelier-bio').value, 'A longer story');
+        assert.equal(app.find('#atelier-save').disabled, false);
+        assert.equal(app.store.state.myCreator.name, 'Verne & Co');
+        fake.fail('updateAtelier', null);
+        await submit(FORM);
+        assert.equal(app.store.state.myCreator.name, 'Better name');
+        assert.equal(app.text('[data-error="atelier"]'), '');
+      });
+
+      it('disables the button while the save runs, and ignores a second send', async () => {
+        const fake = owner();
+        const release = hold(fake, 'updateAtelier');
+        await open(fake, '/app/studio/settings');
+        await type('#atelier-name', 'Someone');
+        await submit(FORM);
+        await submit(FORM);
+        assert.equal(app.find('#atelier-save').disabled, true);
+        assert.equal(app.find('#atelier-save').getAttribute('aria-busy'), 'true');
+        release();
+        await app.settle();
+        assert.equal(callsTo(fake, 'updateAtelier').length, 1);
+        assert.equal(app.find('#atelier-save').disabled, false);
+      });
+
+      it('asks before leaving with unsaved changes, and discards them on request', async () => {
+        const fake = owner();
+        await open(fake, '/app/studio/settings');
+        assert.equal(app.router.block(), null);
+        await type('#atelier-name', 'Changed');
+        const asked = confirmWith(false);
+        await app.navigate('/app/library');
+        assert.equal(app.path, '/app/studio/settings', 'staying put when the person says no');
+        assert.equal(asked.length, 1);
+        assert.match(asked[0], /unsaved changes to your atelier/);
+        await app.click('[data-action="discard"]');
+        await answer(false);
+        assert.equal(app.find('#atelier-name').value, 'Changed', 'saying no keeps the text');
+        await app.click('[data-action="discard"]');
+        await answer(true);
+        assert.equal(app.find('#atelier-name').value, 'Verne & Co');
+        assert.equal(app.router.block(), null);
+        assert.equal(callsTo(fake, 'updateAtelier').length, 0);
+        confirmWith(true);
+        await app.navigate('/app/library');
+        assert.equal(app.path, '/app/library');
+      });
+
+      it('shows names and text with markup as text, in the form, the preview and the heading', async () => {
+        const fake = owner();
+        verne(fake).name = HOSTILE;
+        verne(fake).bio = HOSTILE;
+        verne(fake).descriptor = HOSTILE;
+        await open(fake, '/app/studio/settings');
+        assert.equal(app.find('#atelier-name').value, HOSTILE);
+        assert.equal(app.find('.preview-name').textContent, HOSTILE);
+        assert.equal(app.find('.preview-bio').textContent, HOSTILE);
+        assert.ok(app.text('#view .eyebrow').includes(HOSTILE));
+        assert.equal(app.document.querySelectorAll('#view img[src="x"], img[onerror]').length, 0);
+      });
+    });
+
+    describe('preview', () => {
+      it('follows what is typed, before anything is saved', async () => {
+        const fake = owner();
+        await open(fake, '/app/studio/settings');
+        assert.equal(app.find('.preview-name').textContent, 'Verne & Co');
+        assert.match(app.text('.preview-line'), /Writing · Turin, Italy/);
+        assert.equal(app.find('.preview-descriptor').textContent, 'Essays on getting started');
+        assert.deepEqual([...app.document.querySelectorAll('.preview-link')].map(node => node.textContent.trim()), ['Newsletter']);
+        await type('#atelier-name', HOSTILE);
+        await choose('#atelier-category', 'Music');
+        await type('#atelier-location', '');
+        await type('#atelier-bio', 'New words');
+        assert.equal(app.find('.preview-name').textContent, HOSTILE);
+        assert.equal(app.document.querySelectorAll('.atelier-preview img[onerror]').length, 0);
+        assert.equal(app.find('.preview-line').textContent.trim(), 'Music');
+        assert.equal(app.find('.preview-bio').textContent, 'New words');
+        await type('#atelier-name', '');
+        assert.equal(app.find('.preview-name').textContent, 'Your atelier');
+        assert.equal(callsTo(fake, 'updateAtelier').length, 0);
+      });
+
+      it('shows the default cover chosen, and the uploaded banner once there is one', async () => {
+        const fake = owner();
+        await open(fake, '/app/studio/settings');
+        assert.match(app.find('[data-preview-banner] img').getAttribute('src'), /ritual/);
+        assert.equal(app.find('[data-preview-banner]').classList.contains('is-preset'), true);
+        await choose('#atelier-image', 'architecture');
+        assert.match(app.find('[data-preview-banner] img').getAttribute('src'), /architecture/);
+      });
+    });
+
+    describe('address', () => {
+      it('checks a new address as it is typed, and warns that old links will break', async () => {
+        const fake = owner();
+        await open(fake, '/app/studio/settings');
+        assert.equal(app.find('[data-slug-warning]').hidden, true);
+        assert.equal(app.find('#atelier-slug').getAttribute('aria-describedby').includes('atelier-slug-status'), true);
+        await type('#atelier-slug', 'verne-press');
+        assert.match(app.text('[data-slug-status]'), /Checking availability/);
+        assert.equal(app.find('[data-slug-warning]').hidden, false);
+        assert.match(app.text('[data-slug-warning]'), /\/app\/c\/verne-and-co/);
+        await wait();
+        assert.deepEqual(callsTo(fake, 'slugAvailable').map(call => call.args[0]), ['verne-press']);
+        assert.match(app.text('[data-slug-status]'), /That address is available/);
+        assert.equal(app.find('[data-slug-status]').dataset.state, 'available');
+      });
+
+      it('waits for the person to stop typing before it asks', async () => {
+        const fake = owner();
+        await open(fake, '/app/studio/settings');
+        await type('#atelier-slug', 've');
+        await type('#atelier-slug', 'ver');
+        await type('#atelier-slug', 'vern');
+        await wait();
+        assert.deepEqual(callsTo(fake, 'slugAvailable').map(call => call.args[0]), ['vern']);
+      });
+
+      it('says when an address is taken, is not valid, or is the current one', async () => {
+        const fake = owner();
+        await open(fake, '/app/studio/settings');
+        await slugTyped('atelier-solene');
+        assert.match(app.text('[data-slug-status]'), /address is taken/);
+        assert.equal(app.find('[data-slug-status]').dataset.state, 'taken');
+        await type('#atelier-slug', 'a');
+        assert.match(app.text('[data-slug-status]'), /2 to 40 letters/);
+        await type('#atelier-slug', 'Verne And Co!');
+        assert.equal(app.find('#atelier-slug').value, 'verneandco', 'only letters, numbers and hyphens are kept, in lower case');
+        await type('#atelier-slug', 'verne-and-co');
+        assert.match(app.text('[data-slug-status]'), /current address/);
+        assert.equal(app.find('[data-slug-warning]').hidden, true);
+      });
+
+      it('does not use an answer that arrived after the address changed again', async () => {
+        const fake = owner();
+        const real = fake.slugAvailable.bind(fake);
+        const gates = [];
+        fake.slugAvailable = slug => new Promise(resolve => gates.push(() => resolve(real(slug))));
+        await open(fake, '/app/studio/settings');
+        await type('#atelier-slug', 'first-try');
+        await tick(400);
+        await type('#atelier-slug', 'verne-and-co');
+        gates.shift()();
+        await app.settle();
+        assert.match(app.text('[data-slug-status]'), /current address/);
+      });
+
+      it('asks before changing the address, then saves it and says where the atelier is now', async () => {
+        const fake = owner();
+        await open(fake, '/app/studio/settings');
+        await slugTyped('verne-press');
+        await submit(FORM);
+        assert.ok(dialog(), 'the person is asked');
+        assert.match(app.text('#modal'), /\/app\/c\/verne-and-co will stop working/);
+        await answer(false);
+        assert.equal(callsTo(fake, 'updateAtelier').length, 0);
+        assert.equal(app.find('#atelier-slug').value, 'verne-press');
+        await submit(FORM);
+        await answer(true);
+        const [call] = callsTo(fake, 'updateAtelier');
+        assert.equal(call.args[1].slug, 'verne-press');
+        assert.equal(verne(fake).slug, 'verne-press');
+        assert.equal(app.store.state.myCreator.slug, 'verne-press');
+        assert.match(app.text('[data-note="atelier"]'), /\/app\/c\/verne-press/);
+        assert.equal(app.find('#view .page-actions a').getAttribute('href'), '/app/c/verne-press');
+        assert.equal(app.find('[data-slug-warning]').hidden, true);
+      });
+
+      it('does not save an address that is taken', async () => {
+        const fake = owner();
+        await open(fake, '/app/studio/settings');
+        await slugTyped('casa-verano');
+        await submit(FORM);
+        assert.equal(callsTo(fake, 'updateAtelier').length, 0);
+        assert.equal(dialog(), null);
+        assert.match(app.text('#atelier-slug-error'), /address is taken/);
+        assert.equal(app.document.activeElement.id, 'atelier-slug');
+      });
+
+      it('reports an address taken in the meantime, keeping what was typed', async () => {
+        const fake = owner();
+        await open(fake, '/app/studio/settings');
+        await slugTyped('verne-press');
+        fake.db.creators.find(row => row.id === IDS.verano).slug = 'verne-press';
+        await submit(FORM);
+        await answer(true);
+        assert.match(app.text('[data-error="atelier"]'), /address is taken/);
+        assert.match(app.text('#atelier-slug-error'), /address is taken/);
+        assert.equal(app.find('#atelier-slug').value, 'verne-press');
+        assert.equal(verne(fake).slug, 'verne-and-co');
+      });
+
+      it('lets the person save when the check itself cannot run', async () => {
+        const fake = owner();
+        fake.fail('slugAvailable', 'Network down.');
+        await open(fake, '/app/studio/settings');
+        await slugTyped('verne-press');
+        assert.match(app.text('[data-slug-status]'), /could not check this address/);
+        await submit(FORM);
+        await answer(true);
+        assert.equal(verne(fake).slug, 'verne-press');
+      });
+    });
+
+    describe('links', () => {
+      it('lists the saved links with labelled fields and tools', async () => {
+        await open(owner(), '/app/studio/settings');
+        assert.deepEqual(linkValues(), [['Newsletter', 'https://example.test/verne']]);
+        assert.equal(app.find('#link-l1-label').getAttribute('aria-describedby').includes('link-l1-label-error'), true);
+        assert.equal(app.find('#link-l1-up').disabled, true, 'the first row cannot move up');
+        assert.equal(app.find('#link-l1-down').disabled, true, 'the only row cannot move down');
+        assert.ok(app.find('#link-l1-remove').getAttribute('aria-label'));
+        labelled(app.find('.links-editor'));
+      });
+
+      it('adds rows up to five, focusing the new one, and then stops offering more', async () => {
+        await open(owner(), '/app/studio/settings');
+        await app.click('#link-add');
+        assert.equal(linkIds().length, 2);
+        assert.equal(app.document.activeElement.id, `link-${linkIds()[1]}-label`);
+        for (let i = 0; i < 3; i++) await app.click('#link-add');
+        assert.equal(linkIds().length, 5);
+        assert.equal(app.find('#link-add').disabled, true);
+        assert.match(app.text('.link-add'), /most links/);
+      });
+
+      it('saves the links in the order shown, adds https:// to a bare address, and drops empty rows', async () => {
+        const fake = owner();
+        await open(fake, '/app/studio/settings');
+        await app.click('#link-add');
+        await app.click('#link-add');
+        const [first, second, third] = linkIds();
+        await type(`#link-${second}-label`, 'Shop');
+        await type(`#link-${second}-url`, 'shop.example.test');
+        await type(`#link-${third}-label`, '');
+        await app.click(`#link-${second}-up`);
+        assert.deepEqual(linkIds(), [first, second, third].toSpliced(0, 2, second, first));
+        assert.equal(app.document.activeElement.id.startsWith(`link-${second}-`), true, 'focus stays with the moved row');
+        await submit(FORM);
+        const [call] = callsTo(fake, 'updateAtelier');
+        assert.deepEqual(call.args[1].links, [{ label: 'Shop', url: 'https://shop.example.test' }, { label: 'Newsletter', url: 'https://example.test/verne' }]);
+        assert.deepEqual(verne(fake).links.map(link => link.label), ['Shop', 'Newsletter']);
+        assert.equal(app.document.querySelectorAll('.link-row').length, 2);
+      });
+
+      it('moves a row down and removes one', async () => {
+        const fake = owner();
+        await open(fake, '/app/studio/settings');
+        await app.click('#link-add');
+        const [first, second] = linkIds();
+        await type(`#link-${second}-label`, 'Podcast');
+        await type(`#link-${second}-url`, 'https://podcast.example.test');
+        await app.click(`#link-${first}-down`);
+        assert.deepEqual(linkValues().map(row => row[0]), ['Podcast', 'Newsletter']);
+        assert.match(app.router.block(), /unsaved/);
+        await app.click(`#link-${second}-remove`);
+        assert.deepEqual(linkValues().map(row => row[0]), ['Newsletter']);
+        assert.equal(app.document.activeElement.id, 'link-add');
+        assert.equal(app.router.block(), null, 'back to what is saved');
+      });
+
+      it('says what is wrong with a link before sending anything', async () => {
+        const fake = owner();
+        await open(fake, '/app/studio/settings');
+        await app.click('#link-add');
+        await app.click('#link-add');
+        const [first, second, third] = linkIds();
+        await type(`#link-${first}-url`, 'not a web address');
+        await type(`#link-${second}-url`, 'https://nolabel.example.test');
+        await type(`#link-${third}-label`, 'No address');
+        await submit(FORM);
+        assert.equal(callsTo(fake, 'updateAtelier').length, 0);
+        assert.match(app.text(`#link-${first}-url-error`), /web address such as https:\/\/example\.com/);
+        assert.match(app.text(`#link-${second}-label-error`), /Name this link/);
+        assert.match(app.text(`#link-${third}-url-error`), /Add the web address/);
+        assert.equal(app.document.activeElement.id, `link-${first}-url`);
+        await type(`#link-${first}-url`, 'https://fixed.example.test');
+        assert.equal(app.text(`#link-${first}-url-error`), '');
+      });
+
+      it('shows link text with markup as text', async () => {
+        const fake = owner();
+        verne(fake).links = [{ label: HOSTILE, url: 'https://example.test' }];
+        await open(fake, '/app/studio/settings');
+        assert.equal(app.find('#link-l1-label').value, HOSTILE);
+        assert.ok(app.text('.preview-links').includes(HOSTILE));
+        assert.equal(app.document.querySelectorAll('img[onerror]').length, 0);
+      });
+    });
+
+    describe('pictures', () => {
+      const withCrop = (seen = []) => patch(tools, 'cropImage', async (file, options) => { seen.push([file.name, options]); return image(); });
+
+      it('offers a banner and a picture, with a choose button and no remove while there is none', async () => {
+        await open(owner(), '/app/studio/settings');
+        assert.match(app.text('#atelier-cover-pick'), /Choose a banner/);
+        assert.match(app.text('#atelier-avatar-pick'), /Choose a picture/);
+        assert.equal(app.exists('[data-action="remove-image"]'), false);
+        assert.equal(app.find('#atelier-cover-file').getAttribute('aria-label'), 'Choose a banner');
+        assert.match(app.find('#atelier-avatar-file').getAttribute('accept'), /image\/webp/);
+        assert.equal(app.find('[data-picture="avatar"] .avatar').textContent.trim(), 'VC');
+      });
+
+      it('crops and uploads a banner at once, and the preview and store follow', async () => {
+        const fake = owner();
+        const seen = [];
+        withCrop(seen);
+        await open(fake, '/app/studio/settings');
+        await pickFile('#atelier-cover-file');
+        assert.deepEqual(seen, [['photo.png', { aspect: 16 / 5, width: 1600 }]]);
+        const [call] = callsTo(fake, 'uploadCreatorImage');
+        assert.deepEqual([call.args[0], call.args[1]], [IDS.verne, 'cover']);
+        assert.ok(call.args[2] instanceof Blob);
+        assert.ok(app.store.state.myCreator.coverUrl);
+        assert.match(toastText(), /Your banner was updated/);
+        assert.match(app.text('[data-note="image-cover"]'), /Your banner was updated/);
+        assert.match(app.text('#atelier-cover-pick'), /Change banner/);
+        assert.equal(app.find('[data-preview-banner]').classList.contains('is-preset'), false);
+        assert.equal(app.find('[data-preview-banner] img').getAttribute('src'), app.store.state.myCreator.coverUrl);
+        assert.equal(app.document.activeElement.id, 'atelier-cover-pick');
+      });
+
+      it('crops a picture to a square, and keeps typed details while it uploads', async () => {
+        const fake = owner();
+        const seen = [];
+        withCrop(seen);
+        await open(fake, '/app/studio/settings');
+        await type('#atelier-name', 'Typed but unsaved');
+        await pickFile('#atelier-avatar-file');
+        assert.deepEqual(seen[0][1], { aspect: 1, width: 512 });
+        assert.deepEqual(callsTo(fake, 'uploadCreatorImage').map(call => call.args[1]), ['avatar']);
+        assert.ok(app.store.state.myCreator.avatarUrl);
+        assert.equal(app.find('#atelier-name').value, 'Typed but unsaved');
+        assert.ok(app.exists('[data-picture="avatar"] img'));
+      });
+
+      it('disables the buttons while a picture is being sent', async () => {
+        const fake = owner();
+        withCrop();
+        const release = hold(fake, 'uploadCreatorImage');
+        await open(fake, '/app/studio/settings');
+        await pickFile('#atelier-cover-file');
+        assert.equal(app.find('#atelier-cover-pick').disabled, true);
+        assert.match(app.text('#atelier-cover-pick'), /Uploading/);
+        release();
+        await app.settle();
+        assert.equal(app.find('#atelier-cover-pick').disabled, false);
+      });
+
+      it('explains a file that cannot be prepared, and an upload that fails', async () => {
+        const fake = owner();
+        patch(tools, 'cropImage', async () => { throw Error('This image could not be read. Try a JPG, PNG or WebP file.'); });
+        await open(fake, '/app/studio/settings');
+        await pickFile('#atelier-cover-file', new File(['x'], 'notes.txt', { type: 'text/plain' }));
+        assert.match(app.text('[data-error="image-cover"]'), /could not be read/);
+        assert.equal(callsTo(fake, 'uploadCreatorImage').length, 0);
+        assert.equal(app.find('#atelier-cover-pick').disabled, false);
+        withCrop();
+        fake.fail('uploadCreatorImage', 'The banner could not be uploaded.');
+        await pickFile('#atelier-cover-file');
+        assert.match(app.text('[data-error="image-cover"]'), /could not be uploaded/);
+        assert.match(toastText(), /could not be uploaded/);
+        assert.equal(app.store.state.myCreator.coverUrl ?? null, null);
+        fake.fail('uploadCreatorImage', null);
+        await pickFile('#atelier-cover-file');
+        assert.ok(app.store.state.myCreator.coverUrl);
+      });
+
+      it('removes a picture after asking, and reports a failure', async () => {
+        const fake = owner();
+        withCrop();
+        await open(fake, '/app/studio/settings');
+        await pickFile('#atelier-avatar-file');
+        assert.ok(app.store.state.myCreator.avatarUrl);
+        await app.click('[data-picture="avatar"] [data-action="remove-image"]');
+        await answer(false);
+        assert.equal(callsTo(fake, 'removeCreatorImage').length, 0, 'saying no changes nothing');
+        fake.fail('removeCreatorImage', 'The picture could not be removed.');
+        await app.click('[data-picture="avatar"] [data-action="remove-image"]');
+        await answer(true);
+        assert.match(app.text('[data-error="image-avatar"]'), /could not be removed/);
+        assert.ok(app.store.state.myCreator.avatarUrl);
+        fake.fail('removeCreatorImage', null);
+        await app.click('[data-picture="avatar"] [data-action="remove-image"]');
+        await answer(true);
+        assert.deepEqual(callsTo(fake, 'removeCreatorImage').at(-1).args, [IDS.verne, 'avatar']);
+        assert.equal(app.store.state.myCreator.avatarUrl, null);
+        assert.match(toastText(), /Your picture was removed/);
+        assert.equal(app.exists('[data-picture="avatar"] [data-action="remove-image"]'), false);
+      });
+    });
+  });
+
+  // ============================================================================================
+  describe('tier settings', () => {
+    const TIERS = '/app/studio/settings?tab=tiers';
+    const form = id => `form[data-tier-form="${id}"]`;
+    const perkInputs = id => [...app.document.querySelectorAll(`[data-tier="${id}"][data-perk]`)];
+    const perkTexts = id => perkInputs(id).map(input => input.value);
+    const addMember = (fake, tier) => fake.db.memberships.push({ user_id: IDS.fan1, creator_id: IDS.verne, tier, created_at: '2026-09-30T09:00:00+00:00', updated_at: '2026-09-30T09:00:00+00:00' });
+
+    it('shows the three levels in order, each with its price, status and members', async () => {
+      const fake = owner();
+      addMember(fake, 'premium');
+      await open(fake, TIERS);
+      const forms = [...app.document.querySelectorAll('[data-tier-form]')];
+      assert.deepEqual(forms.map(node => node.dataset.tierForm), ['essential', 'premium', 'signature']);
+      assert.deepEqual(forms.map(node => node.querySelector('h3').textContent), ['Reader', 'Supporter', 'Inner circle']);
+      assert.equal(app.find(`${form('premium')} .tier-editor-price`).textContent.replace(/\s+/g, ' ').trim(), '€19 / month');
+      assert.equal(app.find('[data-members="premium"]').textContent, '1 member');
+      assert.equal(app.find('[data-members="essential"]').textContent, '0 members');
+      assert.match(app.text(`${form('signature')} .tier-editor-meta`), /Open/);
+      assert.equal(app.find('#tier-essential-name').value, 'Reader');
+      assert.equal(app.find('#tier-essential-price').value, '9');
+      assert.equal(app.find('#tier-essential-currency').value, 'EUR');
+      assert.deepEqual([...app.find('#tier-essential-currency').options].map(option => option.value), ['EUR', 'USD', 'GBP']);
+      assert.equal(app.find('#tier-essential-description').value, 'A closer look at the work.');
+      assert.equal(app.text('[data-counter="tier-essential-description"]'), '26 / 280');
+      assert.equal(app.find('#tier-essential-enabled').checked, true);
+      assert.equal(app.find('#tier-essential-enabled').getAttribute('role'), 'switch');
+      assert.deepEqual(perkTexts('essential'), ['All circle entries', 'The complete entry archive', 'Members’ conversation']);
+      labelled(app.find('#view'));
+      assert.deepEqual(forms.map(node => node.getAttribute('aria-labelledby')), ['tier-essential-title', 'tier-premium-title', 'tier-signature-title']);
+    });
+
+    it('says that payments are not live yet', async () => {
+      await open(owner(), TIERS);
+      assert.match(app.text('.tiers-notice'), /Payments are not live yet/);
+      assert.match(app.text('.tiers-notice'), /free during early access/);
+      assert.doesNotMatch(app.text('#view'), /demo|mock|fake|lorem/i);
+    });
+
+    it('still opens when the member counts cannot be loaded', async () => {
+      const fake = owner();
+      fake.fail('creatorStats', 'Stats are unavailable.');
+      await open(fake, TIERS);
+      assert.ok(app.exists('[data-tier-form="premium"]'));
+      assert.equal(app.exists('[data-members]'), false);
+    });
+
+    it('shows an error with Retry when the tiers cannot be loaded, and opens once they can', async () => {
+      const fake = owner();
+      fake.fail('listTiers', 'The tiers could not be loaded.');
+      await open(fake, TIERS);
+      assert.match(app.text('#view .error-state'), /could not be loaded/);
+      assert.ok(app.exists('#view .error-state [data-retry]'), 'the error state offers Retry');
+      fake.fail('listTiers', null);
+      // The Retry button's own listener sits on the first document a test run ever drew one on; what it calls is the router's reload.
+      await app.router.reload();
+      await app.settle();
+      assert.ok(app.exists('[data-tier-form="essential"]'));
+    });
+
+    it('shows a closed tier as closed', async () => {
+      const fake = owner();
+      tierRow(fake, 'signature').enabled = false;
+      await open(fake, TIERS);
+      assert.equal(app.find('#tier-signature-enabled').checked, false);
+      assert.equal(app.find(form('signature')).classList.contains('is-closed'), true);
+      assert.match(app.text(`${form('signature')} .tier-editor-meta`), /Closed/);
+    });
+
+    it('saves one tier: price with a comma, currency, description and perks, and the card follows', async () => {
+      const fake = owner();
+      await open(fake, TIERS);
+      await type('#tier-premium-name', '  Patron  ');
+      await type('#tier-premium-price', '12,50');
+      await choose('#tier-premium-currency', 'USD');
+      await type('#tier-premium-description', 'For people who read everything.');
+      await type(perkInputs('premium')[0], 'Monthly letter');
+      assert.match(app.router.block(), /unsaved changes to your tiers/);
+      assert.equal(app.find('[data-tier-status="premium"]').textContent, 'You have unsaved changes.');
+      assert.equal(app.find('[data-tier-status="essential"]').textContent, '');
+      await submit(form('premium'));
+      const [call] = callsTo(fake, 'updateTier');
+      assert.deepEqual(call.args.slice(0, 2), [IDS.verne, 'premium']);
+      assert.deepEqual(call.args[2], {
+        name: 'Patron', currency: 'USD', description: 'For people who read everything.', priceCents: 1250,
+        perks: ['Monthly letter', 'In-depth studio notes', 'Priority conversation prompts'], enabled: true
+      });
+      const row = tierRow(fake, 'premium');
+      assert.deepEqual([row.name, row.price_cents, row.currency], ['Patron', 1250, 'USD']);
+      assert.equal(app.find(`${form('premium')} h3`).textContent, 'Patron');
+      assert.equal(app.find(`${form('premium')} .tier-editor-price`).textContent.replace(/\s+/g, ' ').trim(), 'US$12.50 / month');
+      assert.equal(app.find('#tier-premium-price').value, '12.50');
+      assert.match(toastText(), /Patron saved\./);
+      assert.match(app.text('[data-note="tier-premium"]'), /Patron was updated/);
+      assert.equal(app.router.block(), null);
+      assert.equal(callsTo(fake, 'updateTier').length, 1, 'only the tier that was saved is sent');
+    });
+
+    it('keeps the unsaved changes of the other tiers when one is saved', async () => {
+      const fake = owner();
+      await open(fake, TIERS);
+      await type('#tier-essential-name', 'Friend');
+      await type('#tier-signature-price', '45');
+      await submit(form('signature'));
+      assert.equal(tierRow(fake, 'signature').price_cents, 4500);
+      assert.equal(tierRow(fake, 'essential').name, 'Reader');
+      assert.equal(app.find('#tier-essential-name').value, 'Friend', 'still typed, still unsaved');
+      assert.match(app.router.block(), /unsaved changes to your tiers/);
+      await submit(form('essential'));
+      assert.equal(tierRow(fake, 'essential').name, 'Friend');
+      assert.equal(app.router.block(), null);
+    });
+
+    it('accepts prices of 0 and 1000, shows cents, and refuses what is out of range or not a number', async () => {
+      const fake = owner();
+      await open(fake, TIERS);
+      await type('#tier-essential-price', '0');
+      await submit(form('essential'));
+      assert.equal(tierRow(fake, 'essential').price_cents, 0);
+      assert.equal(app.find('#tier-essential-price').value, '0');
+      await type('#tier-essential-price', '€ 1000');
+      await submit(form('essential'));
+      assert.equal(tierRow(fake, 'essential').price_cents, 100000);
+      const before = callsTo(fake, 'updateTier').length;
+      await type('#tier-essential-price', '1000.01');
+      await submit(form('essential'));
+      assert.match(app.text('#tier-essential-price-error'), /between 0 and 1,000/);
+      await type('#tier-essential-price', 'nine');
+      await submit(form('essential'));
+      assert.match(app.text('#tier-essential-price-error'), /price such as 9 or 9\.50/);
+      assert.equal(app.find('#tier-essential-price').getAttribute('aria-invalid'), 'true');
+      assert.equal(app.document.activeElement.id, 'tier-essential-price');
+      assert.equal(callsTo(fake, 'updateTier').length, before, 'nothing was sent');
+    });
+
+    it('says what is wrong with the name, the description and a long perk', async () => {
+      const fake = owner();
+      await open(fake, TIERS);
+      await type('#tier-premium-name', 'x');
+      await type('#tier-premium-description', 'y'.repeat(281));
+      await type(perkInputs('premium')[1], 'z'.repeat(81));
+      await submit(form('premium'));
+      assert.equal(callsTo(fake, 'updateTier').length, 0);
+      assert.match(app.text('#tier-premium-name-error'), /tier name/i);
+      assert.match(app.text('#tier-premium-description-error'), /at most 280 characters/);
+      const long = perkInputs('premium')[1];
+      assert.match(app.text(`#${long.id}-error`), /at most 80 characters/);
+      assert.equal(long.getAttribute('aria-invalid'), 'true');
+      assert.match(app.text('[data-error="tier-premium"]'), /Check the highlighted fields/);
+      assert.equal(app.document.activeElement.id, 'tier-premium-name');
+    });
+
+    it('keeps everything typed when the save fails, and saves on the second try', async () => {
+      const fake = owner();
+      fake.fail('updateTier', 'This tier could not be saved right now.');
+      await open(fake, TIERS);
+      await type('#tier-premium-name', 'Patron');
+      await type('#tier-premium-price', '25');
+      await submit(form('premium'));
+      assert.match(app.text('[data-error="tier-premium"]'), /could not be saved right now/);
+      assert.match(toastText(), /could not be saved right now/);
+      assert.equal(app.find('#tier-premium-name').value, 'Patron');
+      assert.equal(app.find('#tier-premium-price').value, '25');
+      assert.equal(app.find('#tier-premium-save').disabled, false);
+      assert.equal(tierRow(fake, 'premium').name, 'Supporter');
+      fake.fail('updateTier', null);
+      await submit(form('premium'));
+      assert.equal(tierRow(fake, 'premium').name, 'Patron');
+      assert.equal(app.text('[data-error="tier-premium"]'), '');
+    });
+
+    it('disables the button while a tier is saved, and sends it once', async () => {
+      const fake = owner();
+      const release = hold(fake, 'updateTier');
+      await open(fake, TIERS);
+      await type('#tier-premium-name', 'Patron');
+      await submit(form('premium'));
+      await submit(form('premium'));
+      assert.equal(app.find('#tier-premium-save').disabled, true);
+      assert.equal(app.find('#tier-premium-save').getAttribute('aria-busy'), 'true');
+      assert.equal(app.find('#tier-essential-save').disabled, false, 'the other tiers can still be edited');
+      release();
+      await app.settle();
+      assert.equal(callsTo(fake, 'updateTier').length, 1);
+      assert.equal(app.find('#tier-premium-save').disabled, false);
+    });
+
+    describe('perks', () => {
+      it('adds a perk with focus on it, removes one, and counts them', async () => {
+        const fake = owner();
+        await open(fake, TIERS);
+        assert.equal(app.text('[data-perk-count="premium"]'), '3 / 8');
+        await app.click('#tier-premium-add-perk');
+        assert.equal(perkInputs('premium').length, 4);
+        assert.equal(app.document.activeElement, perkInputs('premium')[3]);
+        assert.equal(app.text('[data-perk-count="premium"]'), '4 / 8');
+        await type(perkInputs('premium')[3], 'A signed print');
+        await app.click(`${form('premium')} [data-action="remove-perk"]`);
+        assert.deepEqual(perkTexts('premium'), ['In-depth studio notes', 'Priority conversation prompts', 'A signed print']);
+        assert.equal(app.document.activeElement.id, 'tier-premium-add-perk');
+        await submit(form('premium'));
+        assert.deepEqual(tierRow(fake, 'premium').perks, ['In-depth studio notes', 'Priority conversation prompts', 'A signed print']);
+      });
+
+      it('adds the next perk on Enter instead of sending the tier', async () => {
+        const fake = owner();
+        await open(fake, TIERS);
+        await press(perkInputs('premium')[0], 'Enter');
+        assert.equal(perkInputs('premium').length, 4);
+        assert.equal(callsTo(fake, 'updateTier').length, 0);
+      });
+
+      it('stops at eight perks', async () => {
+        await open(owner(), TIERS);
+        for (let i = 0; i < 5; i++) await app.click('#tier-premium-add-perk');
+        assert.equal(perkInputs('premium').length, 8);
+        assert.equal(app.find('#tier-premium-add-perk').disabled, true);
+        assert.equal(app.text('[data-perk-count="premium"]'), '8 / 8');
+        await press(perkInputs('premium')[0], 'Enter');
+        assert.equal(perkInputs('premium').length, 8);
+      });
+
+      it('leaves out empty perks and can remove them all', async () => {
+        const fake = owner();
+        await open(fake, TIERS);
+        await app.click('#tier-premium-add-perk');
+        for (let i = 0; i < 3; i++) await app.click(`${form('premium')} [data-action="remove-perk"]`);
+        assert.deepEqual(perkTexts('premium'), ['']);
+        await submit(form('premium'));
+        assert.deepEqual(tierRow(fake, 'premium').perks, []);
+        assert.equal(app.exists(`${form('premium')} .perk-rows`), false);
+      });
+
+      it('shows perks with markup as text', async () => {
+        const fake = owner();
+        tierRow(fake, 'premium').perks = [HOSTILE];
+        tierRow(fake, 'premium').name = HOSTILE;
+        await open(fake, TIERS);
+        assert.equal(perkInputs('premium')[0].value, HOSTILE);
+        assert.equal(app.find(`${form('premium')} h3`).textContent, HOSTILE);
+        assert.equal(app.document.querySelectorAll('img[onerror]').length, 0);
+      });
+    });
+
+    describe('open and closed', () => {
+      it('closes a tier while another stays open', async () => {
+        const fake = owner();
+        await open(fake, TIERS);
+        await toggle('#tier-signature-enabled', false);
+        assert.match(app.router.block(), /unsaved/);
+        await submit(form('signature'));
+        assert.equal(callsTo(fake, 'updateTier')[0].args[2].enabled, false);
+        assert.equal(tierRow(fake, 'signature').enabled, false);
+        assert.match(app.text(`${form('signature')} .tier-editor-meta`), /Closed/);
+        assert.equal(app.find(form('signature')).classList.contains('is-closed'), true);
+      });
+
+      it('shows the server rule when the last open tier would be closed, and keeps the switch where it was put', async () => {
+        const fake = owner();
+        tierRow(fake, 'essential').enabled = false;
+        tierRow(fake, 'premium').enabled = false;
+        await open(fake, TIERS);
+        await toggle('#tier-signature-enabled', false);
+        await submit(form('signature'));
+        assert.match(app.text('[data-error="tier-signature"]'), /Keep at least one membership tier open/);
+        assert.match(toastText(), /Keep at least one membership tier open/);
+        assert.equal(tierRow(fake, 'signature').enabled, true);
+        assert.equal(app.document.activeElement.id, 'tier-signature-enabled', 'focus goes to the switch that caused it');
+        await toggle('#tier-signature-enabled', true);
+        assert.equal(app.find('[data-tier-status="signature"]').textContent, '');
+        await toggle('#tier-essential-enabled', true);
+        await submit(form('essential'));
+        assert.equal(tierRow(fake, 'essential').enabled, true);
+        assert.match(app.text(`${form('essential')} .tier-editor-meta`), /Open/);
+      });
+    });
+
+    describe('unsaved changes', () => {
+      it('asks before leaving, and again for each way out', async () => {
+        const fake = owner();
+        await open(fake, TIERS);
+        assert.equal(app.router.block(), null);
+        await type('#tier-premium-description', 'Changed');
+        const asked = confirmWith(false);
+        await app.navigate('/app/library');
+        assert.equal(app.path, TIERS);
+        assert.equal(asked.length, 1);
+        assert.match(asked[0], /unsaved changes to your tiers/);
+        await app.click('#view nav.tabs a[href="/app/studio/settings?tab=atelier"]');
+        assert.equal(app.path, TIERS);
+        confirmWith(true);
+        await app.navigate('/app/library');
+        assert.equal(app.path, '/app/library');
+      });
+
+      it('discards the changes of one tier after asking, and not the others', async () => {
+        const fake = owner();
+        await open(fake, TIERS);
+        await type('#tier-premium-name', 'Changed');
+        await type('#tier-premium-price', 'abc');
+        await submit(form('premium'));
+        await type('#tier-signature-name', 'Other');
+        await app.click(`${form('premium')} [data-action="discard-tier"]`);
+        await answer(false);
+        assert.equal(app.find('#tier-premium-name').value, 'Changed');
+        await app.click(`${form('premium')} [data-action="discard-tier"]`);
+        await answer(true);
+        assert.equal(app.find('#tier-premium-name').value, 'Supporter');
+        assert.equal(app.find('#tier-premium-price').value, '19');
+        assert.equal(app.text('#tier-premium-price-error'), '');
+        assert.equal(app.find('#tier-signature-name').value, 'Other');
+        assert.equal(callsTo(fake, 'updateTier').length, 0);
+      });
+
+      it('does not count a change that was typed back as unsaved', async () => {
+        await open(owner(), TIERS);
+        await type('#tier-premium-name', 'Changed');
+        await type('#tier-premium-name', 'Supporter');
+        await type('#tier-premium-price', '19.00');
+        assert.equal(app.router.block(), null);
       });
     });
   });

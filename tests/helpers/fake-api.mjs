@@ -14,7 +14,7 @@
 //                            bookmarks, likes, memberships, comments, messages, circle_notes, notifications, reports, entry_reads, storage.
 //                            Tests may read and edit it freely; counters (follower_count, like_count, ...) are recomputed after every write.
 //   fake.calls               log of every api call: [{method, args}] (helpers are not logged). `fake.calls.length = 0` clears it.
-//   fake.fail(method, error) make the next call of `method` reject with `error` (an Error or a message); fake.fail(method, null) clears it.
+//   fake.fail(method, error) make every call of `method` reject with `error` (an Error or a message) until fake.fail(method, null) clears it.
 //   fake.confirmEmail(email) confirms a pending sign-up (createFakeApi({confirmEmail: true}), the default, makes signUp wait for the email link;
 //                            with false, signUp signs the new user in at once and resolves {confirmed: true}).
 //   fake.emit(userId, 'notification'|'message', row)   push a realtime event (a table row) to the subscribe() listeners it concerns.

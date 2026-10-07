@@ -1,7 +1,7 @@
 # Post formats: text, image and video
 
 Creators publish three kinds of entry. This document is the contract between
-`src/media.js`, `src/api.js`, `src/platform.js` and the database, and it describes
+`src/media.js`, the data layer (`src/api/media.js`, `src/api/entries.js`), the editor and reader views (`src/views/editor*`, `src/views/entry*`, `src/core/covers.js`) and the database, and it describes
 what is deployed: the migration below is **already applied to production**, so
 the client adapts to it, never the other way round. Change this file in the same
 commit as any code that breaks it.
@@ -87,7 +87,7 @@ duration_seconds, alt, position, created_at)`. `path` is unique, `size_bytes` 1 
 
 The order never varies, so a failed step cannot leave a published entry without its media:
 
-1. Validate locally (`validateEntry` in `store.js`, plus the media rules the form cannot express).
+1. Validate locally (`validate` in `src/views/editor/model.js`, plus the media rules the form cannot express).
 2. New entry with files → `api.saveEntry(null, values, 'draft')` to obtain an id (object names need it).
 3. **Upload** each new file, **two at a time** (`UPLOADS_AT_ONCE`): `media.prepareImage` / `media.prepareVideo`, then
    `api.uploadMedia(entryId, creatorId, prepared, {position, alt, onProgress, signal})`. While one file is prepared (decoded and
@@ -118,7 +118,7 @@ Failure handling:
 - The one case where a removal may come before an upload: files this editing session stored itself and
   the creator then discarded again after a failed save. They were never part of the entry, and they
   would use up the transient headroom (20 images, 2 videos) that the next upload needs, so only as
-  many of them as the cap requires are removed first (`makeRoom` in `platform.js`). At least one other
+  many of them as the cap requires are removed first (`makeRoom` in `src/views/editor/save.js`). At least one other
   file of that kind (an original, or the newest upload) always remains, so a published entry is never
   left empty and the sync trigger never demotes it. The original files are always removed after the
   uploads.
@@ -162,7 +162,7 @@ export async function prepareVideo(file) → Prepared            // reads metada
 KB (limit 256 KB), the poster is a webp or jpeg, and the video blob keeps the original bytes with a
 normalised MIME type. The module imports cleanly in Node (the pure helpers are unit tested).
 
-## `src/api.js`
+## `src/api` (`api/media.js`, `api/entries.js`; `src/api.js` re-exports `createApi`)
 
 ```js
 createApi(client, { url = SUPABASE_URL, key = SUPABASE_KEY,
@@ -214,11 +214,12 @@ previewUrl(path) → string | null          // public URL in the previews bucket
   entry (the rows cascade), then removes the files from both buckets best effort. This works after the
   cascade because the owner policies authorise by creator folder.
 
-## UI (`src/platform.js`)
+## UI (`src/views/editor*`, `src/views/entry*`, `src/core/covers.js`)
 
-- `mount(api, { storage, media })`: `storage` defaults to `localStorage` (guarded), `media` defaults to
-  `src/media.js`. Tests inject a fake of each; `media` needs `LIMITS`, `classify`, `validateFiles`,
-  `prepareImage`, `prepareVideo` and `formatDuration`. Returns `{ handleAction, render, hydrateMedia }`.
+Platform v2 moved the editor from a dialog to its own pages (`/app/studio/new`, `/app/studio/edit/:id`) and the reader to
+`/app/p/:id`; the behaviour described below is kept. Where it says "dialog", read "page" (leaving the editor is guarded by
+`router.block` and `beforeunload`). The editor takes `media` (default `src/media.js`: `LIMITS`, `classify`, `validateFiles`,
+`prepareImage`, `prepareVideo`, `formatDuration`) from `src/views/editor/deps.js`, where tests replace it.
 - Editor: a Text / Image / Video switch at the top (group "Post type"; the select below it is "Editorial format"). Image:
   multi-select or drop, thumbnails with remove, move earlier/later and alt text. Video: one file, inline preview player. Per-file
   progress, and the whole form is locked while saving (disabled controls are dimmed to 45 %; keyboard focus moves to the status line

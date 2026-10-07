@@ -48,7 +48,7 @@ lowercase uuids.
 | --- | --- | --- |
 | `/app` | `views/feed.js` | optional (guests: latest from everyone) |
 | `/app/discover` (`?q=&category=&kind=&sort=`) | `views/discover.js` | optional |
-| `/app/c/:slug` (`?join=1` opens the join dialog) | `views/creator.js` | optional |
+| `/app/c/:slug` (`?join=1` opens the join dialog, `?tab=posts\|membership\|about`) | `views/creator.js` | optional |
 | `/app/p/:id` | `views/entry.js` | optional |
 | `/app/library` | `views/library.js` | required |
 | `/app/memberships` | `views/memberships.js` | required |
@@ -67,6 +67,9 @@ Legacy: `/app.html` (and `/app.html#discover`, `#archive`, `#circle`, `#membersh
 `#studio`, `#settings`, `#entry/<id>`) is replaced (`history.replaceState`) by the new
 path after supabase-js has consumed any auth params in the URL. Auth emails keep
 redirecting to `/app.html` (the URL in the Supabase allow-list). `PASSWORD_RECOVERY` → `/app/reset`.
+An expired or reused email link comes back as `/app.html#error=access_denied&error_code=otp_expired&…`: `main.js` reads it before the
+router replaces the address (`views/auth/auth-error.js`: `parseAuthError`, `stashAuthError`), and a visitor without a session lands on
+`/app/login`, which shows the stashed message once (ten minutes at most) with a "Send me a new link" action.
 The landing page already forwards auth params to `/app.html`; its CTAs point at `/app`,
 `/app/signup` and `/app/studio`, and show "Open the app" when a session token exists in
 localStorage (`sb-bwezbxwdmnmfbibpusaf-auth-token`).
@@ -86,7 +89,7 @@ app.html                       shell document (core)
 src/main.js                    boot: supabase-js → createApi → startApp (core)
 src/config.js                  Supabase URL + publishable key (keep)
 src/media.js                   media preparation (keep, from post formats; owners: editor)
-src/api.js                     at cutover: export { createApi } from './api/index.js' (until then the old api, untouched)
+src/api.js                     export { createApi } from './api/index.js' (the original import path; nothing in the app imports it)
 src/api/index.js               createApi(client, {url, key, XHR, now, uuid, stallMs, fetch}) composing:
 src/api/util.js                check(), friendly(), mappers (toCreator, toEntry, toTier, ...), publicUrl()
 src/api/{auth,viewer,creators,tiers,entries,media,social,memberships,messages,
@@ -100,10 +103,13 @@ src/design.css                 tokens (keep)    src/icons.js (core; others may a
 src/landing.js, index.html     landing page (auth agent: CTA changes only)
 supabase/functions/delete-account/index.ts   (api agent; deployed with verify_jwt off, it checks the token itself)
 tests/helpers/dom.mjs (core)   tests/helpers/fake-api.mjs (api agent)
-tests/*.test.mjs, tests/views/*.test.mjs, tests/contract.test.mjs
+tests/*.test.mjs, tests/views/*.test.mjs, tests/contract.test.mjs, tests/links.test.mjs (cross-area links and stylesheets)
+scripts/check.mjs (lint), scripts/serve.mjs (dev server, mirrors vercel.json), scripts/build.mjs (copies the site to dist/)
 ```
-`src/platform.js`, `src/store.js`, `src/platform.css` are replaced and deleted at the end
-(their behaviour is ported, including everything in POST_FORMATS.md).
+The first version of the app (`src/platform.js`, `src/store.js`, `src/platform.css` and their tests `interface`, `store`, `api`) is gone: its
+behaviour lives in the modules above (POST_FORMATS.md says where), and its tests were ported (`tests/api-v2.test.mjs` has the media and
+validation cases of the old api test, `tests/editor-model.test.mjs` the validators of the old store test, `tests/views/editor.test.mjs`
+and `tests/views/entry.test.mjs` the editor and reader scenarios).
 
 ## 5. Core contracts
 
@@ -264,3 +270,13 @@ cleanComment cleanMessage cleanNote cleanReport`, the constants and the mappers;
 - `tests/contract.test.mjs` fails when section 3 or 6 and the code disagree: method lists of the real and the fake api, the shapes of
   results, every `api.x(` call in `src/core`, `src/views` and `src/main.js`, and the route table with its guards.
 - `tests/boot.test.mjs` boots the shell as guest, member and creator and visits every route.
+- `tests/links.test.mjs` reads every link of every page for the three kinds of visitor: each must match a route of section 3 and carry only
+  query parameters that route reads; it also checks that every stylesheet is linked from `app.html` and that feature sheets do not restyle
+  bare elements or shared classes.
+- `tests/editor-model.test.mjs` holds the post validators, formats, the upload pool, CSV safety and escaping.
+- `npm run lint` (`scripts/check.mjs`) scans every `.js`/`.mjs` under `src`, `scripts` and `tests` recursively: syntax, local imports (static
+  and dynamic), page assets, the Content-Security-Policy hashes, and the word "demo" in `src/core` and `src/views`.
+- Retry buttons drawn by `ui.errorState` are routed by one click listener per document, so they also work in each test's own window.
+- happy-dom picks the wrong `<option selected>` of a parsed `<select>` when it is not the first one; views that read `select.value` right
+  after rendering set it again on mount (`syncSelects` in settings, `session.js` in the editor). Browsers are not affected.
+- `fake.fail(method, error)` stays in force for every call of `method` until `fake.fail(method, null)`.

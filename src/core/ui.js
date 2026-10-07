@@ -148,11 +148,12 @@ export function emptyState({ icon: iconName, title, text, action } = {}) {
 // Retry buttons are plain markup too: the click is routed here by one document listener.
 const retries = new Map();
 let retryCount = 0;
-let retryListening = false;
+// The listener belongs to one document (a page has one; tests install a new one per suite), so it is tracked per document.
+const retryDocuments = new WeakSet();
 
 function listenForRetries() {
-  if (retryListening || typeof document === 'undefined') return;
-  retryListening = true;
+  if (typeof document === 'undefined' || retryDocuments.has(document)) return;
+  retryDocuments.add(document);
   document.addEventListener('click', event => {
     const target = event.target?.closest?.('[data-retry]');
     const retry = target && retries.get(target.dataset.retry);

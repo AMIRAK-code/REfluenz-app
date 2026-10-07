@@ -74,6 +74,14 @@ export function refreshCounter(control) {
   if (counter) counter.textContent = `${length(control.value)} / ${counter.dataset.max}`;
 }
 
+// A drawn <select> shows the option the markup marked `selected`, whatever the engine or a restored form state decided.
+export function syncSelects(root) {
+  for (const select of root.querySelectorAll('select')) {
+    const chosen = select.querySelector('option[selected]');
+    if (chosen && select.value !== chosen.value) select.value = chosen.value;
+  }
+}
+
 export function focusFirstInvalid(root) {
   const control = root.querySelector('[aria-invalid="true"]');
   control?.focus?.();

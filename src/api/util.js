@@ -212,7 +212,7 @@ export const MEDIA_COLUMNS = 'id,entry_id,kind,path,poster_path,preview_path,mim
 export const PERSON_COLUMNS = 'id,display_name,avatar_path';
 export const PROFILE_COLUMNS = 'id,display_name,bio,website,avatar_path';
 export const SETTINGS_COLUMNS = 'compact,welcome_dismissed,onboarded,notify_prefs';
-export const COMMENT_COLUMNS = `id,entry_id,author_id,parent_id,body,created_at,edited_at,author:profiles(${PERSON_COLUMNS})`;
+export const COMMENT_COLUMNS = `id,entry_id,author_id,parent_id,body,created_at,edited_at,author:profiles!author_id(${PERSON_COLUMNS})`;
 export const MESSAGE_COLUMNS = 'id,creator_id,member_id,sender,body,created_at,read_at';
 export const NOTE_COLUMNS = 'id,creator_id,body,created_at';
 // The tiers of a creator, embedded in a creator. The hint names the foreign key: memberships also reference creator_tiers (by creator and tier),

@@ -56,7 +56,7 @@ export function createMemberships(ctx, {circle}) {
     // The people in a creator's circle, newest first (row level security lets only the owner read them).
     async circleMembers(creatorId) {
       const [rows, tiers] = await Promise.all([
-        client.from('memberships').select(`user_id,tier,created_at,member:profiles(${PERSON_COLUMNS})`).eq('creator_id', creatorId).order('created_at', {ascending: false}).limit(MEMBERS_LIMIT).then(check),
+        client.from('memberships').select(`user_id,tier,created_at,member:profiles!user_id(${PERSON_COLUMNS})`).eq('creator_id', creatorId).order('created_at', {ascending: false}).limit(MEMBERS_LIMIT).then(check),
         client.from('creator_tiers').select(TIER_COLUMNS).eq('creator_id', creatorId).then(check)
       ]);
       const byId = Object.fromEntries(map.tiers(tiers).map(tier => [tier.id, tier]));

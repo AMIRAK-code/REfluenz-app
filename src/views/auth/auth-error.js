@@ -1,7 +1,9 @@
 // Errors that arrive in the URL of an auth e-mail link (/app.html#error=access_denied&error_code=otp_expired&error_description=...).
 // supabase-js leaves them in the address and the router replaces that address with a clean path, so main.js reads them first
 // (parseAuthError), keeps them for this tab (stashAuthError) and the sign-in page shows them once (takeAuthError).
-// Pure functions: the storage is a parameter, nothing here touches the DOM at import time.
+// The storage is a parameter, nothing here touches the DOM at import time.
+
+import { paths } from '../../core/paths.js';
 
 export const AUTH_ERROR_KEY = 'refluenz:auth-error';
 const MAX_AGE_MS = 10 * 60 * 1000;
@@ -61,4 +63,16 @@ export function takeAuthError({ storage, now = Date.now() } = {}) {
   } catch {
     return null;
   }
+}
+
+// Called by main.js once the first page is drawn: a visitor without a session who followed a dead email link is taken to the
+// sign-in page, which shows the stashed message. A signed-in visitor stays where they are and the message is dropped.
+export async function landOnAuthError(app, authError) {
+  if (!authError) return false;
+  if (app.store.state.user) {
+    takeAuthError();
+    return false;
+  }
+  await app.router.navigate(paths.login(), { replace: true });
+  return true;
 }

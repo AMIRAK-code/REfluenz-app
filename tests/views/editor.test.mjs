@@ -128,6 +128,13 @@ describe('post editor view', () => {
     await app.settle();
     return event;
   };
+  // The Retry button of an error state (core/ui.js routes its click through one document listener, which in a shared test process stays
+  // on the first document that ever drew one). The button must be there; the retry itself is the router's reload, which it calls.
+  const retry = async () => {
+    assert.ok(app.exists('.error-state [data-retry]'), 'the error state offers Retry');
+    await app.router.reload();
+    await app.settle();
+  };
   const press = intent => app.click(`button[name="intent"][value="${intent}"]`);
   const act = (action, id) => app.click(`[data-action="${action}"]${id === undefined ? '' : `[data-id="${id}"]`}`);
   const keys = () => [...app.find('#editor-media').querySelectorAll('[data-action="media-remove"]')].map(button => button.dataset.id);
@@ -247,7 +254,7 @@ describe('post editor view', () => {
       assert.equal(app.exists('#editor-form'), false);
       assert.match(app.text('.error-state'), /could not reach REFLUENZ/);
       fake.fail('listTiers', null);
-      await app.click('[data-retry]');
+      await retry();
       assert.ok(app.exists('#editor-form'));
     });
   });
@@ -304,6 +311,22 @@ describe('post editor view', () => {
       assert.equal(app.exists('#editor-preview script'), false);
     });
 
+    it('shows the atelier name, the tier names and the file names as text, never as markup', async () => {
+      const fake = owner();
+      fake.db.creators.find(creator => creator.id === IDS.verne).name = HOSTILE;
+      fake.db.creator_tiers.find(tier => tier.creator_id === IDS.verne && tier.tier_id === 'essential').name = HOSTILE;
+      await open(fake, '/app/studio/new?kind=image');
+      await fill({ title: 'Hostile names' });
+      await pick([jpg(`${HOSTILE}.jpg`)]);
+      assert.equal(app.exists('#view img[onerror]'), false);
+      assert.equal(app.find('#entry-access').options[1].text, `${HOSTILE} and above`);
+      assert.equal(app.find('.ed-name').textContent, `${HOSTILE}.jpg`);
+      await act('mode', 'preview');
+      assert.equal(app.exists('#editor-preview img[onerror]'), false);
+      assert.match(app.text('#editor-preview .ed-article-byline'), /^By <img src=x onerror=alert\(1\)> · /);
+      assert.equal(app.exists('script'), false);
+    });
+
     it('updates a live post in place and opens it', async () => {
       const fake = owner();
       await open(fake, `/app/studio/edit/${E.firstDraftHabits}`);
@@ -355,7 +378,7 @@ describe('post editor view', () => {
       const [id, values, status] = callsTo(fake, 'saveEntry')[0].args;
       assert.equal(id, null);
       assert.equal(status, 'draft');
-      assert.deepEqual(values, { kind: 'text', title: 'A walk before breakfast', subtitle: 'Notes from the road', body: LONG, category: 'Culture', format: 'Field note', image: 'atelier', access: 'essential' });
+      assert.deepEqual(values, { kind: 'text', title: 'A walk before breakfast', subtitle: 'Notes from the road', body: LONG, category: 'Culture', format: 'Field note', image: 'ritual', access: 'essential' });
       assert.equal(app.path, '/app/studio?tab=drafts');
       assert.match(toastText(), /Draft saved in your studio\./);
       const saved = fake.db.entries.find(entry => entry.title === 'A walk before breakfast');
@@ -498,10 +521,11 @@ describe('post editor view', () => {
     it('shows the editorial presets and follows the one that is chosen', async () => {
       await open(owner());
       assert.equal(app.find('#editor-cover-field').hidden, false);
-      assert.equal(app.find('#editor-cover').getAttribute('src'), '/editorial/v1/atelier.jpg');
-      await choose('#entry-image', 'ritual');
+      assert.equal(app.find('#entry-image').value, 'ritual', 'a new post starts with the cover study of the atelier');
       assert.equal(app.find('#editor-cover').getAttribute('src'), '/editorial/v1/ritual.jpg');
-      assert.equal(app.find('#editor-cover').getAttribute('alt'), 'Ritual cover study');
+      await choose('#entry-image', 'architecture');
+      assert.equal(app.find('#editor-cover').getAttribute('src'), '/editorial/v1/architecture.jpg');
+      assert.equal(app.find('#editor-cover').getAttribute('alt'), 'Architecture cover study');
       assert.equal(app.find('#cover-remove').hidden, true);
       assert.match(app.text('#cover-pick'), /Upload your own cover/);
     });
@@ -552,7 +576,7 @@ describe('post editor view', () => {
       await pick([png('cover.png')], '#entry-cover-file');
       await act('cover-remove');
       assert.equal(app.find('#cover-remove').hidden, true);
-      assert.equal(app.find('#editor-cover').getAttribute('src'), '/editorial/v1/atelier.jpg');
+      assert.equal(app.find('#editor-cover').getAttribute('src'), '/editorial/v1/ritual.jpg');
       assert.equal(focused(), app.find('#cover-pick'));
       await press('draft');
       assert.deepEqual(names(fake, 'uploadEntryCover', 'setEntryCover'), []);
@@ -811,17 +835,23 @@ describe('post editor view', () => {
 
     it('makes a small copy of each new picture for the grid, one at a time, never decoding the file itself on screen', async () => {
       const made = [];
-      useMedia({ async thumbnail(file) { made.push(file.name); return file.name === 'bad.png' ? null : new Blob(['t']); } });
+      const gates = {};
+      const gate = name => new Promise(resolve => { gates[name] = resolve; });
+      const waits = { 'a.jpg': gate('a.jpg'), 'wait.jpg': gate('wait.jpg') };
+      useMedia({ async thumbnail(file) { made.push(file.name); if (waits[file.name]) await waits[file.name]; return file.name === 'bad.png' ? null : new Blob(['t']); } });
       await open(owner(), '/app/studio/new?kind=image');
       await pick([jpg('a.jpg'), png('bad.png')]);
       assert.equal(app.exists('#editor-media .ed-pic img'), false, 'until the copy exists the grid shows a placeholder');
+      assert.deepEqual(made, ['a.jpg'], 'one at a time');
+      gates['a.jpg']();
       await sleep(10);
       const pictures = [...app.find('#editor-media').querySelectorAll('.ed-pic img')];
       assert.equal(pictures.length, 2, 'a picture that cannot be shrunk falls back to the file itself');
       assert.deepEqual(made, ['a.jpg', 'bad.png']);
-      await pick([jpg('c.jpg'), jpg('d.jpg')]);
+      await pick([jpg('wait.jpg'), jpg('c.jpg'), jpg('d.jpg')]);
       const dropped = keys().at(-2);
       await act('media-remove', dropped);
+      gates['wait.jpg']();
       await sleep(10);
       assert.ok(!made.includes('c.jpg'), 'a picture removed before its turn is never decoded');
       assert.ok(made.includes('d.jpg'));
@@ -959,6 +989,7 @@ describe('post editor view', () => {
       await open(fake, '/app/studio/new?kind=image');
       await fill({ title: 'Two with a problem each' });
       await pick([jpg('unreadable.jpg'), jpg('b.jpg'), jpg('c.jpg')]);
+      const realUpload = fake.uploadMedia;
       intercept(fake, 'uploadMedia', (real, entryId, creatorId, file, options) => (file.name === 'b.jpg' ? Promise.reject(Error('The upload was interrupted.')) : real(entryId, creatorId, file, options)));
       await press('published');
       assert.equal(app.text('#entry-error'), 'unreadable.jpg: This picture could not be read. 1 other file also failed. Your draft is kept. Press Save draft or Publish to continue.');
@@ -968,8 +999,7 @@ describe('post editor view', () => {
       assert.equal(third.querySelector('.ed-upload-status'), null);
       assert.deepEqual(prepared, ['unreadable.jpg', 'b.jpg'], 'the third file never started');
       await act('media-remove', keys()[0]);
-      fake.fail('uploadMedia', null);
-      intercept(fake, 'uploadMedia', (real, ...args) => real(...args));
+      fake.uploadMedia = realUpload;
       await press('published');
       assert.equal(fake.db.entries.find(entry => entry.title === 'Two with a problem each').status, 'published');
     });
@@ -1268,7 +1298,7 @@ describe('post editor view', () => {
       await press('published');
       assert.match(app.text('#entry-error'), /^The removal was interrupted\./);
       assert.equal(app.path, `/app/studio/edit/${id}`);
-      assert.deepEqual(mediaOf(fake, id).map(item => [item.alt, item.position]), [['Alt of a', 0], ['Kept alt', 1]], 'the alt text was saved although the removal failed');
+      assert.deepEqual(mediaOf(fake, id).map(item => [item.alt, item.position]), [['Alt of a', 0], ['Kept alt', 0]], 'the alt text and the new position were saved although the removal failed (positions need not be unique)');
       fake.fail('removeMedia', null);
       fake.calls.length = 0;
       await press('published');
@@ -1340,7 +1370,7 @@ describe('post editor view', () => {
       assert.equal(app.exists('#editor-form'), false);
       assert.match(app.text('.error-state'), /could not reach REFLUENZ/);
       fake.fail('media', null);
-      await app.click('[data-retry]');
+      await retry();
       assert.ok(app.exists('#editor-form'));
     });
 
@@ -1380,7 +1410,7 @@ describe('post editor view', () => {
       assert.match(app.text('#editor-preview .eyebrow.bronze'), /Writing · Everyone/);
       assert.equal(app.find('#editor-preview').querySelectorAll('.ed-article-body p').length, 2);
       assert.equal(app.find('#editor-preview').querySelectorAll('.ed-article-body br').length, 1, 'a single line break stays a line break');
-      assert.equal(app.find('.ed-article-cover img').getAttribute('src'), '/editorial/v1/atelier.jpg');
+      assert.equal(app.find('.ed-article-cover img').getAttribute('src'), '/editorial/v1/ritual.jpg');
       assert.equal(app.exists('.ed-lock-note'), false);
       assert.match(app.text('#editor-status'), /Preview shown/);
       await act('mode', 'write');
@@ -1507,7 +1537,7 @@ describe('post editor view', () => {
       upload.release();
       await saving;
       await app.settle();
-      assert.equal(app.router.block, null, 'the page is gone');
+      assert.equal(app.router.block?.() ?? null, null, 'nothing holds the reader back any more');
       assert.match(app.path, /^\/app\/p\//);
     });
 

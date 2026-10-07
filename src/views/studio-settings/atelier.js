@@ -9,7 +9,7 @@ import { avatar, button, confirmDialog, debounce, delegate, html, icon, setBusy,
 import { presetUrl } from '../../core/constants.js';
 import { CATEGORIES, IMAGE_PRESETS, MAX_LINKS, SLUG, cleanAtelier, cleanLinks } from '../../api/util.js';
 import { tools } from '../settings/tools.js';
-import { focusFirstInvalid, formError, formNote, messenger, reason, refreshCounter, setError, textField, validateEach } from '../settings/form.js';
+import { focusFirstInvalid, formError, formNote, messenger, reason, refreshCounter, setError, syncSelects, textField, validateEach } from '../settings/form.js';
 
 const LIMITS = { name: 60, slug: 40, descriptor: 60, location: 60, bio: 400, label: 40, url: 300 };
 const FIELDS = ['name', 'slug', 'category', 'descriptor', 'location', 'bio', 'image'];
@@ -237,6 +237,7 @@ export function mountAtelier(el, ctx, data) {
   const doc = el.ownerDocument;
   const say = messenger(el, state);
   let alive = true;
+  syncSelects(el);
 
   const redraw = () => ctx.rerender();
   const field = id => doc.getElementById(id);

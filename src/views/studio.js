@@ -67,7 +67,7 @@ function renderStudio(ctx, st) {
   return html`<section class="page studio" aria-labelledby="studio-title">
     <header class="page-head studio-head">
       <div class="studio-identity">${avatar(creator, { size: 64 })}<div><p class="eyebrow muted">Creator studio</p><h1 id="studio-title">${creator.name}</h1>${line && html`<p class="studio-line muted">${line}</p>`}</div></div>
-      <div class="studio-head-actions">${button('View public page', { variant: 'secondary', size: 'small', href: paths.creator(creator.slug), icon: 'arrow' })}${button('Edit atelier', { variant: 'secondary', size: 'small', href: paths.studioSettings(), icon: 'studio' })}</div>
+      <div class="studio-head-actions">${button('View public page', { variant: 'secondary', size: 'small', href: paths.creator(creator.slug), icon: 'eye' })}${button('Edit atelier', { variant: 'secondary', size: 'small', href: paths.studioSettings(), icon: 'edit' })}</div>
     </header>
     ${newPostChooser()}
     <section class="section studio-overview" aria-labelledby="studio-overview-title">

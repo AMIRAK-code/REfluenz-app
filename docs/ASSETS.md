@@ -6,7 +6,7 @@ The original landing page referenced remote Google-hosted imagery that could not
 - `ritual.png`: square monochrome beauty still life; unlabelled frosted cosmetic bottle, ceramic bowl, textured linen, travertine plinth and an olive-branch shadow; natural light; no text or people.
 - `architecture.png`: square monochrome architectural photograph of a curved concrete staircase, pale textured plaster and a small daylight opening; exacting geometry; no people, text or watermark.
 
-The 1254 px and 1024x1536 PNGs are 2.3-2.7 MB each, so the platform does not use them for card covers, the reader, the studio rows or the sign-in screen. It uses 800 px JPEGs (quality 80, 70-140 KB) in `public/editorial/v1/` (`atelier.jpg`, `ritual.jpg`, `architecture.jpg`); `image()` in `src/platform.js` points there. `vercel.json` caches `/editorial/v1/*` for a year as immutable, so a changed image must go into a new `v2/` folder (and `image()` must point at it) instead of replacing a file. The PNGs stay for the landing page and the film.
+The 1254 px and 1024x1536 PNGs are 2.3-2.7 MB each, so the platform does not use them for card covers, the reader, the studio rows or the sign-in screen. It uses 800 px JPEGs (quality 80, 70-140 KB) in `public/editorial/v1/` (`atelier.jpg`, `ritual.jpg`, `architecture.jpg`); `presetUrl()` in `src/core/constants.js` points there. `vercel.json` caches `/editorial/v1/*` for a year as immutable, so a changed image must go into a new `v2/` folder (and `PRESET_BASE` in `src/core/constants.js` must point at it) instead of replacing a file. The PNGs stay for the landing page and the film.
 
 All are generated editorial illustrations. They do not represent actual creator portfolios, real products, or real customer work.
 

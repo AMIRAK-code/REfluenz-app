@@ -7,12 +7,13 @@ import { createHash } from 'node:crypto';
 import { SourceTextModule } from 'node:vm';
 
 const root = resolve(import.meta.dirname, '..');
-const SCRIPT_DIRS = ['src', 'src/api', 'src/core', 'src/views', 'scripts', 'tests', 'tests/helpers', 'tests/views'];
+// Every directory is scanned recursively (the views keep helper modules in src/views/<area>/).
+const SCRIPT_DIRS = ['src', 'scripts', 'tests'];
 // import x from './a.js'  ·  export * from './a.js'  ·  import './a.js'  ·  import('./a.js')
 const LOCAL_IMPORT = /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)['"](\.[^'"]+)['"]/g;
 // Comments are dropped before scanning, so an example import in a comment is not mistaken for a real one.
 const stripComments = text => text.replace(/\/\*[\s\S]*?\*\/|(^|[^:\\'"`])\/\/.*$/gm, '$1');
-const COPY_PATHS = ['src/core', 'src/views'];
+const COPY_PATHS = ['src/core/', 'src/views/'];
 const COPY_FORBIDDEN = /\bdemo\b/i;
 
 const exists = async path => access(path).then(() => true, () => false);
@@ -21,8 +22,14 @@ const fail = message => problems.push(message);
 
 async function listScripts(dir) {
   if (!(await exists(resolve(root, dir)))) return [];
-  const names = await readdir(resolve(root, dir));
-  return names.filter(name => /\.(js|mjs)$/.test(name)).map(name => resolve(root, dir, name));
+  const entries = await readdir(resolve(root, dir), { withFileTypes: true });
+  const found = [];
+  for (const entry of entries) {
+    if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
+    if (entry.isDirectory()) found.push(...(await listScripts(`${dir}/${entry.name}`)));
+    else if (/\.(js|mjs)$/.test(entry.name)) found.push(resolve(root, dir, entry.name));
+  }
+  return found;
 }
 
 let checked = 0;
@@ -38,7 +45,8 @@ for (const dir of SCRIPT_DIRS) {
     for (const match of stripComments(text).matchAll(LOCAL_IMPORT)) {
       if (!(await exists(resolve(dirname(full), match[1])))) fail(`${full.slice(root.length + 1)}: cannot resolve ${match[1]}`);
     }
-    if (COPY_PATHS.includes(dir) && COPY_FORBIDDEN.test(text)) fail(`${full.slice(root.length + 1)}: product copy must not use the word "demo"`);
+    const relative = full.slice(root.length + 1).replaceAll('\\', '/');
+    if (COPY_PATHS.some(prefix => relative.startsWith(prefix)) && COPY_FORBIDDEN.test(text)) fail(`${relative}: product copy must not use the word "demo"`);
     checked++;
   }
 }

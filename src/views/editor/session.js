@@ -11,8 +11,8 @@ import { formatDate, plural } from '../../core/format.js';
 import { paths } from '../../core/paths.js';
 import { deps } from './deps.js';
 import {
-  KIND_LABEL, PRESET_LABEL, accessIds, bodyHelp, bodyHint, bodyLabel, coverNote, coverProblem, formatsFor, itemName, maxItems, messageOf, nextKey, paragraphs,
-  readingMinutes, validate
+  KIND_LABEL, PRESET_LABEL, accessIds, bodyHelp, bodyHint, bodyLabel, coverNote, coverProblem, formatsFor, initialValues, itemName, maxItems, messageOf, nextKey,
+  paragraphs, readingMinutes, validate
 } from './model.js';
 import { accessHelp, accessLabel, formatOptions, itemPic, mediaSection, previewMarkup, sizeText } from './markup.js';
 import { createSaver, sessionUploads, undoUploads } from './save.js';
@@ -39,6 +39,14 @@ export function mountEditor(el, ctx, data, s) {
   let thumbJobs = Promise.resolve();
   const saver = createSaver({ api, s, creatorId: creator.id, say, progress: paintProgress });
   const media = () => deps.media;
+
+  // The markup marks the right option of each select with `selected`; setting the value as well keeps the choice when an engine reads
+  // the attribute differently (an option list parsed from a string) and costs nothing elsewhere.
+  const start = initialValues(data);
+  for (const [selector, value] of [['#entry-category', start.category], ['#entry-format', start.format], ['#entry-image', start.image], ['#entry-access', start.access]]) {
+    const node = el.querySelector(selector);
+    if (node && value) node.value = value;
+  }
 
   // --- Small helpers -------------------------------------------------------------
 
@@ -188,7 +196,9 @@ export function mountEditor(el, ctx, data, s) {
     const format = $('#entry-format');
     if (format) {
       const current = format.value;
-      format.innerHTML = String(formatOptions(next, current !== DEFAULT_FORMAT[previous] && formatsFor(next, current).includes(current) ? current : DEFAULT_FORMAT[next]));
+      const keep = current !== DEFAULT_FORMAT[previous] && formatsFor(next, current).includes(current) ? current : DEFAULT_FORMAT[next];
+      format.innerHTML = String(formatOptions(next, keep));
+      format.value = keep;
     }
     paintKindSwitch();
     renderMedia();

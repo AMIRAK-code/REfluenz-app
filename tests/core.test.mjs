@@ -782,7 +782,7 @@ describe('core', () => {
       });
 
       it('uses the uploaded cover of a text post in colour', () => {
-        const card = draw(ui.entryCard(entryOf({ coverUrl: 'https://bwezbxwdmnmfbibpusaf.supabase.co/storage/v1/object/public/covers/c/x.webp' })));
+        const card = draw(ui.entryCard(entryOf({ coverUrl: 'https://gughgswzovomkxjlqvsr.supabase.co/storage/v1/object/public/covers/c/x.webp' })));
         assert.match(card.querySelector('img').getAttribute('src'), /covers\/c\/x\.webp$/);
         assert.equal(card.querySelector('.entry-cover').classList.contains('is-preset'), false);
       });
@@ -805,7 +805,7 @@ describe('core', () => {
       });
 
       it('shows the blurred preview, never a hydrate marker, for a locked media post', () => {
-        const card = draw(ui.entryCard(entryOf({ kind: 'image', mediaCount: 3, access: 'premium', previewUrl: 'https://bwezbxwdmnmfbibpusaf.supabase.co/storage/v1/object/public/previews/c/e/p.webp' })));
+        const card = draw(ui.entryCard(entryOf({ kind: 'image', mediaCount: 3, access: 'premium', previewUrl: 'https://gughgswzovomkxjlqvsr.supabase.co/storage/v1/object/public/previews/c/e/p.webp' })));
         assert.ok(card.querySelector('.entry-card').classList.contains('is-locked'));
         assert.ok(card.querySelector('.entry-cover').classList.contains('is-preview'));
         assert.match(card.querySelector('img').getAttribute('src'), /previews\/c\/e\/p\.webp$/);
@@ -820,7 +820,7 @@ describe('core', () => {
       });
 
       it('unlocks for members and marks readable media posts for hydration, starting from the preview', () => {
-        const entry = entryOf({ kind: 'image', mediaCount: 2, access: 'public', previewUrl: 'https://bwezbxwdmnmfbibpusaf.supabase.co/storage/v1/object/public/previews/p.webp' });
+        const entry = entryOf({ kind: 'image', mediaCount: 2, access: 'public', previewUrl: 'https://gughgswzovomkxjlqvsr.supabase.co/storage/v1/object/public/previews/p.webp' });
         const card = draw(ui.entryCard(entry));
         assert.equal(card.querySelector('img').dataset.cover, 'e1');
         assert.equal(card.querySelector('img').dataset.coverReady, undefined);
@@ -901,7 +901,7 @@ describe('core', () => {
 
     describe('small components', () => {
       it('avatar shows the picture or the initials, at the size asked', () => {
-        const withPicture = draw(ui.avatar({ name: 'Mila Rossi', avatarUrl: 'https://bwezbxwdmnmfbibpusaf.supabase.co/a.webp' }, { size: 48 }));
+        const withPicture = draw(ui.avatar({ name: 'Mila Rossi', avatarUrl: 'https://gughgswzovomkxjlqvsr.supabase.co/a.webp' }, { size: 48 }));
         assert.ok(withPicture.querySelector('.avatar img'));
         assert.match(withPicture.querySelector('.avatar').getAttribute('style'), /--avatar-size:48px/);
         assert.equal(draw(ui.avatar({ name: 'Mila Rossi' })).querySelector('.avatar').textContent, 'MR');
@@ -1180,7 +1180,7 @@ describe('core', () => {
   // ---------------------------------------------------------------------------------------------------------------------
   describe('covers hydration', () => {
     const URLS = 'https://signed.test/';
-    const PREVIEW = 'https://bwezbxwdmnmfbibpusaf.supabase.co/storage/v1/object/public/previews/p.webp';
+    const PREVIEW = 'https://gughgswzovomkxjlqvsr.supabase.co/storage/v1/object/public/previews/p.webp';
     const file = (kind, name, poster = null) => ({ id: name, kind, path: `c/e/${name}.${kind === 'image' ? 'webp' : 'mp4'}`, posterPath: poster && `c/e/${poster}`, position: 0 });
 
     function coverApi(files, { unsigned = [] } = {}) {

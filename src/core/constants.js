@@ -22,6 +22,6 @@ export const TIER_NAMES = { public: 'Open', essential: 'Essential', premium: 'Pr
 export const DEFAULT_SETTINGS = Object.freeze({ compact: false, welcomeDismissed: false, onboarded: true, notifyPrefs: {} });
 
 // Where a signed-in session lives (supabase-js default key for this project); the landing page reads it too.
-export const SESSION_STORAGE_KEY = 'sb-bwezbxwdmnmfbibpusaf-auth-token';
+export const SESSION_STORAGE_KEY = 'sb-gughgswzovomkxjlqvsr-auth-token';
 
 export const presetUrl = name => `${PRESET_BASE}/${PRESETS.includes(name) ? name : PRESETS[0]}.jpg`;

@@ -89,7 +89,7 @@ describe('boot', () => {
       assert.equal(site['Permissions-Policy'], 'camera=(), microphone=(), geolocation=()');
       assert.match(site['Strict-Transport-Security'], /^max-age=\d{7,}/);
       const policy = Object.fromEntries(site['Content-Security-Policy'].split(';').map(part => part.trim().split(/\s+/)).map(([name, ...values]) => [name, values]));
-      const SUPABASE = 'https://bwezbxwdmnmfbibpusaf.supabase.co';
+      const SUPABASE = 'https://gughgswzovomkxjlqvsr.supabase.co';
       assert.deepEqual(policy['default-src'], ["'self'"]);
       assert.ok(policy['script-src'].includes('https://cdn.jsdelivr.net'));
       assert.ok(policy['script-src'].some(value => value.startsWith("'sha256-")), 'the landing page’s inline script is allowed by hash');
@@ -98,7 +98,7 @@ describe('boot', () => {
       assert.deepEqual(policy['font-src'], ["'self'", 'https://fonts.gstatic.com', 'data:']);
       assert.deepEqual(policy['img-src'], ["'self'", 'data:', 'blob:', SUPABASE]);
       assert.deepEqual(policy['media-src'], ["'self'", 'blob:', SUPABASE]);
-      assert.deepEqual(policy['connect-src'], ["'self'", SUPABASE, 'wss://bwezbxwdmnmfbibpusaf.supabase.co', 'https://cdn.jsdelivr.net']);
+      assert.deepEqual(policy['connect-src'], ["'self'", SUPABASE, 'wss://gughgswzovomkxjlqvsr.supabase.co', 'https://cdn.jsdelivr.net']);
       assert.deepEqual(policy['frame-ancestors'], ["'none'"]);
       assert.deepEqual(policy['base-uri'], ["'self'"]);
       assert.deepEqual(policy['form-action'], ["'self'"]);

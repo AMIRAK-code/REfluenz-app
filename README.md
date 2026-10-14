@@ -61,7 +61,7 @@ Rules the code keeps: markup is built with the escaping `html` tag (never string
 
 ## Backend: Supabase
 
-- Project: `refluenz` (`bwezbxwdmnmfbibpusaf`, eu-central-1). The URL and publishable key are in `src/config.js`; they are public by design, every table is protected by row level security.
+- Project: `refluenz` (`gughgswzovomkxjlqvsr`, eu-west-1). The URL and publishable key are in `src/config.js`; they are public by design, every table is protected by row level security.
 - Schema, policies, functions and seed data are in `supabase/migrations/`, in the order they were applied. The latest are `20261006231142_platform_v2.sql` and `20261006231241_platform_v2_indexes.sql`.
 - `src/api/*` is the only code that talks to Supabase. Views get plain camelCase objects and friendly error messages.
 
@@ -87,7 +87,7 @@ Storage buckets: `entry-media` (private, signed links), `previews` (public, tiny
 3. **Delete-account edge function.** Account deletion calls `supabase/functions/delete-account`, which verifies the caller's token itself, removes the person's files (entry-media, previews, covers, avatars), their atelier and finally the user. It must be deployed with JWT verification **off**, because the project's publishable key is not a JWT:
 
    ```sh
-   supabase functions deploy delete-account --project-ref bwezbxwdmnmfbibpusaf --no-verify-jwt
+   supabase functions deploy delete-account --project-ref gughgswzovomkxjlqvsr --no-verify-jwt
    ```
 
    It uses the `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` that Supabase injects into every function; set nothing by hand. It answers CORS only for `https://refluenz.com` and `localhost` / `127.0.0.1`; add your preview origins to `ORIGINS` in `index.ts` if you test deletion there. Until it is deployed, "Delete my account" in Settings fails with an error message and nothing is deleted.

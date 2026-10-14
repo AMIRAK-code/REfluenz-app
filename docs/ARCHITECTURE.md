@@ -28,7 +28,7 @@ Showcase ateliers (`creators.is_showcase`, no owner) are REFLUENZ sample content
 ## 2. Stack
 
 - Static site, no bundler, native ES modules under `/src/**`. No runtime npm deps.
-- Supabase project `bwezbxwdmnmfbibpusaf` (eu-central-1): Auth, Postgres + RLS, Storage,
+- Supabase project `gughgswzovomkxjlqvsr` (eu-west-1): Auth, Postgres + RLS, Storage,
   Realtime, Edge Function `delete-account`.
 - supabase-js `https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/+esm` (pinned).
 - Vercel: `npm run build` → `dist/`; `/app` and `/app/*` rewrite to `/app.html`.
@@ -72,7 +72,7 @@ router replaces the address (`views/auth/auth-error.js`: `parseAuthError`, `stas
 `/app/login`, which shows the stashed message once (ten minutes at most) with a "Send me a new link" action.
 The landing page already forwards auth params to `/app.html`; its CTAs point at `/app`,
 `/app/signup` and `/app/studio`, and show "Open the app" when a session token exists in
-localStorage (`sb-bwezbxwdmnmfbibpusaf-auth-token`).
+localStorage (`sb-gughgswzovomkxjlqvsr-auth-token`).
 
 Guards: `required` without session → `/app/login?next=<path>` (`next` accepted only if it
 starts with `/app/` or equals `/app`). `guest` with session → `next` or `/app`. `creator` =

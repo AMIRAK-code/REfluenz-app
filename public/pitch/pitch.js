@@ -70,6 +70,9 @@ addEventListener('keydown', e => {
   e.preventDefault();
   scrollToScene(scenes[Math.min(scenes.length - 1, Math.max(0, current() + (next ? 1 : -1)))]);
 });
+// The footer button rides the whole story back to the opening painting.
+let scrollToTop = () => scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+document.querySelector('[data-top]')?.addEventListener('click', () => scrollToTop());
 const updateChrome = () => { counter.textContent = String(current() + 1).padStart(2, '0'); };
 addEventListener('scroll', updateChrome, { passive: true });
 updateChrome();
@@ -94,6 +97,7 @@ async function start() {
   gsap.ticker.add(t => lenis.raf(t * 1000));
   gsap.ticker.lagSmoothing(0);
   scrollToScene = el => lenis.scrollTo(el, { duration: 1.4, easing: t => 1 - Math.pow(1 - t, 4) });
+  scrollToTop = () => lenis.scrollTo(0, { duration: 3.2, easing: t => (t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2) });
 
   const ease = 'power4.out';
   document.querySelectorAll('.split').forEach(split);

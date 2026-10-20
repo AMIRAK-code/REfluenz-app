@@ -2,7 +2,8 @@
 //   calm     "It used to be simple": slow pads and a bell.
 //   chaos    the problems arrive: action techno at 140 BPM that adds layers as the painting is defaced.
 //   solved   REFLUENZ: a clean, modern groove at 112 BPM (soft kick, sub bass, electric-piano chords, a stereo pluck).
-// setStory(progress 0..1) drives calm → chaos; setSolved(true) crossfades to the solved groove.
+// setStory(progress 0..1) drives calm → chaos. setMode('chaos' | 'silent' | 'solved') handles the turning point:
+// chaos cuts to silence, and after at least a second of it a hopeful burst plays before the solved groove comes in.
 
 const NOTE = n => 440 * Math.pow(2, (n - 69) / 12);
 const LOOKAHEAD = 0.14;   // seconds of audio scheduled ahead
@@ -27,7 +28,7 @@ const PLUCK = [0, 2, 4, 2, 3, 4, 2, 4];  // index into the current chord, one pe
 
 export function createSound() {
   let ctx, out, buses, reverb, delay, noiseBuffer, scheduler;
-  let playing = false, story = 0, solved = false;
+  let playing = false, story = 0, solved = false, hushed = false, mode = 'chaos', hushedAt = 0, pending = [];
   const seq = { techno: { next: 0, step: 0, on: false }, smart: { next: 0, step: 0, on: false } };
   let padTimer, bellTimer, padIndex = 0;
 
@@ -57,7 +58,8 @@ export function createSound() {
       if (send) { const s = ctx.createGain(); s.gain.value = send; g.connect(s).connect(reverb); }
       g.level = level; return g;
     };
-    buses = { calm: bus(0.9, 0.9), techno: bus(0.85, 0.12), smart: bus(0.8, 0.25) };
+    buses = { calm: bus(0.9, 0.9), techno: bus(0.85, 0.12), smart: bus(0.8, 0.25), fx: bus(1, 1.1) };
+    buses.fx.gain.value = 1;
 
     // Techno gets grit as the painting falls apart.
     buses.drive = ctx.createWaveShaper(); buses.drive.curve = curve(0); buses.drive.oversample = '2x';
@@ -187,9 +189,58 @@ export function createSound() {
     o.start(t); o.stop(t + 0.4);
   }
 
+  // --- the turning point: a hopeful burst out of silence --------------------------------------------------------------
+  function burst() {
+    const t = ctx.currentTime + 0.02, dest = buses.fx;
+    // a deep, soft boom
+    const boom = ctx.createOscillator(), bg = ctx.createGain();
+    boom.frequency.setValueAtTime(78, t); boom.frequency.exponentialRampToValueAtTime(36, t + 1.2);
+    bg.gain.setValueAtTime(0.0001, t); bg.gain.linearRampToValueAtTime(0.85, t + 0.03); bg.gain.exponentialRampToValueAtTime(0.0001, t + 3.6);
+    boom.connect(bg).connect(dest); boom.start(t); boom.stop(t + 3.8);
+    // a bright breath of air that opens up
+    const air = ctx.createBufferSource(); air.buffer = noiseBuffer;
+    const af = ctx.createBiquadFilter(); af.type = 'lowpass'; af.Q.value = 0.6;
+    af.frequency.setValueAtTime(600, t); af.frequency.exponentialRampToValueAtTime(14000, t + 0.5); af.frequency.exponentialRampToValueAtTime(2200, t + 3);
+    const ag = ctx.createGain(); ag.gain.setValueAtTime(0.0001, t); ag.gain.linearRampToValueAtTime(0.32, t + 0.04); ag.gain.exponentialRampToValueAtTime(0.0001, t + 3.2);
+    air.connect(af).connect(ag).connect(dest); air.start(t); air.stop(t + 3.4);
+    // a wide major chord that blooms (F major add 9, spread across five octaves)
+    [41, 53, 60, 64, 67, 69, 72, 76, 79, 84].forEach((n, i) => {
+      for (const [type, detune] of [['sine', -6], ['triangle', 7]]) {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = type; o.frequency.value = NOTE(n); o.detune.value = detune;
+        g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.05 - i * 0.003, t + 0.06 + i * 0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 6.5);
+        o.connect(g).connect(dest); o.start(t); o.stop(t + 6.6);
+      }
+    });
+    // shimmering bells falling like sparks
+    const sparkle = [84, 88, 91, 93, 96, 91, 88, 93, 96, 100, 96, 91];
+    sparkle.forEach((n, i) => {
+      const at = t + 0.12 + i * 0.16 + Math.random() * 0.05, o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = NOTE(n);
+      env(g.gain, at, 0.05, 0.004, 1.6);
+      o.connect(g).connect(dest); o.start(at); o.stop(at + 1.7);
+    });
+  }
+  const later = (fn, ms) => pending.push(setTimeout(fn, ms));
+  function clearPending() { pending.forEach(clearTimeout); pending = []; }
+  function enter(next) {
+    if (next === mode) return;
+    mode = next;
+    if (!ctx || !playing) { solved = next === 'solved'; hushed = next === 'silent'; return; }
+    clearPending();
+    if (next === 'chaos') { hushed = false; solved = false; mix(0.4); return; }
+    if (next === 'silent') { if (!hushed) { hushed = true; hushedAt = ctx.currentTime; } solved = false; mix(0.06); return; }
+    // solved: from chaos or silence, keep (at least) a second of silence, then the burst, then the groove.
+    if (!hushed) { hushed = true; hushedAt = ctx.currentTime; mix(0.06); }
+    const wait = Math.max(0, 1 - (ctx.currentTime - hushedAt)) * 1000;
+    later(() => { burst(); later(() => { hushed = false; solved = true; mix(1.4); }, 2000); }, wait);
+  }
+
   // --- mix and transport ------------------------------------------------------------------------------------------------
   const intensity = () => Math.min(1, Math.max(0, (story - 0.08) / 0.84));
   function targets() {
+    if (hushed) return { calm: 0, techno: 0, smart: 0 };
     if (solved) return { calm: 0, techno: 0, smart: 1 };
     const chaos = intensity();
     return { calm: Math.max(0, 1 - (story - 0.03) / 0.08), techno: story > 0.07 ? 0.55 + chaos * 0.45 : 0, smart: 0 };
@@ -226,12 +277,13 @@ export function createSound() {
       pad(); padTimer = setInterval(pad, PAD_SECONDS * 1000);
       bellTimer = setTimeout(bell, 1800);
       scheduler = setInterval(run, TICK_MS);
+      solved = mode === 'solved'; hushed = mode === 'silent';
       mix(0.3);
     },
     stop() {
       if (!ctx) return;
       playing = false;
-      clearInterval(padTimer); clearTimeout(bellTimer); clearInterval(scheduler);
+      clearInterval(padTimer); clearTimeout(bellTimer); clearInterval(scheduler); clearPending();
       seq.techno.on = seq.smart.on = false;
       out.gain.cancelScheduledValues(ctx.currentTime);
       out.gain.setValueAtTime(out.gain.value, ctx.currentTime);
@@ -239,6 +291,6 @@ export function createSound() {
       setTimeout(() => { if (!playing) ctx.suspend(); }, 1200);
     },
     setStory(progress) { story = Math.min(1, Math.max(0, progress)); if (playing) mix(); },
-    setSolved(value) { if (solved === value) return; solved = value; if (playing) mix(value ? 1.2 : 0.5); },
+    setMode: enter,
   };
 }

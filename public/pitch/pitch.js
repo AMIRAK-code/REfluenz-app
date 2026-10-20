@@ -86,7 +86,8 @@ async function start() {
   ]);
   gsap.registerPlugin(ScrollTrigger);
 
-  const lenis = new Lenis({ lerp: 0.09, wheelMultiplier: 1 });
+  // Scrolling runs at 0.7× the browser's speed so each scene has time to land.
+  const lenis = new Lenis({ lerp: 0.09, wheelMultiplier: 0.7, touchMultiplier: 0.7 });
   lenis.on('scroll', ScrollTrigger.update);
   gsap.ticker.add(t => lenis.raf(t * 1000));
   gsap.ticker.lagSmoothing(0);
@@ -113,8 +114,6 @@ async function start() {
     .to('.d6 .glitch', { x: () => gsap.utils.random(-140, 140), duration: 0.22, stagger: 0.05, repeat: 6, yoyo: true }, 11.6)
     .fromTo('.d7', { opacity: 0, scale: 0.6, transformOrigin: '50% 50%' }, { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(2)' }, 12.4);
 
-  // From the answer onwards the music is "solved": modern and calm again.
-  ScrollTrigger.create({ trigger: '.shift', start: 'top 65%', end: 'max', onToggle: self => sound.setSolved(self.isActive) });
 
   // --- 02 The feed: an endless wall of reels, boosts and AI slop that speeds up ------------------------------------
   const cols = gsap.utils.toArray('.feed-col');
@@ -143,6 +142,40 @@ async function start() {
     .fromTo('.share .seg.plat', { '--w': '0%' }, { '--w': '52%', duration: 3.2, ease: 'power2.out' }, 3)
     .fromTo('.share .seg.ads', { '--w': '0%' }, { '--w': '29%', duration: 3.2, ease: 'power2.out' }, 4)
     .fromTo('.share .seg.boost', { '--w': '0%' }, { '--w': '12%', duration: 3, ease: 'power2.out' }, 5);
+
+  // --- The spark: a second of silence, the bulb sparks and lights, the room turns to day, the music changes ------
+  const IGNITE = 0.42;
+  const sparks = document.querySelector('.lamp .sparks');
+  sparks.innerHTML = Array.from({ length: 26 }, (_, i) => i % 3 ? '<line x1="0" y1="0" x2="0" y2="-18"/>' : '<circle r="3.5"/>').join('');
+  const sparkEls = [...sparks.children];
+  const spark = gsap.timeline({ defaults: { ease: 'none' }, scrollTrigger: {
+    trigger: '.spark', start: 'top top', end: '+=320%', pin: '.spark .sticky', scrub: 0.6,
+    onUpdate: self => sound.setMode(self.progress >= IGNITE ? 'solved' : 'silent'),
+    onLeaveBack: () => sound.setMode('chaos'), onLeave: () => sound.setMode('solved'),
+  } });
+  spark.fromTo('.lamp-swing', { y: -620 }, { y: 0, duration: 1.4, ease: 'power3.out' }, 0)
+    .fromTo('.lamp-swing', { rotation: 7, svgOrigin: '300 -400' }, { keyframes: [{ rotation: -3.5 }, { rotation: 1.6 }, { rotation: -0.6 }, { rotation: 0 }], duration: 2.4, ease: 'sine.inOut', svgOrigin: '300 -400' }, 0.2);
+  spark.fromTo('.k1', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, 1.4).to('.k1', { opacity: 0, y: -24, duration: 0.4 }, 3.9);
+  // The filament flickers, catches, fails, catches again.
+  spark.to('.glass-lit', { keyframes: [{ opacity: 0.35 }, { opacity: 0 }, { opacity: 0.55 }, { opacity: 0.08 }, { opacity: 0.7 }, { opacity: 0.15 }], duration: 2.2 }, 1.8)
+    .to('.filament', { keyframes: [{ stroke: '#ffd77a' }, { stroke: '#6f6252' }, { stroke: '#fff0b8' }, { stroke: '#7a6a55' }, { stroke: '#fff6d8' }], duration: 2.2 }, 1.8);
+  sparkEls.forEach((el, i) => {
+    const angle = (i / sparkEls.length) * Math.PI * 2 + (i % 5) * 0.3, dist = 120 + (i * 37) % 220, at = 2 + (i % 7) * 0.28;
+    spark.fromTo(el, { x: 300, y: 500, opacity: 0, rotation: angle * 57.3 + 90, scale: 0.4 },
+      { x: 300 + Math.cos(angle) * dist, y: 500 + Math.sin(angle) * dist + 40, opacity: 1, scale: 1, duration: 0.5, ease: 'power2.out' }, at)
+      .to(el, { opacity: 0, duration: 0.3 }, at + 0.45);
+  });
+  // Ignition: the bulb lights, the halo and rays bloom, daylight fills the room.
+  spark.to('.glass-lit', { opacity: 1, duration: 0.35 }, IGNITE * 10)
+    .to('.filament', { stroke: '#fffdf0', strokeWidth: 5, duration: 0.3 }, IGNITE * 10)
+    .fromTo('.lamp-halo', { opacity: 0, scale: 0.5, transformOrigin: '50% 50%' }, { opacity: 1, scale: 1.5, duration: 1.6, ease: 'power3.out' }, IGNITE * 10)
+    .fromTo('.rays', { opacity: 0, rotation: -6, svgOrigin: '300 560' }, { opacity: 1, rotation: 6, duration: 4, svgOrigin: '300 560' }, IGNITE * 10)
+    .fromTo('.spark-glow', { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 2.6, ease: 'power2.inOut' }, IGNITE * 10 + 0.2)
+    .to('.cord', { stroke: '#3a332b', duration: 1 }, IGNITE * 10 + 1);
+  spark.fromTo('.k2', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, 6.4)
+    .to('.lamp', { yPercent: -8, scale: 0.86, duration: 3, ease: 'power1.inOut' }, 7)
+    .set({}, {}, 10);
+  if (spark.scrollTrigger.progress >= IGNITE) sound.setMode('solved');
 
   // --- The answer: the word arrives from far away, the image moves inside the letters ------------------------------
   const shift = gsap.timeline({ scrollTrigger: { trigger: '.shift', start: 'top top', end: '+=160%', pin: '.shift .sticky', scrub: 0.6 } });

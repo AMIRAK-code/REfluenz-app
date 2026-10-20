@@ -60,13 +60,12 @@ a { color: inherit; }
 /* 01 Story: the fresco */
 .story { background: var(--night); color: var(--cream); }
 .stage { position: relative; height: 100svh; overflow: hidden; }
-.painting { position: absolute; inset: 0; background: var(--night); --img-w: 100vw; --img-h: 45vw; --img-x: 0px; --img-y: 0px; --split: 50vw; }
-.half { position: absolute; inset: 0; overflow: hidden; will-change: transform; }
-.half img { position: absolute; left: var(--img-x); top: var(--img-y); width: var(--img-w); height: var(--img-h); max-width: none; object-fit: cover; filter: saturate(1) brightness(1) contrast(1); will-change: filter; }
-.half-left { clip-path: inset(0 calc(100% - var(--split)) 0 0); }
-.half-right { clip-path: inset(0 0 0 var(--split)); }
-.stage::after { content: ''; position: absolute; inset: 45% 0 0 0; z-index: 1; background: linear-gradient(transparent, rgb(10 9 8 / .72)); pointer-events: none; }
-.painting .dim { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 45%, transparent 40%, rgb(8 7 6 / .55) 100%); opacity: .35; pointer-events: none; }
+.painting { position: absolute; inset: 0; background: var(--night); }
+.painting-still { width: 100%; height: 100%; object-fit: cover; object-position: 37.7% 45%; }
+.tear { position: absolute; inset: 0; width: 100%; height: 100%; display: block; background: radial-gradient(ellipse at 50% 50%, #1d1a17, #070605 75%); }
+.motion .painting { visibility: hidden; }
+.no-tear .tear { display: none; }
+.no-tear .painting { visibility: visible; }
 .vandal-layer { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
 .vandal-layer .tag { font-family: 'Hanken Grotesk', Arial, sans-serif; font-weight: 800; letter-spacing: -.02em; }
 .vandal-layer .ui-t { font-family: 'Hanken Grotesk', Arial, sans-serif; font-weight: 700; }
@@ -239,3 +238,81 @@ a { color: inherit; }
 }
 .story-lines .l0-text { display: block; }
 .ask .credits { margin-top: 3vh; font-size: 11px; color: rgb(243 238 230 / .45); max-width: 70ch; }
+
+/* 02 The feed: the chaos the old platforms sell */
+.feed { background: #07060a; color: var(--cream); }
+.feed .sticky { padding: 0; }
+.feed-wall { position: absolute; inset: -10% -4%; display: grid; grid-template-columns: repeat(var(--cols, 5), 1fr); gap: 18px; transform: rotate(-6deg) scale(1.08); filter: saturate(1.25); }
+.feed-col { display: grid; gap: 18px; align-content: start; will-change: transform; }
+.reel { position: relative; aspect-ratio: 9 / 16; border-radius: 22px; overflow: hidden; background: var(--g, linear-gradient(160deg, #ff3ea5, #6a00ff)); box-shadow: 0 10px 30px rgb(0 0 0 / .5); font-family: var(--sans); }
+.reel::after { content: ''; position: absolute; inset: 0; background: linear-gradient(transparent 45%, rgb(0 0 0 / .6)); }
+.reel .shape { position: absolute; border-radius: 50%; filter: blur(2px); opacity: .7; }
+.reel .cap { position: absolute; z-index: 1; left: 12px; right: 40px; bottom: 14px; font-size: 13px; line-height: 1.25; font-weight: 700; color: #fff; text-shadow: 0 1px 6px rgb(0 0 0 / .5); }
+.reel .tag { position: absolute; z-index: 1; left: 10px; top: 10px; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; background: #fff; color: #111; }
+.reel .tag.ai { background: #2ef2a0; }
+.reel .tag.ad { background: #ffd400; }
+.reel .tag.boost { background: #ff3b30; color: #fff; }
+.reel .side { position: absolute; z-index: 1; right: 10px; bottom: 14px; display: grid; gap: 12px; justify-items: center; font-size: 11px; font-weight: 700; color: #fff; }
+.reel .side i { width: 22px; height: 22px; border-radius: 50%; background: rgb(255 255 255 / .85); }
+.feed-tabs { position: absolute; z-index: 2; top: 76px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; padding: 6px; border-radius: 999px; background: rgb(0 0 0 / .65); backdrop-filter: blur(10px); font: 700 13px/1 var(--sans); white-space: nowrap; }
+.feed-tabs span { padding: 10px 14px; border-radius: 999px; color: #ddd; }
+.feed-tabs span.on { background: #fff; color: #111; }
+.feed-pop { position: absolute; z-index: 3; width: min(320px, 78vw); padding: 18px 18px 16px; border-radius: 18px; background: #fff; color: #111; font-family: var(--sans); box-shadow: 0 24px 60px rgb(0 0 0 / .55); display: grid; gap: 6px; }
+.feed-pop b { font-size: 18px; }
+.feed-pop p { font-size: 14px; color: #444; }
+.feed-pop small { font-size: 12px; color: #d1001f; font-weight: 600; }
+.feed-pop .pill { justify-self: start; margin-top: 6px; padding: 10px 16px; border-radius: 999px; background: #0a66ff; color: #fff; font-weight: 700; font-size: 13px; }
+.feed-pop.boost { right: 8vw; top: 22vh; }
+.feed-pop.again { left: 7vw; top: 40vh; }
+.feed-pop.gen { right: 18vw; bottom: 16vh; }
+.feed-pop.gen .pill { background: #6a00ff; }
+.motion .feed-pop { opacity: 0; }
+.feed-lines { position: absolute; z-index: 4; left: var(--gut); right: var(--gut); bottom: 10vh; display: grid; pointer-events: none; }
+.feed-line { grid-area: 1 / 1; font-family: var(--serif); font-size: clamp(2.6rem, 7vw, 8rem); line-height: .95; letter-spacing: -.03em; color: #fff; text-shadow: 0 4px 40px rgb(0 0 0 / .8); max-width: 14ch; }
+.feed-line em { font-style: italic; color: var(--gold); }
+.motion .feed-line { opacity: 0; }
+
+/* 03 Your share: talking to creators */
+.share { background: var(--night); color: var(--cream); }
+.share .sticky { display: grid; grid-template-rows: auto auto 1fr; align-content: start; gap: 4vh; }
+.share-lines { display: grid; min-height: 2.2em; }
+.share-line { grid-area: 1 / 1; font-family: var(--serif); font-size: clamp(2.2rem, 5.6vw, 6.4rem); line-height: .98; letter-spacing: -.03em; max-width: 18ch; }
+.share-line em { font-style: italic; color: var(--gold); }
+.motion .share-line { opacity: 0; }
+.value { align-self: end; display: grid; gap: 14px; max-width: 1200px; }
+.value-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--cream-2); }
+.value-head .views b { font-family: var(--serif); font-size: clamp(28px, 3.4vw, 48px); font-weight: 400; letter-spacing: -.02em; color: var(--cream); font-variant-numeric: tabular-nums; text-transform: none; margin-right: 6px; }
+.value-bar { display: flex; height: clamp(64px, 10vh, 110px); background: var(--night-2); overflow: hidden; }
+.value-bar .seg { position: relative; display: flex; align-items: flex-end; padding: 10px 12px; flex: 0 0 var(--w, 0%); min-width: 0; overflow: hidden; font: 600 12px/1.2 var(--sans); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; transition: none; }
+.value-bar .seg span { overflow: hidden; text-overflow: ellipsis; }
+.value-bar .you { background: var(--gold); color: var(--night); --w: 100%; }
+.value-bar .plat { background: #3a3631; color: var(--cream); }
+.value-bar .ads { background: #57524b; color: var(--cream); }
+.value-bar .boost { background: #a3000b; color: #fff; }
+.value-note { font-size: 13px; color: var(--cream-2); }
+
+/* For creators: the solved version */
+.fix { background: var(--paper); }
+.fix .display { font-size: clamp(2.8rem, 7vw, 8rem); margin-bottom: 7vh; }
+.fix-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(28px, 5vw, 80px); align-items: start; }
+.fix .value-head { color: var(--ink-3); }
+.fix .value-bar { background: var(--paper-2); }
+.fix .value-bar .you { --w: 0%; }
+.fix .value-bar .ref { background: var(--ink); color: var(--paper); }
+.fix .value-note { color: var(--ink-2); }
+.fix-list { display: grid; border-top: 1px solid var(--line); }
+.fix-list li { display: grid; gap: 6px; padding: 20px 0; border-bottom: 1px solid var(--line); }
+.fix-list s { color: var(--ink-3); text-decoration-color: var(--bronze); text-decoration-thickness: 2px; font-size: 15px; }
+.fix-list span { font-size: clamp(19px, 1.6vw, 24px); font-weight: 500; letter-spacing: -.01em; }
+@media (max-width: 820px) {
+  .fix-grid { grid-template-columns: 1fr; }
+  .feed-wall { --cols: 3; }
+  .feed-pop.again { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .feed-pop, .feed-line, .share-line { opacity: 1; position: relative; }
+  .feed-lines, .share-lines { position: relative; inset: auto; gap: 18px; }
+  .feed-line, .share-line { grid-area: auto; }
+  .value-bar .you { --w: 8%; } .value-bar .plat { --w: 52%; } .value-bar .ads { --w: 28%; } .value-bar .boost { --w: 12%; }
+  .fix .value-bar .you { --w: 88%; } .fix .value-bar .ref { --w: 12%; }
+}

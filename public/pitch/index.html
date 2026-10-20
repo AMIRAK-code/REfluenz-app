@@ -28,33 +28,13 @@
 <!-- 01 STORY: Michelangelo, The Creation of Adam (c. 1512, public domain; photograph via Wikimedia Commons) -->
 <section id="story" class="scene story" data-scene data-title="It used to be simple">
   <div class="stage">
-    <div class="painting" role="img" aria-label="Michelangelo, The Creation of Adam: the hands of God and Adam reaching for each other, slowly drifting apart while the painting is defaced.">
-      <div class="half half-left"><img src="/pitch/creation-3200.jpg" srcset="/pitch/creation-1600.jpg 1600w, /pitch/creation-3200.jpg 3200w" sizes="(max-width: 900px) 1600px, 3200px" alt="" fetchpriority="high"></div>
-      <div class="half half-right"><img src="/pitch/creation-3200.jpg" srcset="/pitch/creation-1600.jpg 1600w, /pitch/creation-3200.jpg 3200w" sizes="(max-width: 900px) 1600px, 3200px" alt=""></div>
-      <div class="dim" aria-hidden="true"></div>
-    </div>
+    <div class="painting"><img class="painting-still" src="/pitch/creation-3200.jpg" srcset="/pitch/creation-1600.jpg 1600w, /pitch/creation-3200.jpg 3200w" sizes="100vw" alt="Michelangelo, The Creation of Adam: the hands of God and Adam reaching for each other." fetchpriority="high"></div>
+    <svg class="tear" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg>
     <svg class="vandal-layer" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
       <defs>
         <filter id="spray"><feTurbulence type="fractalNoise" baseFrequency="2.2" numOctaves="1" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3"/></filter>
       </defs>
-      <!-- Playful vandalism: notifications, doodles, tags -->
-      <g class="vandal fun">
-        <g class="v v1" transform="translate(470 300)"><path class="draw" d="M-40,20 L-20,-30 L0,10 L20,-30 L40,20 Z" fill="none" stroke="#ffd400" stroke-width="7" stroke-linejoin="round" filter="url(#spray)"/></g>
-        <g class="v v2" transform="translate(1180 300)"><circle r="58" fill="none" stroke="#2ef2a0" stroke-width="7" filter="url(#spray)" class="draw"/><path class="draw" d="M-22,-12 v4 M22,-12 v4 M-28,18 C-12,36 12,36 28,18" fill="none" stroke="#2ef2a0" stroke-width="7" stroke-linecap="round"/></g>
-        <g class="v v3" transform="translate(300 640) rotate(-8)"><text class="tag" font-size="92" fill="none" stroke="#ff3ea5" stroke-width="5">#FYP</text></g>
-        <g class="v v4" transform="translate(1060 690) rotate(6)"><text class="tag" font-size="110" fill="#ffd400">LOL</text></g>
-        <g class="v v5" transform="translate(690 210)"><rect x="-64" y="-26" width="128" height="52" rx="26" fill="#e0245e"/><text class="ui-t" x="0" y="11" text-anchor="middle" font-size="30" fill="#fff">♥ 99+</text></g>
-        <g class="v v6" transform="translate(1000 180)"><rect x="-120" y="-34" width="240" height="68" rx="14" fill="#fff" stroke="#111" stroke-width="3"/><text class="ui-t" x="0" y="11" text-anchor="middle" font-size="28" fill="#111">New post! Tap now</text></g>
-        <g class="v v7" transform="translate(560 560)"><circle r="30" fill="#ff3b30"/><text class="ui-t" y="11" text-anchor="middle" font-size="30" fill="#fff">37</text></g>
-      </g>
-
-      <!-- Dark vandalism: drips, cracks, ads, glitch -->
       <g class="vandal dark">
-        <g class="v d1"><path class="drip" fill="#120d0b" d="M330,0 h120 v120 c0,30 -14,40 -14,70 s14,30 0,60 -18,10 -18,-20 0,-50 -14,-60 -14,30 -18,80 -20,10 -20,-30 6,-70 -10,-100 -26,40 -26,-30 Z"/></g>
-        <g class="v d2"><path class="drip" fill="#120d0b" d="M1080,0 h170 v90 c0,40 -20,30 -20,90 s-24,20 -24,-30 -10,-40 -24,-40 -10,90 -22,90 -14,-60 -24,-80 -26,10 -26,40 -20,10 -24,-30 4,-60 -6,-140 Z"/></g>
-        <g class="v d3"><polyline class="draw" points="800,0 780,120 820,190 760,300 810,380 790,470 830,560 800,650 840,900" fill="none" stroke="#0d0a09" stroke-width="5"/><path class="draw" d="M780,120 L700,170 L650,160 M820,190 L900,230" fill="none" stroke="#0d0a09" stroke-width="3"/></g>
-        <g class="v d4" transform="translate(200 400)"><path class="draw" d="M-70,-70 L70,70 M70,-70 L-70,70" stroke="#d1001f" stroke-width="16" stroke-linecap="round" filter="url(#spray)"/></g>
-        <g class="v d5" transform="translate(1290 520)"><rect x="-150" y="-54" width="300" height="108" fill="#111"/><text class="ui-t" x="0" y="-8" text-anchor="middle" font-size="26" fill="#ffd400">AD · 0:05</text><text class="ui-t" x="0" y="32" text-anchor="middle" font-size="30" fill="#fff">SKIP AD ▸</text></g>
         <g class="v d6"><rect class="glitch" x="0" y="420" width="1600" height="26" fill="#ff3ea5" opacity=".55"/><rect class="glitch" x="0" y="470" width="1600" height="10" fill="#2ef2a0" opacity=".55"/><rect class="glitch" x="0" y="300" width="1600" height="6" fill="#ffffff" opacity=".6"/></g>
         <g class="v d7" transform="translate(800 820)"><text class="tag" font-size="64" text-anchor="middle" fill="none" stroke="#d1001f" stroke-width="4">SCROLL. SCROLL. SCROLL.</text></g>
       </g>
@@ -75,6 +55,46 @@
   </div>
 </section>
 
+
+<!-- 02 THE FEED -->
+<section class="scene feed" data-scene data-title="The feed">
+  <div class="sticky">
+    <div class="feed-wall" aria-hidden="true"></div>
+    <div class="feed-tabs" aria-hidden="true"><span class="on">For you</span><span>Reels</span><span>Shorts</span><span>Trending</span><span>Live</span><span>Explore</span></div>
+    <div class="feed-pop boost" aria-hidden="true"><b>Boost this post</b><p>Reach 10,000 more people for €49.</p><span class="pill">Boost now</span><small>Your reach is down this week.</small></div>
+    <div class="feed-pop again" aria-hidden="true"><b>Promote again?</b><p>Your last boost has ended.</p><span class="pill">Pay to promote</span></div>
+    <div class="feed-pop gen" aria-hidden="true"><b>Create with AI</b><p>Post 30 times a day. No effort needed.</p><span class="pill">Generate</span></div>
+    <div class="feed-lines" aria-live="polite">
+      <p class="feed-line f1">Reels on reels <em>on reels.</em></p>
+      <p class="feed-line f2">Pay to be <em>seen.</em></p>
+      <p class="feed-line f3">AI slop, <em>at scale.</em></p>
+    </div>
+  </div>
+</section>
+
+<!-- 03 YOUR SHARE -->
+<section class="scene share" data-scene data-title="Your share">
+  <div class="sticky">
+    <p class="eyebrow light">To every creator</p>
+    <div class="share-lines">
+      <p class="share-line s1">You spent <em>years</em> learning this.</p>
+      <p class="share-line s2">Your research. Your craft. <em>Your experience.</em></p>
+      <p class="share-line s3">You share it <em>for free.</em></p>
+      <p class="share-line s4">They keep <em>the value.</em></p>
+    </div>
+    <div class="value" aria-label="Illustration: the value of a creator's work is mostly kept by the platform, advertisers and paid boosts; a sliver reaches the creator.">
+      <div class="value-head"><span>The value of your work</span><span class="views"><b data-views>0</b> views</span></div>
+      <div class="value-bar">
+        <i class="seg you"><span>You</span></i>
+        <i class="seg plat"><span>The platform</span></i>
+        <i class="seg ads"><span>Advertisers</span></i>
+        <i class="seg boost"><span>Your boosts</span></i>
+      </div>
+      <p class="value-note">Illustration, not data. The point: reach goes up, your return does not.</p>
+    </div>
+  </div>
+</section>
+
 <!-- 03 SHIFT -->
 <section class="scene shift" data-scene data-title="The answer">
   <div class="sticky">
@@ -84,10 +104,35 @@
   </div>
 </section>
 
+
+<!-- FIX: for creators -->
+<section class="scene fix" data-scene data-title="For creators">
+  <div class="inner">
+    <p class="eyebrow">02 — For creators</p>
+    <h2 class="display reveal">Your knowledge,<br><em>your House.</em></h2>
+    <div class="fix-grid">
+      <div class="fix-flow reveal" aria-label="Illustration: members pay the creator directly; REFLUENZ keeps a fair share.">
+        <div class="value-head"><span>What your House pays</span></div>
+        <div class="value-bar solved">
+          <i class="seg you"><span>You</span></i>
+          <i class="seg ref"><span>Fee</span></i>
+        </div>
+        <p class="value-note">Members pay you directly, every month. We keep a fair share when payments launch.</p>
+      </div>
+      <ul class="fix-list">
+        <li class="reveal"><s>Racing the reels</s><span>Publish when the work is ready</span></li>
+        <li class="reveal"><s>Paying to be seen</s><span>Your people see everything they joined for</span></li>
+        <li class="reveal"><s>AI slop in the feed</s><span>People, chosen by people</span></li>
+        <li class="reveal"><s>The algorithm decides</s><span>You set the price and the doors</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
 <!-- 04 PRODUCT (horizontal) -->
 <section class="scene product" data-scene data-horizontal data-title="The product">
   <div class="sticky">
-    <div class="product-head"><p class="eyebrow">02 — The product</p><p class="hscroll-hint">Keep scrolling →</p></div>
+    <div class="product-head"><p class="eyebrow">03 — The product</p><p class="hscroll-hint">Keep scrolling →</p></div>
     <div class="track">
       <article class="panel">
         <p class="num">i</p><h3>Three ways<br>to publish.</h3>
@@ -116,7 +161,7 @@
 <!-- 05 HOW -->
 <section class="scene how" data-scene data-title="How it works">
   <div class="inner">
-    <p class="eyebrow">03 — How it works</p>
+    <p class="eyebrow">04 — How it works</p>
     <ol class="steps">
       <li class="reveal"><span class="step-n">01</span><h3>Open your Studio</h3><p>A page of one's own, with a name, a banner, links and three tiers. It takes a minute.</p></li>
       <li class="reveal"><span class="step-n">02</span><h3>Publish the work</h3><p>Text, images or film, public or for members. Drafts stay private until they are ready.</p></li>
@@ -130,7 +175,7 @@
   <div class="sticky">
     <figure class="lock-img"><img src="/editorial/v1/ritual.jpg" alt="" loading="lazy"></figure>
     <div class="lock-copy">
-      <p class="eyebrow light">04 — Built to be trusted</p>
+      <p class="eyebrow light">05 — Built to be trusted</p>
       <h2 class="display">Locked on the <em>server</em>,<br>not hidden in the page.</h2>
       <p>Member posts, photos and films never reach a reader without the right tier: the database enforces every rule. Data lives in the EU, and anyone can export or delete their account.</p>
     </div>
@@ -140,7 +185,7 @@
 <!-- 07 FILM -->
 <section class="scene film" data-scene data-title="The film">
   <div class="inner">
-    <p class="eyebrow light">05 — Thirty seconds of REFLUENZ</p>
+    <p class="eyebrow light">06 — Thirty seconds of REFLUENZ</p>
     <div class="frame reveal">
       <video controls playsinline preload="metadata" poster="/film/poster.jpg" aria-label="REFLUENZ introduction film">
         <source src="/film/refluenz-introduction.mp4" type="video/mp4">
@@ -153,7 +198,7 @@
 <!-- 08 MODEL -->
 <section class="scene model" data-scene data-title="Business model">
   <div class="inner">
-    <p class="eyebrow">06 — Business model</p>
+    <p class="eyebrow">07 — Business model</p>
     <h2 class="display reveal">The House pays the creator.<br><em>We take a share.</em></h2>
     <div class="ladder">
       <div class="rung reveal" style="--h:34%"><b>€9</b><small>Member</small></div>
@@ -167,7 +212,7 @@
 <!-- 09 LIVE -->
 <section class="scene live" data-scene data-title="Where we are">
   <div class="inner">
-    <p class="eyebrow">07 — Where we are</p>
+    <p class="eyebrow">08 — Where we are</p>
     <h2 class="display reveal">Not a mock-up. <em>Live</em> at refluenz.com.</h2>
     <ul class="checks">
       <li class="reveal">Free sign-up, onboarding and public creator Studios</li>
@@ -184,7 +229,7 @@
 <!-- 10 ROADMAP -->
 <section class="scene roadmap" data-scene data-title="Roadmap">
   <div class="sticky">
-    <p class="eyebrow">08 — What comes next</p>
+    <p class="eyebrow">09 — What comes next</p>
     <ol class="road">
       <li><span>Now</span><h3>Payments</h3><p>Card payments for memberships, creator payouts and the platform fee.</p></li>
       <li><span>Next</span><h3>First creator cohort</h3><p>A hand-picked group across writing, film, music, education, design and more.</p></li>
@@ -198,7 +243,7 @@
 <!-- 11 ASK -->
 <section class="scene ask" data-scene data-title="The ask">
   <div class="inner">
-    <p class="eyebrow light">09 — The ask</p>
+    <p class="eyebrow light">10 — The ask</p>
     <h2 class="display split">Help us open <em>the doors.</em></h2>
     <p class="lede reveal">We are raising to switch on payments and bring the first creators and their Houses onto REFLUENZ.</p>
     <div class="cta reveal">

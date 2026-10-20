@@ -79,7 +79,8 @@ a { color: inherit; }
 .story-lines .eyebrow { display: block; font-family: var(--sans); text-shadow: none; margin-bottom: 18px; }
 .motion .story-lines .line { opacity: 0; }
 .motion .story-lines .l0 { opacity: 1; }
-.sound { position: absolute; z-index: 4; left: var(--gut); bottom: 5vh; display: inline-flex; align-items: center; gap: 12px; min-height: 44px; padding: 10px 16px; background: rgb(15 14 13 / .55); color: var(--cream); border: 1px solid var(--line-n); font: 600 12px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; backdrop-filter: blur(8px); }
+/* The sound control stays on screen through every scene. */
+.sound { position: fixed; z-index: 45; left: var(--gut); bottom: 5vh; display: inline-flex; align-items: center; gap: 12px; min-height: 44px; padding: 10px 16px; background: rgb(15 14 13 / .8); color: var(--cream); border: 1px solid var(--line-n); font: 600 12px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; backdrop-filter: blur(8px); }
 .sound:hover { border-color: var(--gold); }
 .sound .bars { display: inline-flex; gap: 3px; align-items: flex-end; height: 14px; }
 .sound .bars i { width: 3px; height: 4px; background: var(--gold); }
@@ -237,7 +238,13 @@ a { color: inherit; }
   .ui-stats path { stroke-dashoffset: 0; }
 }
 .story-lines .l0-text { display: block; }
-.ask .credits { margin-top: 3vh; font-size: 11px; color: rgb(243 238 230 / .45); max-width: 70ch; }
+.ask .credits { font-size: 11px; color: rgb(243 238 230 / .45); max-width: 70ch; }
+.foot { margin-top: 3vh; padding-top: 22px; border-top: 1px solid var(--line-n); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px 32px; }
+.to-top { display: inline-flex; align-items: center; gap: 12px; min-height: 44px; padding: 10px 10px 10px 18px; background: transparent; color: var(--cream); border: 1px solid var(--line-n); border-radius: 999px; font: 600 12px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; transition: border-color .25s, color .25s; }
+.to-top svg { width: 26px; height: 26px; padding: 5px; border-radius: 50%; background: var(--gold); fill: none; stroke: var(--night); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: transform .4s var(--ease); }
+.to-top:hover { border-color: var(--gold); color: var(--gold); }
+.to-top:hover svg { transform: translateY(-3px); }
+.to-top:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 
 /* 02 The feed: the chaos the old platforms sell */
 .feed { background: #07060a; color: var(--cream); }

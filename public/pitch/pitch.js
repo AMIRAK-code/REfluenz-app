@@ -85,6 +85,8 @@ async function start() {
     import('https://cdn.jsdelivr.net/npm/lenis@1.3.27/+esm'),
   ]);
   gsap.registerPlugin(ScrollTrigger);
+  // Phones resize the viewport when the address bar hides; pinned scenes must not jump when that happens.
+  ScrollTrigger.config({ ignoreMobileResize: true });
 
   // Scrolling runs at 0.7× the browser's speed so each scene has time to land.
   const lenis = new Lenis({ lerp: 0.09, wheelMultiplier: 0.7, touchMultiplier: 0.7 });

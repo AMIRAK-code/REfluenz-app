@@ -8,7 +8,7 @@ import { SourceTextModule } from 'node:vm';
 
 const root = resolve(import.meta.dirname, '..');
 // Every directory is scanned recursively (the views keep helper modules in src/views/<area>/).
-const SCRIPT_DIRS = ['src', 'scripts', 'tests'];
+const SCRIPT_DIRS = ['src', 'scripts', 'tests', 'public/pitch'];
 // import x from './a.js'  ·  export * from './a.js'  ·  import './a.js'  ·  import('./a.js')
 const LOCAL_IMPORT = /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)['"](\.[^'"]+)['"]/g;
 // Comments are dropped before scanning, so an example import in a comment is not mistaken for a real one.

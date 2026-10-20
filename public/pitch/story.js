@@ -137,19 +137,43 @@ export function mountStory({ svg, gsap, sound, imageSrc, end = '+=900%' }) {
   svg.querySelectorAll('.ink').forEach(p => { const L = p.getTotalLength?.() || 800; p.style.strokeDasharray = L; p.style.strokeDashoffset = L; });
 
   // ---------------------------------------------------------------------------------------------------- camera
-  const cam = { cx: W / 2, cy: H / 2, w: W };
+  // cam.w = painting units across the screen's width, cam.rot = rotation of the whole picture in degrees.
+  const cam = { cx: W / 2, cy: H / 2, w: W, rot: 0 };
   const aspect = () => innerWidth / innerHeight;
+  const portrait = () => aspect() < 0.9;
+  // On phones the painting is a band in the upper part of the screen (the words sit below it), framed wider so both
+  // figures and their graffiti stay in view. width = how much of the painting spans the screen.
+  const phoneFrame = (w, cx) => ({ w, cx, cy: H / 2 + 0.11 * (w / aspect()) });
   function wide(extra = 1) {
+    if (portrait()) return phoneFrame(extra > 1.3 ? 3300 : extra > 1 ? 2400 : 1450, extra > 1.3 ? 1600 : extra > 1 ? 1350 : TIP.x + 170);
     const a = aspect();
     if (a < W / H) { const w = H * a * extra; return { w, cx: Math.min(Math.max(TIP.x + 160, w / 2), W - w / 2), cy: H / 2 }; }
     const w = W * extra; return { w, cx: W / 2, cy: H / 2 };
   }
-  const close = () => ({ w: Math.max(380, 640 * Math.min(1, aspect())), cx: TIP.x, cy: TIP.y - 6 });
+  const close = () => (portrait() ? { w: 430, cx: TIP.x, cy: TIP.y - 6 } : { w: Math.max(380, 640 * Math.min(1, aspect())), cx: TIP.x, cy: TIP.y - 6 });
+  // Phones open with the picture turned sideways so the landscape fresco fills the tall screen; zooming in spins it
+  // upright. While it turns, the SVG is a square as wide as the screen's diagonal, so it always covers the screen.
+  const turned = () => { const k = Math.max(innerHeight / W, innerWidth / H); return { w: innerWidth / k, cx: W / 2, cy: H / 2, rot: 450 }; };
+  const start = () => (portrait() ? turned() : { ...wide(), rot: 0 });
+  let squareSize = 0;
   function applyCamera() {
-    const h = cam.w / aspect();
-    svg.setAttribute('viewBox', `${(cam.cx - cam.w / 2).toFixed(1)} ${(cam.cy - h / 2).toFixed(1)} ${cam.w.toFixed(1)} ${h.toFixed(1)}`);
+    const vw = innerWidth, vh = innerHeight;
+    if (!portrait()) {
+      if (squareSize) { svg.removeAttribute('style'); squareSize = 0; }
+      const h = cam.w / aspect();
+      svg.setAttribute('viewBox', `${(cam.cx - cam.w / 2).toFixed(1)} ${(cam.cy - h / 2).toFixed(1)} ${cam.w.toFixed(1)} ${h.toFixed(1)}`);
+      return;
+    }
+    const D = Math.ceil(Math.hypot(vw, vh));
+    if (D !== squareSize) {
+      squareSize = D;
+      Object.assign(svg.style, { width: `${D}px`, height: `${D}px`, left: `${(vw - D) / 2}px`, top: `${(vh - D) / 2}px`, transformOrigin: '50% 50%' });
+    }
+    svg.style.transform = cam.rot ? `rotate(${cam.rot.toFixed(2)}deg)` : '';
+    const L = D * cam.w / vw;
+    svg.setAttribute('viewBox', `${(cam.cx - L / 2).toFixed(1)} ${(cam.cy - L / 2).toFixed(1)} ${L.toFixed(1)} ${L.toFixed(1)}`);
   }
-  Object.assign(cam, wide()); applyCamera();
+  Object.assign(cam, start()); applyCamera();
 
   // ------------------------------------------------------------------------------------------------- piece motion
   const S = {
@@ -190,16 +214,22 @@ export function mountStory({ svg, gsap, sound, imageSrc, end = '+=900%' }) {
   const pop = (name, at) => tl.fromTo(marks(name), { opacity: 0, scale: 0.4, transformOrigin: '50% 50%' }, { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(2)' }, at);
   const draw = (name, at, d = 0.8) => tl.set(marks(name), { opacity: 1 }, at).to(svg.querySelectorAll(`.m-${name} .ink`), { strokeDashoffset: 0, duration: d, ease: 'power1.inOut' }, at);
   const drip = (name, at) => tl.set(marks(name), { opacity: 1 }, at).fromTo(svg.querySelectorAll(`.m-${name} .drip`), { scaleY: 0, transformOrigin: '50% 0%' }, { scaleY: 1, duration: 2, ease: 'power2.in' }, at);
-  const camTo = (view, at, d, ease = 'power2.inOut') => tl.to(cam, { cx: () => view().cx, cy: () => view().cy, w: () => view().w, duration: d, ease }, at);
+  // Each camera move goes between two explicit views, so a refresh half way never records a wrong starting point.
+  const view = v => () => ({ rot: 0, ...v() });
+  const camMove = (from, to, at, d, ease = 'power2.inOut') => tl.fromTo(cam,
+    { cx: () => view(from)().cx, cy: () => view(from)().cy, w: () => view(from)().w, rot: () => view(from)().rot },
+    { cx: () => view(to)().cx, cy: () => view(to)().cy, w: () => view(to)().w, rot: () => view(to)().rot, duration: d, ease, immediateRender: false }, at);
+  const midView = () => wide(1.1);
+  const endView = () => { const v = wide(1.45); return portrait() ? v : { ...v, cx: v.cx + 120, cy: H / 2 + 40 }; };
 
   // 0–2: the camera moves in on the fingertips.
-  camTo(close, 0, 2);
+  camMove(start, close, 0, 2.2);
   // 1.6–4: they tremble, then the paper starts to give.
   tl.to(S, { shake: 1, duration: 0.8 }, 1.6)
     .to(S.left, { x: -10, duration: 1.4, ease: 'power1.in' }, 2.6).to(S.right, { x: 12, duration: 1.4, ease: 'power1.in' }, 2.6)
     .to(S, { fibre: 1, duration: 0.6 }, 2.9);
   // 4–6.5: the tear rips open and the camera pulls back to the whole scene.
-  camTo(() => wide(1.1), 4, 2.6);
+  camMove(close, midView, 4, 2.6);
   tl.to(S, { shake: 0.25, duration: 1.5 }, 4)
     .to(S.left, { x: -150, y: 20, r: -2.2, duration: 2.5, ease: 'power2.out' }, 4)
     .to(S.right, { x: 170, y: -14, r: 2.6, duration: 2.5, ease: 'power2.out' }, 4)
@@ -221,7 +251,7 @@ export function mountStory({ svg, gsap, sound, imageSrc, end = '+=900%' }) {
     .to(S.right, { x: 460, y: -40, r: 6, duration: 4, ease: 'power1.in' }, 9.5)
     .to(S, { scraps: 1, duration: 4 }, 9.5)
     .fromTo(svg, { filter: 'saturate(1) brightness(1) contrast(1)' }, { filter: 'saturate(0.55) brightness(0.86) contrast(1.06)', duration: 6 }, 7);
-  camTo(() => { const v = wide(1.45); return { ...v, cx: v.cx + 120, cy: H / 2 + 40 }; }, 10, 3.5, 'power1.inOut');
+  camMove(midView, endView, 10, 3.5, 'power1.inOut');
   tl.set({}, {}, 14.6);
 
   return { timeline: tl, refresh: applyCamera };

@@ -1,10 +1,37 @@
 // REFLUENZ pitch: scroll-told deck. One animation stack (GSAP + ScrollTrigger) with Lenis smooth scroll.
 // Without motion (reduced motion, or the libraries fail to load) the page stays a complete, readable document.
+import { createSound } from './sound.js';
+
 const scenes = [...document.querySelectorAll('[data-scene]')];
+
+// Sound starts only on request (browsers block audio until someone interacts).
+const sound = createSound();
+const soundButton = document.querySelector('.sound');
+soundButton?.addEventListener('click', async () => {
+  if (sound.playing) sound.stop(); else await sound.start();
+  soundButton.setAttribute('aria-pressed', String(sound.playing));
+  soundButton.querySelector('.sound-label').textContent = sound.playing ? 'Sound on' : 'Sound off';
+});
 const counter = document.querySelector('[data-count]');
 document.querySelector('[data-total]').textContent = String(scenes.length).padStart(2, '0');
 
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// The painting is cut between the two fingertips (measured on the photograph) so each half can drift away.
+// The image covers the stage and keeps the touching point near the centre on every screen shape.
+const PAINT = { ratio: 3200 / 1452, tipX: 0.377, tipY: 0.447 };
+const painting = document.querySelector('.painting');
+function layoutPainting() {
+  if (!painting) return;
+  const w = innerWidth, h = innerHeight;
+  const imgW = Math.max(w, h * PAINT.ratio), imgH = imgW / PAINT.ratio;
+  const x = Math.min(0, Math.max(w - imgW, w / 2 - PAINT.tipX * imgW));
+  const y = Math.min(0, Math.max(h - imgH, h * 0.42 - PAINT.tipY * imgH));
+  const set = (k, v) => painting.style.setProperty(k, `${Math.round(v)}px`);
+  set('--img-w', imgW); set('--img-h', imgH); set('--img-x', x); set('--img-y', y); set('--split', x + PAINT.tipX * imgW);
+}
+layoutPainting();
+addEventListener('resize', layoutPainting);
 
 // Split headings into words and characters for the type reveals.
 function split(el) {
@@ -65,21 +92,53 @@ async function start() {
   // Progress bar
   gsap.to('.progress i', { scaleX: 1, ease: 'none', scrollTrigger: { start: 0, end: 'max', scrub: true } });
 
-  // 01 Hero: characters rise, image settles, copy drifts away.
-  gsap.from('.hero .c', { yPercent: 110, duration: 1.3, ease, stagger: 0.025, delay: 0.15 });
-  gsap.from('.hero .eyebrow, .hero .lede', { y: 24, opacity: 0, duration: 1.1, ease, delay: 0.7, stagger: 0.12 });
-  gsap.to('.hero-img img', { scale: 1, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
-  gsap.to('.hero-copy', { yPercent: -30, opacity: 0, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom 30%', scrub: true } });
-
-  // 02 Problem: pinned; each claim lands, then gets struck through.
-  const claims = gsap.utils.toArray('.claims li');
-  const problem = gsap.timeline({ scrollTrigger: { trigger: '.problem', start: 'top top', end: '+=220%', pin: '.problem .sticky', scrub: 0.6 } });
-  claims.forEach((li, i) => {
-    problem.from(li, { yPercent: 60, opacity: 0, duration: 1, ease: 'power3.out' }, i * 1.2)
-      .to(li.querySelector('span'), { '--strike': 1, duration: 0.8, ease: 'power2.inOut' }, i * 1.2 + 0.7)
-      .to(li, { color: 'oklch(55% 0.012 60)', duration: 0.6 }, i * 1.2 + 1);
+  // 01 Story: the hands drift apart, the painting loses its colour and gets defaced, one line at a time.
+  document.querySelectorAll('.vandal-layer .draw').forEach(path => {
+    const length = path.getTotalLength?.() || 600;
+    path.style.strokeDasharray = length; path.style.strokeDashoffset = length;
   });
-  problem.from('.problem .aside', { opacity: 0, y: 30, duration: 1 }, '>-0.2');
+  // The opening only plays when the deck opens at the start (a reload half way keeps the scrolled state).
+  if (scrollY < innerHeight * 0.1) {
+    gsap.from('.l0 > *', { y: 40, opacity: 0, duration: 1.4, ease, delay: 0.2, stagger: 0.15 });
+    gsap.from('.painting', { scale: 1.06, opacity: 0, duration: 2.4, ease: 'power3.out' });
+  }
+
+  const story = gsap.timeline({ defaults: { ease: 'none' }, scrollTrigger: {
+    trigger: '.story', start: 'top top', end: '+=700%', pin: '.story .stage', scrub: 0.8, invalidateOnRefresh: true,
+    onUpdate: self => sound.setStory(self.progress),
+  } });
+  // From the answer onwards the music is "solved": modern and calm again.
+  ScrollTrigger.create({ trigger: '.shift', start: 'top 65%', end: 'max', onToggle: self => sound.setSolved(self.isActive) });
+  const T = 14; // timeline length; line i lands at 2i
+  // The outer hand groups carry no transform of their own, so x / rotation are plain offsets around each fingertip.
+  story.to('.half-left', { x: () => -innerWidth * 0.26, duration: T - 1, ease: 'power1.in' }, 1)
+    .to('.half-right', { x: () => innerWidth * 0.26, duration: T - 1, ease: 'power1.in' }, 1)
+    .fromTo('.half img', { filter: 'saturate(1) brightness(1) contrast(1)' }, { filter: 'saturate(0.55) brightness(0.82) contrast(1.06)', duration: T - 2 }, 1.5)
+    .to('.painting .dim', { opacity: 0.75, duration: T - 3 }, 3)
+    .to('.scroll-cue', { opacity: 0, duration: 0.8 }, 0.4);
+
+  // The lines
+  story.to('.l0', { opacity: 0, y: -30, duration: 0.8 }, 1.2);
+  for (let i = 1; i <= 6; i++) {
+    story.fromTo(`.l${i}`, { opacity: 0, y: 40, filter: 'blur(8px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.7, ease: 'power2.out' }, 2 * i - 0.5);
+    if (i < 6) story.to(`.l${i}`, { opacity: 0, y: -30, duration: 0.6 }, 2 * i + 1.1);
+  }
+
+  // Playful vandalism first (distraction), then the dark kind (decay).
+  const pop = (sel, at) => story.fromTo(sel, { opacity: 0, scale: 0.4, transformOrigin: '50% 50%' }, { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(2)' }, at);
+  const draw = (sel, at, d = 1) => story.to(`${sel} .draw`, { strokeDashoffset: 0, duration: d, ease: 'power1.inOut' }, at);
+  pop('.v5', 1.7); pop('.v7', 2.1); pop('.v6', 2.5);
+  story.set('.v1, .v2', { opacity: 1 }, 3.2); draw('.v1', 3.2, 0.8); draw('.v2', 3.6, 0.9);
+  pop('.v3', 4.1); pop('.v4', 4.6);
+  story.fromTo('.d1 .drip, .d2 .drip', { scaleY: 0, transformOrigin: '50% 0%' }, { scaleY: 1, duration: 2.2, ease: 'power2.in' }, 6)
+    .set('.d1, .d2', { opacity: 1 }, 6);
+  story.set('.d3', { opacity: 1 }, 7.5); draw('.d3', 7.5, 1.6);
+  pop('.d5', 8.4);
+  story.set('.d4', { opacity: 1 }, 9.4); draw('.d4', 9.4, 0.6);
+  story.fromTo('.d6', { opacity: 0 }, { opacity: 1, duration: 0.3 }, 10.2)
+    .to('.d6 .glitch', { x: () => gsap.utils.random(-120, 120), duration: 0.25, stagger: 0.05, repeat: 5, yoyo: true }, 10.2);
+  pop('.d7', 11.2);
+  story.to('.vandal.fun', { opacity: 0.55, duration: 2 }, 11);
 
   // 03 Answer: the word arrives from far away, the image moves inside the letters.
   const shift = gsap.timeline({ scrollTrigger: { trigger: '.shift', start: 'top top', end: '+=160%', pin: '.shift .sticky', scrub: 0.6 } });

@@ -390,3 +390,34 @@ a { color: inherit; }
 .feed-line em { font-style: normal; color: #ffd400; }
 .feed-tabs { font-family: 'Chakra Petch', 'Hanken Grotesk', Arial, sans-serif; font-weight: 600; letter-spacing: .02em; }
 @media (max-width: 480px) { .feed-line { font-size: clamp(2rem, 10vw, 3rem); } }
+
+/* The solution speaks in a clean, premium sans: Apple's San Francisco where the system has it, Inter Tight elsewhere.
+   No italics: emphasis is a quiet bronze-to-gold gradient. */
+:root { --sol: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter Tight', 'Helvetica Neue', Arial, sans-serif; }
+:is(.shift, .fix, .product, .how, .lock, .film, .model, .live, .roadmap, .ask) :is(.display, h3, .step-n, .num, .rung b, .ui-tiers b, .ui-stats b),
+.spark .k2 {
+  font-family: var(--sol); font-weight: 600; font-style: normal; letter-spacing: -.045em; line-height: .98;
+}
+:is(.shift, .fix, .product, .how, .lock, .film, .model, .live, .roadmap, .ask, .spark .k2) em {
+  font-style: normal;
+  background: linear-gradient(100deg, var(--bronze) 10%, var(--gold) 90%); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+/* Split headings animate per letter; their emphasis keeps a solid colour (a gradient cannot span the letter boxes). */
+.ask .display.split em { background: none; color: var(--gold); }
+.lock .display em, .ask .lede em { background: linear-gradient(100deg, var(--gold), #f6e2b3); -webkit-background-clip: text; background-clip: text; color: transparent; }
+:is(.shift-copy, .lede, .note, .value-note, .fix-list span, .panel p, .steps p, .road p, .checks li) { font-family: var(--sol); letter-spacing: -.012em; }
+.fix .display, .model .display, .live .display { font-size: clamp(2.4rem, 5.6vw, 6.4rem); }
+.lock .display { font-size: clamp(2.4rem, 6vw, 7rem); }
+.ask .display { font-size: clamp(2.8rem, 8.4vw, 10rem); letter-spacing: -.05em; }
+.spark .k2 { font-size: clamp(2rem, 5vw, 5.6rem); }
+.panel .num { font-size: 15px; font-weight: 600; letter-spacing: .08em; color: var(--bronze); }
+.panel h3 { font-size: clamp(2rem, 3.2vw, 3.4rem); }
+.step-n { font-weight: 300; letter-spacing: -.06em; }
+.road h3 { font-family: var(--sol); font-weight: 600; letter-spacing: -.035em; }
+.rung b { letter-spacing: -.04em; }
+.ui-tiers b, .ui-stats b { letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+@media (max-width: 480px) {
+  .fix .display, .model .display, .live .display, .lock .display { font-size: clamp(2.1rem, 9vw, 2.8rem); }
+  .ask .display { font-size: clamp(2.4rem, 11vw, 3.4rem); }
+  .spark .k2 { font-size: clamp(1.8rem, 8.4vw, 2.6rem); }
+}

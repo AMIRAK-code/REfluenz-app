@@ -95,10 +95,52 @@
   </div>
 </section>
 
+
+<!-- THE SPARK: silence, then a light comes on -->
+<section class="scene spark" data-scene data-title="A spark">
+  <div class="sticky">
+    <div class="spark-glow" aria-hidden="true"></div>
+    <svg class="lamp" viewBox="0 0 600 1000" role="img" aria-label="A light bulb in the dark sparks and lights up.">
+      <defs>
+        <linearGradient id="metal" x1="0" x2="1"><stop offset="0" stop-color="#2b2724"/><stop offset=".35" stop-color="#9c9389"/><stop offset=".5" stop-color="#e2dbd0"/><stop offset=".7" stop-color="#7d756b"/><stop offset="1" stop-color="#25211e"/></linearGradient>
+        <radialGradient id="glass-off" cx=".42" cy=".38" r=".7"><stop offset="0" stop-color="#ffffff" stop-opacity=".16"/><stop offset=".7" stop-color="#9aa3a8" stop-opacity=".07"/><stop offset="1" stop-color="#d9e2e6" stop-opacity=".22"/></radialGradient>
+        <radialGradient id="glass-on" cx=".5" cy=".55" r=".62"><stop offset="0" stop-color="#fffdf2"/><stop offset=".38" stop-color="#fff0b8"/><stop offset=".75" stop-color="#ffc760"/><stop offset="1" stop-color="#f29a2e" stop-opacity=".85"/></radialGradient>
+        <radialGradient id="halo" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff3c8" stop-opacity=".95"/><stop offset=".35" stop-color="#ffd27a" stop-opacity=".55"/><stop offset="1" stop-color="#ffb347" stop-opacity="0"/></radialGradient>
+        <filter id="bloom" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <g class="lamp-swing">
+        <path class="cord" d="M300,-400 L300,214" stroke="#141210" stroke-width="7" fill="none"/>
+        <circle class="lamp-halo" cx="300" cy="560" r="330" fill="url(#halo)" opacity="0"/>
+        <g class="rays" opacity="0">
+          <path d="M300,560 L-300,300 L-300,380 Z M300,560 L900,300 L900,380 Z M300,560 L-300,760 L-300,840 Z M300,560 L900,760 L900,840 Z M300,560 L120,1300 L200,1300 Z M300,560 L400,1300 L480,1300 Z" fill="#ffe6a6" opacity=".22"/>
+        </g>
+        <!-- glass -->
+        <path class="glass" d="M238,330 C238,390 168,420 150,500 C126,604 196,720 300,720 C404,720 474,604 450,500 C432,420 362,390 362,330 Z" fill="url(#glass-off)" stroke="#c8d0d4" stroke-opacity=".55" stroke-width="3"/>
+        <path class="glass-lit" d="M238,330 C238,390 168,420 150,500 C126,604 196,720 300,720 C404,720 474,604 450,500 C432,420 362,390 362,330 Z" fill="url(#glass-on)" opacity="0"/>
+        <!-- filament and supports -->
+        <path class="wire" d="M282,330 L286,500 M318,330 L314,500 M300,330 L300,420" stroke="#8a8378" stroke-width="3" fill="none"/>
+        <path class="filament" d="M286,500 C292,488 296,512 302,500 C308,488 312,512 318,500 C312,516 306,486 300,500 C294,516 290,486 286,500" stroke="#6f6252" stroke-width="3.5" fill="none" filter="url(#bloom)"/>
+        <!-- highlights give it volume -->
+        <path d="M205,470 C215,420 245,398 262,392" stroke="#fff" stroke-opacity=".55" stroke-width="9" stroke-linecap="round" fill="none"/>
+        <path d="M190,540 C188,520 190,505 194,492" stroke="#fff" stroke-opacity=".35" stroke-width="5" stroke-linecap="round" fill="none"/>
+        <!-- screw base -->
+        <rect x="232" y="214" width="136" height="34" rx="6" fill="url(#metal)"/>
+        <g fill="url(#metal)"><rect x="236" y="250" width="128" height="18" rx="9"/><rect x="236" y="272" width="128" height="18" rx="9"/><rect x="236" y="294" width="128" height="18" rx="9"/></g>
+        <path d="M240,314 L360,314 L350,334 L250,334 Z" fill="#3a352f"/>
+        <g class="sparks"></g>
+      </g>
+    </svg>
+    <div class="spark-lines" aria-live="polite">
+      <p class="spark-line k1">Then, <em>a spark.</em></p>
+      <p class="spark-line k2">What if the value <em>came first?</em></p>
+    </div>
+  </div>
+</section>
+
 <!-- 03 SHIFT -->
 <section class="scene shift" data-scene data-title="The answer">
   <div class="sticky">
-    <p class="eyebrow light">01 — The answer</p>
+    <p class="eyebrow">01 — The answer</p>
     <h2 class="mask-word" aria-label="REFLUENZ">REFLUENZ</h2>
     <p class="shift-copy reveal">A house for the best work in every field. Creators run their <em>Studio</em>; the people who care join their <em>House</em>. No ads. No algorithm in between.</p>
   </div>

@@ -8,7 +8,7 @@
 const NS = 'http://www.w3.org/2000/svg';
 const W = 3200, H = 1452;
 const TIP = { x: 1206, y: 649 };   // the gap between the two fingertips, measured on the photograph
-const PAPER = '#f2ece0', PAPER_EDGE = '#d6ccba';
+const PAPER = '#fdfaf4', PAPER_EDGE = '#c9bea9';  // bare paper at the torn edges, on a cream backdrop
 const BOX = { l: -60, t: -60, r: W + 60, b: H + 60 };
 
 // Deterministic randomness: the tear looks the same on every visit.
@@ -96,7 +96,7 @@ export function mountStory({ svg, gsap, sound, imageSrc, end = '+=900%' }) {
   // A sheet: its shadow, the fibre along its torn edges (hidden until the tear opens), the clipped painting and graffiti.
   function sheet({ region, keep, part, edges, side, shadow = true }) {
     const g = el('g', { class: 'sheet' }, svg);
-    if (shadow) el('polygon', { points: poly(shifted(region, 16, 22)), fill: '#000', opacity: '.42', 'clip-path': part ? `url(#${keep})` : null }, g);
+    if (shadow) el('polygon', { points: poly(shifted(region, 16, 22)), fill: '#3a2e20', opacity: '.32', 'clip-path': part ? `url(#${keep})` : null }, g);
     // Vertical fibres show when the main tear opens, horizontal ones only when the strip rips out.
     const fibres = el('g', { opacity: 0 }, g), across = el('g', { opacity: 0 }, g);
     for (const [e, horizontal] of edges) el('polygon', { points: poly(e), fill: PAPER, stroke: PAPER_EDGE, 'stroke-width': 1.2 }, horizontal ? across : fibres);
@@ -107,14 +107,14 @@ export function mountStory({ svg, gsap, sound, imageSrc, end = '+=900%' }) {
     return { g, fibres, across };
   }
   // One shadow under the whole of Adam's sheet (its three parts must not darken each other).
-  const leftShadow = el('polygon', { points: poly(shifted(leftRegion, 16, 22)), fill: '#000', opacity: '.42' }, svg);
+  const leftShadow = el('polygon', { points: poly(shifted(leftRegion, 16, 22)), fill: '#3a2e20', opacity: '.32' }, svg);
   const top = sheet({ shadow: false,  region: leftRegion, keep: 'keep-left', part: 'part-above', side: 'left', edges: [[fibre(tear, rnd, 1, 0)], [fibre(upper, rnd, 0, 1), true]] });
   const strip = sheet({ region: band, keep: 'keep-left', part: 'part-band', side: 'left', edges: [[fibre(upper, rnd, 0, -1), true], [fibre(lower, rnd, 0, 1), true]] });
   const bottom = sheet({ shadow: false, region: leftRegion, keep: 'keep-left', part: 'part-below', side: 'left', edges: [[fibre(tear, rnd, 1, 0)], [fibre(lower, rnd, 0, -1), true]] });
   const right = sheet({ region: rightRegion, keep: 'keep-right', side: 'right', edges: [[fibre(tear, rnd, -1, 0)]] });
 
   // God's top-right corner peels back along a 45° fold through (W - d, 0) and (W, d).
-  const flapShadow = el('polygon', { fill: '#000', opacity: '.32' }, right.g);
+  const flapShadow = el('polygon', { fill: '#3a2e20', opacity: '.28' }, right.g);
   const flap = el('polygon', { fill: 'url(#peel-back)', stroke: PAPER_EDGE, 'stroke-width': 2 }, right.g);
   function setPeel(d) {
     if (d < 2) { rightClip.setAttribute('points', poly(rightRegion)); flap.setAttribute('points', ''); flapShadow.setAttribute('points', ''); return; }
@@ -129,7 +129,7 @@ export function mountStory({ svg, gsap, sound, imageSrc, end = '+=900%' }) {
     const size = 24 + rnd() * 48;
     const pts = Array.from({ length: 6 }, (_, k) => { const a = k / 6 * Math.PI * 2 + rnd() * 0.6, r = size * (0.55 + rnd() * 0.5); return [Math.cos(a) * r, Math.sin(a) * r]; });
     const g = el('g', { opacity: 0 }, svg);
-    el('polygon', { points: poly(pts), fill: i % 3 ? PAPER : '#e3d6bd', stroke: PAPER_EDGE, 'stroke-width': 1.5 }, g);
+    el('polygon', { points: poly(pts), fill: ['#fdfaf4', '#d9ccb4', '#c4b294'][i % 3], stroke: '#a89a82', 'stroke-width': 1.5 }, g);
     return { g, x: TIP.x + (rnd() - 0.5) * 60, y: 160 + rnd() * 1100, vx: (rnd() - 0.5) * 950, vy: (rnd() - 0.4) * 520, r: (rnd() - 0.5) * 560 };
   });
 

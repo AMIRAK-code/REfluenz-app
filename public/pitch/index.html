@@ -9,7 +9,7 @@
 <link rel="icon" href="/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Inter+Tight:wght@300;400;500;600;700&family=Hanken+Grotesk:wght@300;400;500;600;800&family=Instrument+Serif:ital@0;1&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Chakra+Petch:wght@600;700&family=Inter+Tight:wght@300;400;500;600;700&family=Hanken+Grotesk:wght@300;400;500;600;800&family=Instrument+Serif:ital@0;1&display=swap">
 <link rel="stylesheet" href="/pitch/pitch.css">
 <script type="module" src="/pitch/pitch.js"></script>
 </head>
@@ -132,7 +132,16 @@
       </g>
     </svg>
     <div class="spark-lines" aria-live="polite">
-      <p class="spark-line k1">Then, <em>a spark.</em></p>
+      <p class="spark-line k1">Then, a <span class="zap" data-text="spark.">spark.</span></p>
+      <svg class="fx-defs" width="0" height="0" aria-hidden="true" focusable="false">
+        <filter id="electric" x="-10%" y="-30%" width="120%" height="160%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.02 0.9" numOctaves="2" seed="3" result="noise">
+            <animate attributeName="baseFrequency" dur="0.6s" repeatCount="indefinite" values="0.02 0.9; 0.03 0.4; 0.015 1.2; 0.02 0.9"/>
+            <animate attributeName="seed" dur="0.9s" repeatCount="indefinite" values="3;7;11;5;3" calcMode="discrete"/>
+          </feTurbulence>
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+      </svg>
       <p class="spark-line k2">What if the value <em>came first?</em></p>
     </div>
   </div>

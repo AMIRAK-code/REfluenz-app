@@ -421,3 +421,21 @@ a { color: inherit; }
   .ask .display { font-size: clamp(2.4rem, 11vw, 3.4rem); }
   .spark .k2 { font-size: clamp(1.8rem, 8.4vw, 2.6rem); }
 }
+
+/* To every creator: plain, honest type; the words that matter are bold and gold. */
+.share-line { font-family: var(--sol); font-weight: 500; letter-spacing: -.035em; line-height: 1.02; }
+.share-line em { font-style: normal; font-weight: 700; color: var(--gold); }
+
+/* The spark: an electrified word. */
+.fx-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.zap { position: relative; display: inline-block; font-family: 'Bungee', 'Chakra Petch', Arial, sans-serif; font-size: .92em; letter-spacing: .01em; color: #ffe14d;
+  text-shadow: 0 0 4px #fff7c2, 0 0 14px #ffd400, 0 0 34px #ffb000, 0 0 70px rgb(255 160 0 / .55);
+  filter: url(#electric); animation: zap-flicker 3.2s infinite steps(1), zap-buzz .11s infinite linear; }
+.zap::after { content: attr(data-text); position: absolute; inset: 0; color: #b6f0ff; text-shadow: 0 0 10px #7fe0ff; mix-blend-mode: screen; opacity: .55;
+  animation: zap-arc 1.4s infinite steps(1); pointer-events: none; }
+@keyframes zap-flicker { 0%, 17%, 19%, 21%, 52%, 54%, 76%, 100% { opacity: 1; } 18%, 20%, 53% { opacity: .3; } 77% { opacity: .7; } }
+@keyframes zap-buzz { 0% { transform: translate(0, 0); } 25% { transform: translate(.7px, -.5px); } 50% { transform: translate(-.6px, .6px); } 75% { transform: translate(.5px, .4px); } }
+@keyframes zap-arc { 0% { clip-path: inset(0 0 72% 0); transform: translate(-2px, 0); } 20% { clip-path: inset(40% 0 38% 0); transform: translate(3px, 0); }
+  40% { clip-path: inset(80% 0 4% 0); transform: translate(-1px, 0); } 60% { clip-path: inset(10% 0 82% 0); transform: translate(2px, 0); } 80% { clip-path: inset(100% 0 0 0); } }
+@media (prefers-reduced-motion: reduce) { .zap, .zap::after { animation: none; filter: none; } }
+.value-head .views b { font-family: var(--sol); font-weight: 600; letter-spacing: -.03em; }

@@ -1,5 +1,5 @@
-// /app/p/:id — one post: its header, the words or the media, the lock for those who are not in the circle yet,
-// the conversation, and more from the same atelier (docs/ARCHITECTURE.md section 3, docs/POST_FORMATS.md "Reader").
+// /app/p/:id — one post: its header, the words or the media, the lock for those who are not in the House yet,
+// the conversation, and more from the same Studio (docs/ARCHITECTURE.md section 3, docs/POST_FORMATS.md "Reader").
 //
 // The page is drawn once. The pieces that change while it is open (the media after a retry, the comments, the list of
 // more posts) are drawn by their own modules inside it, so a film keeps playing and typed text is never lost.
@@ -98,8 +98,8 @@ function lockCard(ctx, data) {
   return html`<section class="post-lock" aria-labelledby="post-lock-title">
     <span class="empty-icon">${icon('lock', 24)}</span>
     <p class="eyebrow bronze">${name} and above</p>
-    <h2 id="post-lock-title">There is more inside the circle</h2>
-    <p>${creator ? creator.name : 'This atelier'} shares this post with the ${name} circle and above.${membership && html` Your ${membership.tier?.name || 'current'} membership does not include it yet.`}</p>
+    <h2 id="post-lock-title">There is more inside the House</h2>
+    <p>${creator ? creator.name : 'This Studio'} shares this post with the ${name} tier and above.${membership && html` Your ${membership.tier?.name || 'current'} membership does not include it yet.`}</p>
     ${tier && !closed && html`<p class="post-lock-price"><strong>${money(tier.priceCents, tier.currency)}</strong> <span class="muted">/ month</span></p>`}
     <p class="muted">Joining is free during early access, so nothing is charged yet.${closed && ' This tier is not open to new members right now.'}</p>
     <div class="post-lock-actions">
@@ -161,7 +161,7 @@ async function load(ctx) {
   return { entry, creator, tiers: tiers || [], body: readable ? String(body) : null, readable, media, recorded: false };
 }
 
-// --- More from this atelier ----------------------------------------------------------
+// --- More from this Studio ----------------------------------------------------------
 
 function mountMore(root, ctx, data) {
   const section = root.querySelector('[data-more]');
@@ -175,7 +175,7 @@ function mountMore(root, ctx, data) {
 
   const cards = items => items.map(item => entryCard({ ...item, creator: item.creator ?? creator }, { compact: true, showCreator: false }));
 
-  const frame = inner => html`<div class="section-head"><h2 id="more-title">More from this atelier</h2>${creator && html`<a class="text-link" href="${paths.creator(creator.slug)}">Visit ${creator.name}</a>`}</div>${inner}`;
+  const frame = inner => html`<div class="section-head"><h2 id="more-title">More from this Studio</h2>${creator && html`<a class="text-link" href="${paths.creator(creator.slug)}">Visit ${creator.name}</a>`}</div>${inner}`;
 
   function paint() {
     section.innerHTML = frame(html`<div class="grid-cards" data-more-grid>${cards(shown)}</div>${cursor && html`<div class="post-more-foot">${button('Load more', { variant: 'secondary', attrs: { 'data-more-load': '' } })}</div>`}`).value;
@@ -198,7 +198,7 @@ function mountMore(root, ctx, data) {
     } catch (error) {
       if (!alive) return;
       section.hidden = false;
-      section.innerHTML = frame(failureState(error, { title: 'We could not load more from this atelier', attr: 'data-more-retry' })).value;
+      section.innerHTML = frame(failureState(error, { title: 'We could not load more from this Studio', attr: 'data-more-retry' })).value;
     }
   }
 

@@ -1,5 +1,5 @@
-// Account settings (/app/settings) and atelier settings (/app/studio/settings): profile, account, notifications, data,
-// the atelier details with its pictures and links, and the three tiers.
+// Account settings (/app/settings) and Studio settings (/app/studio/settings): profile, account, notifications, data,
+// the Studio details with its pictures and links, and the three tiers.
 import { describe, it, before, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { installDom, uninstallDom, mountApp, tick, confirmWith } from '../helpers/dom.mjs';
@@ -366,7 +366,7 @@ describe('settings views', () => {
 
       it('points an owner to the settings of the atelier, and a plain member to nothing', async () => {
         await open(owner(), '/app/settings');
-        assert.equal(app.find('#atelier-link-title').textContent, 'Your atelier');
+        assert.equal(app.find('#atelier-link-title').textContent, 'Your Studio');
         assert.equal(app.find('[href="/app/studio/settings"]').getAttribute('href'), '/app/studio/settings');
         await app.destroy();
         await open(member(), '/app/settings');
@@ -485,6 +485,9 @@ describe('settings views', () => {
         assert.ok(switches.every(control => control.checked === (control.dataset.setting === 'compact' ? false : true)));
         assert.deepEqual([...app.document.querySelectorAll('#view h2')].map(node => node.textContent.trim()), ['Reading', 'As a reader', 'As a creator']);
         assert.ok(app.exists('.switch-status[role="status"]'));
+        assert.match(app.text('#view'), /House notes/);
+        assert.match(app.text('#view'), /Someone joins your House\./);
+        assert.doesNotMatch(app.text('#view'), /circle|atelier/i);
       });
 
       it('shows what is saved', async () => {
@@ -582,11 +585,11 @@ describe('settings views', () => {
 
       it('names what an owner loses, and what a plain member loses', async () => {
         await open(member(), '/app/settings?tab=data');
-        assert.doesNotMatch(app.text('#view'), /atelier/i, 'nothing about an atelier for someone without one');
+        assert.doesNotMatch(app.text('#view'), /studio|House/i, 'nothing about a Studio for someone without one');
         await app.destroy();
         await open(owner(), '/app/settings?tab=data');
-        assert.match(app.text('[aria-labelledby="export-title"]'), /atelier, posts and circle notes/);
-        assert.match(app.text('.danger-zone'), /your atelier, every post, draft and uploaded file, and your circle/);
+        assert.match(app.text('[aria-labelledby="export-title"]'), /Studio, posts and House notes/);
+        assert.match(app.text('.danger-zone'), /your Studio, every post, draft and uploaded file, and your House/);
       });
 
       describe('deleting the account', () => {
@@ -724,14 +727,14 @@ describe('settings views', () => {
 
       it('opens the atelier tab for the owner, with a heading, tabs and a title', async () => {
         await open(owner(), '/app/studio/settings');
-        assert.equal(app.document.title, 'Atelier settings — REFLUENZ');
-        assert.equal(app.text('#view h1'), 'Atelier settings');
+        assert.equal(app.document.title, 'Studio settings — REFLUENZ');
+        assert.equal(app.text('#view h1'), 'Studio settings');
         assert.match(app.text('#view .eyebrow'), /Verne & Co/);
         const tabs = [...app.document.querySelectorAll('#view nav.tabs a')];
-        assert.deepEqual(tabs.map(tab => tab.textContent.trim()), ['Atelier', 'Tiers']);
+        assert.deepEqual(tabs.map(tab => tab.textContent.trim()), ['Studio', 'Tiers']);
         assert.deepEqual(tabs.map(tab => tab.getAttribute('href')), ['/app/studio/settings?tab=atelier', '/app/studio/settings?tab=tiers']);
-        assert.equal(app.find('#view nav.tabs').getAttribute('aria-label'), 'Atelier settings sections');
-        assert.equal(app.find('#view nav.tabs a[aria-current="page"]').textContent.trim(), 'Atelier');
+        assert.equal(app.find('#view nav.tabs').getAttribute('aria-label'), 'Studio settings sections');
+        assert.equal(app.find('#view nav.tabs a[aria-current="page"]').textContent.trim(), 'Studio');
         assert.equal(app.find('#view .page-actions a').getAttribute('href'), '/app/c/verne-and-co');
       });
 
@@ -757,6 +760,7 @@ describe('settings views', () => {
         assert.equal(app.find('#atelier-location').value, 'Turin, Italy');
         assert.equal(app.find('#atelier-bio').value, 'Short essays and small rules for writers.');
         assert.equal(app.find('#atelier-image').value, 'ritual');
+        assert.deepEqual([...app.find('#atelier-image').options].map(option => option.text), ['Studio', 'Ritual', 'Architecture'], 'the cover value atelier is called Studio on screen');
         assert.deepEqual([...app.find('#atelier-category').options].map(option => option.value), CATEGORIES);
         assert.equal(app.text('[data-counter="atelier-bio"]'), '41 / 400');
         assert.equal(app.find('#atelier-bio').getAttribute('maxlength'), '400');
@@ -778,7 +782,7 @@ describe('settings views', () => {
         await type('#atelier-bio', 'A slower kind of writing.');
         await choose('#atelier-image', 'architecture');
         assert.equal(app.find('[data-dirty-status]').textContent, 'You have unsaved changes.');
-        assert.match(app.router.block(), /unsaved changes to your atelier/);
+        assert.match(app.router.block(), /unsaved changes to your Studio/);
         await submit(FORM);
         const [call] = callsTo(fake, 'updateAtelier');
         assert.equal(call.args[0], IDS.verne);
@@ -788,8 +792,8 @@ describe('settings views', () => {
         });
         assert.equal(verne(fake).name, 'Verne Studio');
         assert.equal(app.store.state.myCreator.name, 'Verne Studio');
-        assert.match(toastText(), /Atelier saved\./);
-        assert.match(app.text('[data-note="atelier"]'), /Your atelier was updated/);
+        assert.match(toastText(), /Studio saved\./);
+        assert.match(app.text('[data-note="atelier"]'), /Your Studio was updated/);
         assert.equal(app.find('#atelier-name').value, 'Verne Studio');
         assert.equal(app.router.block(), null, 'nothing is left to lose');
         assert.equal(app.find('[data-dirty-status]').textContent, '');
@@ -804,7 +808,7 @@ describe('settings views', () => {
         await type('#atelier-descriptor', 'y'.repeat(61));
         await submit(FORM);
         assert.equal(callsTo(fake, 'updateAtelier').length, 0);
-        assert.match(app.text('#atelier-name-error'), /atelier name/i);
+        assert.match(app.text('#atelier-name-error'), /Studio name/i);
         assert.match(app.text('#atelier-bio-error'), /at most 400 characters/);
         assert.match(app.text('#atelier-descriptor-error'), /at most 60 characters/);
         assert.equal(app.find('#atelier-name').getAttribute('aria-invalid'), 'true');
@@ -868,7 +872,7 @@ describe('settings views', () => {
         await app.navigate('/app/library');
         assert.equal(app.path, '/app/studio/settings', 'staying put when the person says no');
         assert.equal(asked.length, 1);
-        assert.match(asked[0], /unsaved changes to your atelier/);
+        assert.match(asked[0], /unsaved changes to your Studio/);
         await app.click('[data-action="discard"]');
         await answer(false);
         assert.equal(app.find('#atelier-name').value, 'Changed', 'saying no keeps the text');
@@ -913,7 +917,7 @@ describe('settings views', () => {
         assert.equal(app.find('.preview-line').textContent.trim(), 'Music');
         assert.equal(app.find('.preview-bio').textContent, 'New words');
         await type('#atelier-name', '');
-        assert.equal(app.find('.preview-name').textContent, 'Your atelier');
+        assert.equal(app.find('.preview-name').textContent, 'Your Studio');
         assert.equal(callsTo(fake, 'updateAtelier').length, 0);
       });
 
@@ -1255,7 +1259,7 @@ describe('settings views', () => {
       assert.equal(app.text('[data-counter="tier-essential-description"]'), '26 / 280');
       assert.equal(app.find('#tier-essential-enabled').checked, true);
       assert.equal(app.find('#tier-essential-enabled').getAttribute('role'), 'switch');
-      assert.deepEqual(perkTexts('essential'), ['All circle entries', 'The complete entry archive', 'Members’ conversation']);
+      assert.deepEqual(perkTexts('essential'), ['Every House post', 'The complete archive', 'The members’ conversation']);
       labelled(app.find('#view'));
       assert.deepEqual(forms.map(node => node.getAttribute('aria-labelledby')), ['tier-essential-title', 'tier-premium-title', 'tier-signature-title']);
     });
@@ -1313,7 +1317,7 @@ describe('settings views', () => {
       assert.deepEqual(call.args.slice(0, 2), [IDS.verne, 'premium']);
       assert.deepEqual(call.args[2], {
         name: 'Patron', currency: 'USD', description: 'For people who read everything.', priceCents: 1250,
-        perks: ['Monthly letter', 'In-depth studio notes', 'Priority conversation prompts'], enabled: true
+        perks: ['Monthly letter', 'In-depth Studio notes', 'First in the conversation'], enabled: true
       });
       const row = tierRow(fake, 'premium');
       assert.deepEqual([row.name, row.price_cents, row.currency], ['Patron', 1250, 'USD']);
@@ -1426,10 +1430,10 @@ describe('settings views', () => {
         assert.equal(app.text('[data-perk-count="premium"]'), '4 / 8');
         await type(perkInputs('premium')[3], 'A signed print');
         await app.click(`${form('premium')} [data-action="remove-perk"]`);
-        assert.deepEqual(perkTexts('premium'), ['In-depth studio notes', 'Priority conversation prompts', 'A signed print']);
+        assert.deepEqual(perkTexts('premium'), ['In-depth Studio notes', 'First in the conversation', 'A signed print']);
         assert.equal(app.document.activeElement.id, 'tier-premium-add-perk');
         await submit(form('premium'));
-        assert.deepEqual(tierRow(fake, 'premium').perks, ['In-depth studio notes', 'Priority conversation prompts', 'A signed print']);
+        assert.deepEqual(tierRow(fake, 'premium').perks, ['In-depth Studio notes', 'First in the conversation', 'A signed print']);
       });
 
       it('adds the next perk on Enter instead of sending the tier', async () => {

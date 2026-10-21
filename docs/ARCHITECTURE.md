@@ -4,6 +4,9 @@ This is the contract every module is built against. If code and this document
 disagree, fix the code or update this document in the same change.
 Post media (text / image / video) follows **`docs/POST_FORMATS.md`**, which stays
 authoritative for the media pipeline, upload ordering and failure handling.
+Product vocabulary and copy follow **`docs/HOUSE_IDENTITY.md`**: in copy, a creator's space is a *Studio*, the
+people who join it are its *House*, and the levels are *Member / Private / Black Label*. Identifiers below keep
+their original names (`createAtelier`, `circle_notes`, tier ids `essential|premium|signature`).
 
 ## 1. Product
 

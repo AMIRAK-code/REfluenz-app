@@ -15,7 +15,9 @@ export const COVER_MAX_BYTES = COVER_IMAGE.maxBytes;
 
 export const KIND_LABEL = { text: 'Text', image: 'Image', video: 'Video' };
 export const KIND_ICON = { text: 'text', image: 'image', video: 'video' };
-export const PRESET_LABEL = name => `${name[0].toUpperCase()}${name.slice(1)}`;
+// The cover study 'atelier' is called Studio on screen; the value itself never changes.
+const PRESET_NAMES = { atelier: 'Studio' };
+export const PRESET_LABEL = name => PRESET_NAMES[name] ?? `${name[0].toUpperCase()}${name.slice(1)}`;
 
 // The formats on offer for a kind: five for text, all of them for media. `current` is kept when the database accepts it
 // (a post written as an "Update") so that editing it does not silently change it.
@@ -50,7 +52,7 @@ export const readingMinutes = text => Math.max(1, Math.ceil((String(text ?? '').
 
 // --- Validation -----------------------------------------------------------------
 
-// The access values a creator may pick: 'public' and the tiers of the atelier.
+// The access values a creator may pick: 'public' and the tiers of the Studio.
 export const accessIds = tiers => ['public', ...tiers.map(tier => tier.id)];
 
 // Checks the form values and the media rules the form cannot express (the server enforces the same ones).

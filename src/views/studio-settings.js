@@ -1,7 +1,7 @@
-// Atelier settings: /app/studio/settings?tab=atelier|tiers (docs/ARCHITECTURE.md section 3). Only for the owner of an atelier.
+// Studio settings: /app/studio/settings?tab=atelier|tiers (docs/ARCHITECTURE.md section 3). Only for the owner of a Studio.
 //
-// Atelier: name, address, category, tagline, location, description, links, banner and picture, with a live preview of the header.
-// Tiers: the three levels of the circle as editable cards (name, price, description, perks, open or closed).
+// Studio: name, address, category, tagline, location, description, links, banner and picture, with a live preview of the header.
+// Tiers: the three levels of the House as editable cards (name, price, description, perks, open or closed).
 // The tabs are links, so the address says which one is open; a tab with unsaved changes asks before it is left (router.block).
 // Each tab keeps its own state in the object `load` returns, see studio-settings/atelier.js and studio-settings/tiers.js.
 
@@ -11,23 +11,23 @@ import { loadAtelier, mountAtelier, renderAtelier } from './studio-settings/atel
 import { loadTiers, mountTiers, renderTiers } from './studio-settings/tiers.js';
 
 const TABS = [
-  { id: 'atelier', label: 'Atelier' },
+  { id: 'atelier', label: 'Studio' },
   { id: 'tiers', label: 'Tiers' }
 ];
 const INTRO = {
-  atelier: 'How your atelier looks and where it lives: its name, address, pictures and links.',
-  tiers: 'The three levels of your circle. Name them, price them and say what each one offers.'
+  atelier: 'How your Studio looks and where it lives: its name, address, pictures and links.',
+  tiers: 'The three levels of your House. Name them, price them and say what each one offers.'
 };
 
 const tabOf = query => (TABS.some(tab => tab.id === query?.tab) ? query.tab : 'atelier');
 
 export default {
-  title: (ctx, data) => (data?.tab === 'tiers' ? 'Tier settings' : 'Atelier settings'),
+  title: (ctx, data) => (data?.tab === 'tiers' ? 'Tier settings' : 'Studio settings'),
   auth: 'creator',
 
   async load(ctx) {
     const creator = ctx.store.state.myCreator;
-    if (!creator) throw Error('We could not load your atelier. Check your connection and try again.');
+    if (!creator) throw Error('We could not load your Studio. Check your connection and try again.');
     const tab = tabOf(ctx.query);
     const data = { tab, creator };
     if (tab === 'tiers') data.tiers = await loadTiers(ctx, creator);
@@ -39,10 +39,10 @@ export default {
     const creator = data.creator;
     return html`<section class="page settings-page studio-settings">
       <header class="page-head">
-        <div><p class="eyebrow muted">${creator.name}</p><h1>Atelier settings</h1><p class="page-sub">${INTRO[data.tab]}</p></div>
-        <div class="page-actions">${button('View your atelier', { variant: 'secondary', href: paths.creator((data.atelier?.saved.slug) || creator.slug), icon: 'arrow' })}</div>
+        <div><p class="eyebrow muted">${creator.name}</p><h1>Studio settings</h1><p class="page-sub">${INTRO[data.tab]}</p></div>
+        <div class="page-actions">${button('View your Studio', { variant: 'secondary', href: paths.creator((data.atelier?.saved.slug) || creator.slug), icon: 'arrow' })}</div>
       </header>
-      <nav class="tabs" aria-label="Atelier settings sections">${TABS.map(tab => html`<a class="tab" href="${paths.studioSettings({ tab: tab.id })}"${tab.id === data.tab ? raw(' aria-current="page"') : ''}>${tab.label}</a>`)}</nav>
+      <nav class="tabs" aria-label="Studio settings sections">${TABS.map(tab => html`<a class="tab" href="${paths.studioSettings({ tab: tab.id })}"${tab.id === data.tab ? raw(' aria-current="page"') : ''}>${tab.label}</a>`)}</nav>
       <div class="settings-panel">${data.tab === 'tiers' ? renderTiers(ctx, data) : renderAtelier(ctx, data)}</div>
     </section>`;
   },

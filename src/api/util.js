@@ -11,6 +11,31 @@ export const TIER_IDS = ['essential', 'premium', 'signature'];
 export const CATEGORIES = ['Style', 'Beauty', 'Design', 'Culture', 'Art', 'Music', 'Writing', 'Photography', 'Wellness', 'Food', 'Education', 'Technology'];
 export const IMAGE_PRESETS = ['atelier', 'ritual', 'architecture'];
 export const CURRENCIES = ['EUR', 'USD', 'GBP'];
+
+// The House defaults of each level. Rows written before the House identity still carry the names, lines and perks the
+// platform first shipped with; the mapper shows the House defaults in their place, and the next save stores them.
+// supabase/migrations/20261020120000_house_identity.sql rewrites those rows, after which LEGACY_TIERS matches nothing.
+export const TIER_DEFAULTS = {
+  essential: {name:'Member', description:'A closer look at the work.', perks:['Every House post', 'The complete archive', 'The members’ conversation']},
+  premium: {name:'Private', description:'Closer to the work, closer to the creator.', perks:['Everything in Member', 'In-depth Studio notes', 'First in the conversation']},
+  signature: {name:'Black Label', description:'Inside the creative process.', perks:['Everything in Private', 'Black Label collections', 'Private sessions and notes']}
+};
+const LEGACY_TIERS = {
+  essential: {name:'Essential', description:'A closer look at the work.', perks:['All circle entries', 'The complete entry archive', 'Members’ conversation']},
+  premium: {name:'Premium', description:'More context. More connection.', perks:['Everything in Essential', 'In-depth studio notes', 'Priority conversation prompts']},
+  signature: {name:'Signature', description:'Inside the creative process.', perks:['Everything in Premium', 'Signature reference collections', 'Private workshop notes']}
+};
+const samePerks = (a, b) => a.length === b.length && a.every((perk, i) => perk === b[i]);
+// One field of a tier row: the House default where the row still holds the legacy default, the row's own value otherwise.
+export function houseTier(tierId, {name, description, perks}) {
+  const legacy = LEGACY_TIERS[tierId], house = TIER_DEFAULTS[tierId];
+  if (!legacy) return {name, description, perks};
+  return {
+    name: name === legacy.name ? house.name : name,
+    description: description === legacy.description ? house.description : description,
+    perks: samePerks(perks, legacy.perks) ? [...house.perks] : perks
+  };
+}
 export const ENTRY_KINDS = ['text', 'image', 'video'];
 export const REPORT_TARGETS = ['entry', 'comment', 'creator', 'message'];
 export const REPORT_REASONS = ['spam', 'harassment', 'nudity', 'violence', 'copyright', 'other'];
@@ -38,24 +63,27 @@ export const BAD_IDS = 'This entry cannot take uploads right now. Reload the pag
 export const SESSION_LOST = 'Your session has expired or you do not have permission. Sign in again and retry.';
 // Storage refuses an upload with 403 when the owner policy fails: the entry is not yours, or a quota is used up
 // (60 objects per entry, 500 MB of originals per creator). The client cannot tell those apart, so the message covers both.
-export const REFUSED = 'This upload was refused. Your storage may be full (500 MB per atelier, 60 files per entry): remove media you no longer use, or sign in again, then retry.';
+export const REFUSED = 'This upload was refused. Your storage may be full (500 MB per Studio, 60 files per post): remove media you no longer use, or sign in again, then retry.';
 export const NETWORK = 'We could not reach REFLUENZ. Check your connection and try again.';
 export const CANCELLED = 'Upload cancelled.';
 export const NOT_SIGNED_IN = 'Sign in to continue.';
 const PERMISSION = 'You do not have permission to do that.';
 
+const houseWords = text => text.replace(/\b(an )?atelier(s?)\b/gi, (_, an, s) => `${an ? 'a ' : ''}Studio${s}`).replace(/\bcircle\b/gi, 'House');
+
 export function friendly(error) {
   const text = error?.message || String(error);
-  // Our own functions and triggers raise P0001 with text written for people.
-  if (error?.code === 'P0001') return text;
+  // Our own functions and triggers raise P0001 with text written for people; rows of functions written before the
+  // House identity still say atelier and circle.
+  if (error?.code === 'P0001') return houseWords(text);
   if (error?.code === 'PGRST116') return 'That could not be found, or you do not have permission to change it.';
   if (/Invalid login credentials/i.test(text)) return 'That email and password do not match.';
   if (/Email not confirmed/i.test(text)) return 'Confirm your email first. Check your inbox for the link.';
   if (/User already registered/i.test(text)) return 'An account with this email already exists. Sign in instead.';
   if (/rate limit|too many requests|over_email_send_rate_limit/i.test(text)) return 'Too many attempts. Wait a few minutes and try again.';
   if (/Auth session missing/i.test(text)) return SESSION_LOST;
-  if (/duplicate key.*slug/i.test(text)) return 'That atelier address is taken. Try another name.';
-  if (/duplicate key.*owner/i.test(text)) return 'You already have an atelier.';
+  if (/duplicate key.*slug/i.test(text)) return 'That Studio address is taken. Try another name.';
+  if (/duplicate key.*owner/i.test(text)) return 'You already have a Studio.';
   if (/duplicate key.*entry_media/i.test(text)) return 'That file was already added.';
   if (/row-level security|permission denied/i.test(text)) return PERMISSION;
   if (/Failed to fetch|NetworkError|Load failed/i.test(text)) return NETWORK;
@@ -156,7 +184,7 @@ export function cleanProfile(values = {}) {
 export const SLUG = /^[a-z0-9-]{2,40}$/;
 export function cleanAtelier(values = {}) {
   const clean = {};
-  if (has(values, 'name')) clean.name = text(values.name, {label: 'The atelier name', min: 2, max: 60});
+  if (has(values, 'name')) clean.name = text(values.name, {label: 'The Studio name', min: 2, max: 60});
   if (has(values, 'category')) clean.category = oneOf(values.category, CATEGORIES, 'Choose a category.');
   if (has(values, 'descriptor')) clean.descriptor = text(values.descriptor, {label: 'The tagline', max: 60});
   if (has(values, 'location')) clean.location = text(values.location, {label: 'The location', max: 60});
@@ -247,14 +275,14 @@ export function createMappers(client) {
     likeCount:e.like_count ?? 0, commentCount:e.comment_count ?? 0, readCount:e.read_count ?? 0,
     date:e.published_at || e.created_at, publishedAt:e.published_at ?? null, createdAt:e.created_at, updatedAt:e.updated_at ?? e.created_at});
   // A row of creator_tiers; the level of the shared ladder comes from the embedded `tier`, or from the ladder itself.
-  const tier = t => ({id:t.tier_id, level:t.tier?.level ?? LEVELS[t.tier_id] ?? 0, creatorId:t.creator_id, name:t.name, priceCents:t.price_cents, currency:t.currency || 'EUR',
-    description:t.description ?? '', perks:Array.isArray(t.perks) ? [...t.perks] : [], enabled:t.enabled !== false});
+  const tier = t => ({id:t.tier_id, level:t.tier?.level ?? LEVELS[t.tier_id] ?? 0, creatorId:t.creator_id, priceCents:t.price_cents, currency:t.currency || 'EUR',
+    ...houseTier(t.tier_id, {name:t.name, description:t.description ?? '', perks:Array.isArray(t.perks) ? [...t.perks] : []}), enabled:t.enabled !== false});
   const tiers = rows => (rows || []).map(tier).sort((a, b) => a.level - b.level);
   // A membership row joined with its creator, whose embedded creator_tiers supply the tier the member holds.
   const membership = row => {
     const c = row.creator;
     const own = (c?.creator_tiers || []).find(t => t.tier_id === row.tier);
-    const held = tier(own || {tier_id:row.tier, creator_id:row.creator_id, name:row.tier, price_cents:0});
+    const held = tier(own || {tier_id:row.tier, creator_id:row.creator_id, name:TIER_DEFAULTS[row.tier]?.name ?? row.tier, price_cents:0});
     return {creatorId:row.creator_id, tierId:row.tier, level:held.level, tier:held, creator:creator(c), createdAt:row.created_at};
   };
   const profile = p => ({id:p.id, name:p.display_name, bio:p.bio ?? '', website:p.website ?? '', avatarUrl:urls.avatar(p.avatar_path), avatarPath:p.avatar_path ?? null});

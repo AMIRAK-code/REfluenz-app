@@ -42,7 +42,7 @@ export function entryRow(entry, stats, store) {
 }
 
 const EMPTY = {
-  published: { icon: 'text', title: 'Nothing published yet', text: 'Your first post starts with an observation. Publish it to everyone, or keep it for your circle.' },
+  published: { icon: 'text', title: 'Nothing published yet', text: 'Your first post starts with an observation. Publish it to everyone, or keep it for your House.' },
   drafts: { icon: 'studio', title: 'No drafts', text: 'Drafts are only visible to you. Start a post and save it for later.' }
 };
 

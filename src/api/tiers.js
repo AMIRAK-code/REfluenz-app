@@ -14,8 +14,8 @@ export function createTiers(ctx) {
 
     // The database refuses to close the last open tier ("Keep at least one membership tier open.") and says so in plain words.
     async updateTier(creatorId, tierId, values = {}) {
-      if (!isUuid(creatorId)) throw Error('That atelier could not be found.');
-      if (!TIER_IDS.includes(tierId)) throw Error('Choose Essential, Premium or Signature.');
+      if (!isUuid(creatorId)) throw Error('That Studio could not be found.');
+      if (!TIER_IDS.includes(tierId)) throw Error('Choose Member, Private or Black Label.');
       const patch = {updated_at: isoTime(ctx.now())};
       for (const [key, value] of Object.entries(cleanTier(values))) patch[COLUMN[key]] = value;
       const row = check(await client.from('creator_tiers').update(patch).eq('creator_id', String(creatorId).toLowerCase()).eq('tier_id', tierId).select(TIER_COLUMNS).single());

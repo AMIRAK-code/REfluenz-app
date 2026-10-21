@@ -36,7 +36,7 @@ export function createMemberships(ctx, {circle}) {
   return {
     // Joining is free during early access. Joining again at another tier changes the tier.
     async join(creatorId, tierId) {
-      if (!TIER_IDS.includes(tierId)) throw Error('Choose Essential, Premium or Signature.');
+      if (!TIER_IDS.includes(tierId)) throw Error('Choose Member, Private or Black Label.');
       const userId = await ctx.requireUserId();
       const row = check(await client.from('memberships').upsert({user_id: userId, creator_id: creatorId, tier: tierId}, {onConflict: 'user_id,creator_id'}).select(MEMBERSHIP_COLUMNS).single());
       circle.forget();

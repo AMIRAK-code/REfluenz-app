@@ -1,5 +1,5 @@
 // The viewer's state: who is signed in and everything the interface needs to know about them
-// (profile, settings, atelier, tiers, follows, saves, likes, memberships, unread counts).
+// (profile, settings, Studio, tiers, follows, saves, likes, memberships, unread counts).
 //
 // `store` is the instance the app uses; createStore() makes independent ones for tests.
 // Writes that the person triggers with one click (follow, save, like) are optimistic: the state changes at once, the
@@ -334,7 +334,7 @@ export function createStore() {
   // --- Memberships (not optimistic: the views show progress and handle the error) ---
 
   async function join(creatorId, tierId) {
-    if (!requireAuth('Sign in to join a circle.')) return null;
+    if (!requireAuth('Sign in to join a House.')) return null;
     const user = state.user.id;
     const membership = await api.join(creatorId, tierId);
     if (state.user?.id === user) {

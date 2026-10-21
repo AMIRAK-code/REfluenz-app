@@ -1,4 +1,4 @@
-// Your memberships: /app/memberships (docs/ARCHITECTURE.md section 3). Every circle you belong to, at which tier, since when,
+// Your memberships: /app/memberships (docs/ARCHITECTURE.md section 3). Every House you belong to, at which tier, since when,
 // what it will cost once payments launch, and the ways to manage or leave it.
 //
 // The api returns the whole list, so it is paged here: the first rows, then "Show more".
@@ -11,7 +11,7 @@ const PAGE = 20;
 const PROGRAMMING_ERRORS = [TypeError, ReferenceError, SyntaxError, RangeError];
 const messageOf = (error, fallback) => (PROGRAMMING_ERRORS.some(type => error instanceof type) ? fallback : error?.message || fallback);
 
-// What the circles will cost per month once payments launch, one amount per currency: "€28" or "€28 + US$12".
+// What the Houses will cost per month once payments launch, one amount per currency: "€28" or "€28 + US$12".
 function monthlyTotal(items) {
   const totals = new Map();
   for (const membership of items) {
@@ -25,7 +25,7 @@ function monthlyTotal(items) {
 
 function rowOf(membership) {
   const { creator, tier } = membership;
-  const name = creator?.name || 'This atelier';
+  const name = creator?.name || 'This Studio';
   const href = creator?.slug ? paths.creator(creator.slug) : paths.discover();
   const line = [creator?.descriptor || creator?.category, creator?.location].filter(Boolean).join(' · ');
   return html`<li class="membership-row" data-membership="${membership.creatorId}">
@@ -38,7 +38,7 @@ function rowOf(membership) {
     </div>
     <div class="membership-actions">
       ${creator?.slug && button('Manage', { variant: 'secondary', size: 'small', href: paths.creator(creator.slug, { tab: 'membership' }), attrs: { 'aria-label': `Manage your membership at ${name}` } })}
-      ${button('Leave', { variant: 'ghost', size: 'small', attrs: { 'data-leave': membership.creatorId, 'aria-label': `Leave ${name}’s circle` } })}
+      ${button('Leave', { variant: 'ghost', size: 'small', attrs: { 'data-leave': membership.creatorId, 'aria-label': `Leave ${name}’s House` } })}
     </div>
   </li>`;
 }
@@ -59,15 +59,15 @@ export default {
     return html`<section class="page memberships" aria-labelledby="memberships-heading">
       <header class="page-head">
         <div>
-          <p class="eyebrow muted">Your circles</p>
+          <p class="eyebrow muted">Your Houses</p>
           <h1 id="memberships-heading" tabindex="-1">Memberships</h1>
           <p class="page-sub">The creators you belong to. Memberships are free during early access; prices show what each tier will cost once payments launch.</p>
         </div>
       </header>
       ${items.length === 0
-        ? emptyState({ icon: 'members', title: 'A circle starts with one connection', text: 'Join a creator’s circle to read their members’ posts and take part. It is free during early access.', action: { label: 'Discover creators', href: paths.discover() } })
+        ? emptyState({ icon: 'members', title: 'A House starts with one connection', text: 'Join a creator’s House to read their members’ posts and take part. It is free during early access.', action: { label: 'Discover creators', href: paths.discover() } })
         : html`<div class="membership-summary" role="group" aria-label="Summary">
-            <div><p class="eyebrow muted">Circles</p><p class="membership-figure" data-summary="count">${plural(items.length, 'circle')}</p></div>
+            <div><p class="eyebrow muted">Houses</p><p class="membership-figure" data-summary="count">${plural(items.length, 'House')}</p></div>
             <div><p class="eyebrow muted">Monthly total once payments launch</p><p class="membership-figure" data-summary="total">${monthlyTotal(items)} <span class="muted">/ month</span></p><p class="muted membership-free">Nothing is charged during early access.</p></div>
           </div>
           <ul class="membership-list" aria-label="Your memberships">${visible.map(rowOf)}</ul>
@@ -81,11 +81,11 @@ export default {
     async function leave(control) {
       const membership = data.items.find(item => item.creatorId === control.dataset.leave);
       if (!membership) return;
-      const name = membership.creator?.name || 'this atelier';
+      const name = membership.creator?.name || 'this Studio';
       const confirmed = await confirmDialog({
-        title: `Leave ${name}’s circle?`,
+        title: `Leave ${name}’s House?`,
         text: 'You will lose access to posts that are for members. You can rejoin whenever you like; it is free during early access.',
-        confirmLabel: 'Leave circle',
+        confirmLabel: 'Leave the House',
         tone: 'danger'
       });
       if (!confirmed) return;
@@ -97,7 +97,7 @@ export default {
         toast(messageOf(error, 'We could not update your membership. Try again.'), { tone: 'error' });
         return;
       }
-      toast(`You have left ${name}’s circle.`, { tone: 'success' });
+      toast(`You have left ${name}’s House.`, { tone: 'success' });
       ctx.rerender({ ...data, items: data.items.filter(item => item !== membership) });
       el.querySelector('#memberships-heading')?.focus();
     }

@@ -1,9 +1,9 @@
-// The atelier page: /app/c/:slug (docs/ARCHITECTURE.md section 3).
+// The Studio page: /app/c/:slug (docs/ARCHITECTURE.md section 3).
 //
-// A banner and header (who the atelier is, how big its circle is, what you can do), then three tabs:
-//   Posts       the atelier's published work, filtered by kind, paged with "Load more" and infinite scroll; locks follow store.canRead
+// A banner and header (who the Studio is, how big its House is, what you can do), then three tabs:
+//   Posts       the Studio's published work, filtered by kind, paged with "Load more" and infinite scroll; locks follow store.canRead
 //   Membership  the open tiers, with join / switch / leave
-//   About       the facts about the atelier
+//   About       the facts about the Studio
 // `?join=1` opens the join dialog (locked posts elsewhere link here), `?tab=membership|about` opens a tab.
 //
 // The page never redraws as a whole after it is mounted: each region (actions, counts, tiers, posts) is painted on its own, so a
@@ -33,7 +33,7 @@ const EARLY_ACCESS = 'Free during early access. Prices apply once payments launc
 const PROGRAMMING_ERRORS = [TypeError, ReferenceError, SyntaxError, RangeError];
 const messageOf = (error, fallback) => (PROGRAMMING_ERRORS.some(type => error instanceof type) ? fallback : error?.message || fallback);
 
-// --- What the viewer is to this atelier ---------------------------------------------
+// --- What the viewer is to this Studio ---------------------------------------------
 
 const isOwner = (ctx, creator) => Boolean(ctx.store.state.myCreator && ctx.store.state.myCreator.id === creator.id);
 const heldBy = (ctx, creator) => ctx.store.state.memberships.get(creator.id) || null;
@@ -94,12 +94,12 @@ function actionsMarkup(ctx, data) {
     ${!owner && button('Report', { variant: 'ghost', size: 'small', icon: 'flag', attrs: { 'data-action': 'report' } })}
   </div>`;
   if (owner) {
-    return html`<div class="atelier-primary">${button('New post', { href: paths.studioNew(), icon: 'plus' })}${button('Edit atelier', { href: paths.studioSettings(), variant: 'secondary', icon: 'edit' })}</div>
-      <p class="atelier-state eyebrow muted">This is your atelier</p>${utility}`;
+    return html`<div class="atelier-primary">${button('New post', { href: paths.studioNew(), icon: 'plus' })}${button('Edit Studio', { href: paths.studioSettings(), variant: 'secondary', icon: 'edit' })}</div>
+      <p class="atelier-state eyebrow muted">This is your Studio</p>${utility}`;
   }
   let join;
   if (held) join = button('Manage membership', { variant: 'secondary', icon: 'members', attrs: { 'data-action': 'manage' } });
-  else if (joinableTiers(data).length) join = button('Join circle', { icon: 'members', attrs: { 'data-action': 'join' } });
+  else if (joinableTiers(data).length) join = button('Join the House', { icon: 'members', attrs: { 'data-action': 'join' } });
   else join = button('Memberships closed', { variant: 'secondary', attrs: { disabled: true } });
 
   const viewer = store.state.user?.id;
@@ -117,7 +117,7 @@ function actionsMarkup(ctx, data) {
 
 function tierActionOf(data, tier, held) {
   const free = html`<p class="tier-free muted">Free during early access</p>`;
-  if (held?.tierId === tier.id) return html`${button('Leave circle', { variant: 'secondary', attrs: { 'data-action': 'leave' } })}${free}`;
+  if (held?.tierId === tier.id) return html`${button('Leave the House', { variant: 'secondary', attrs: { 'data-action': 'leave' } })}${free}`;
   if (!tier.enabled) return null;
   const label = held ? `Switch to ${tier.name}` : `Choose ${tier.name}`;
   return html`${button(label, { attrs: { 'data-action': 'join', 'data-tier': tier.id } })}${free}`;
@@ -129,15 +129,15 @@ function tiersMarkup(ctx, data) {
   const held = heldBy(ctx, creator);
   const tiers = shownTiers(data, held);
   let lead;
-  if (owner) lead = html`This is how your circle sees your tiers. <a class="text-link" href="${paths.studioSettings({ tab: 'tiers' })}">Edit your tiers</a>`;
-  else if (held) lead = `You are in ${creator.name}’s circle at ${tierNameOf(data, held)}. Switch tier or leave whenever you like.`;
-  else lead = `Join ${creator.name}’s circle to read members’ posts and take part. Choose the tier that suits you.`;
+  if (owner) lead = html`This is how your House sees your tiers. <a class="text-link" href="${paths.studioSettings({ tab: 'tiers' })}">Edit your tiers</a>`;
+  else if (held) lead = `You are in ${creator.name}’s House at ${tierNameOf(data, held)}. Switch tier or leave whenever you like.`;
+  else lead = `Join ${creator.name}’s House to read members’ posts and take part. Choose the tier that suits you.`;
   if (!tiers.length) {
-    return html`<p class="atelier-lead">${lead}</p>${emptyState({ icon: 'members', title: 'Memberships are closed', text: `${creator.name} is not taking new members right now. You can still follow the atelier and read its open posts.` })}`;
+    return html`<p class="atelier-lead">${lead}</p>${emptyState({ icon: 'members', title: 'Memberships are closed', text: `${creator.name} is not taking new members right now. You can still follow the Studio and read its open posts.` })}`;
   }
   return html`<p class="atelier-lead">${lead}</p>
     <div class="tier-grid">${tiers.map(tier => tierCard(tier, { current: held?.tierId === tier.id, action: owner ? null : tierActionOf(data, tier, held) }))}</div>
-    <p class="notice atelier-early">${EARLY_ACCESS} You can leave a circle at any time.</p>`;
+    <p class="notice atelier-early">${EARLY_ACCESS} You can leave a House at any time.</p>`;
 }
 
 function aboutMarkup(data) {
@@ -147,12 +147,12 @@ function aboutMarkup(data) {
   const facts = [
     ['Category', creator.category],
     ['Based in', creator.location],
-    ['Atelier opened', formatDate(creator.createdAt, { year: true })],
+    ['Studio opened', formatDate(creator.createdAt, { year: true })],
     ['Published', plural(creator.entryCount, 'post')],
     ['Membership', from ? `From ${money(from.priceCents, from.currency)} / month. ${EARLY_ACCESS}` : 'Not open right now']
   ].filter(([, value]) => value);
   return html`<dl class="atelier-facts">${facts.map(([label, value]) => html`<div><dt class="eyebrow muted">${label}</dt><dd>${value}</dd></div>`)}</dl>
-    ${creator.isShowcase && html`<p class="notice">${creator.name} is a showcase atelier, curated by REFLUENZ to show how an atelier can look. It has no owner, so it cannot receive messages.</p>`}`;
+    ${creator.isShowcase && html`<p class="notice">${creator.name} is a showcase Studio, curated by REFLUENZ to show how a Studio can look. It has no owner, so it cannot receive messages.</p>`}`;
 }
 
 function postsPanel(data) {
@@ -187,9 +187,9 @@ function page(ctx, data) {
     <div class="atelier-intro">
       ${creator.bio && html`<p class="atelier-bio">${creator.bio}</p>`}
       ${linksMarkup(creator)}
-      <dl class="atelier-stats" aria-label="Atelier in numbers" data-region="stats">${statsMarkup(ctx, data)}</dl>
+      <dl class="atelier-stats" aria-label="Studio in numbers" data-region="stats">${statsMarkup(ctx, data)}</dl>
     </div>
-    <div class="tabs atelier-tabs" role="tablist" aria-label="Atelier sections">${TAB_IDS.map(name => tabButton(name, data))}</div>
+    <div class="tabs atelier-tabs" role="tablist" aria-label="Studio sections">${TAB_IDS.map(name => tabButton(name, data))}</div>
     ${panel('posts', postsPanel(data))}
     ${panel('membership', html`<div data-region="tiers">${tiersMarkup(ctx, data)}</div>`)}
     ${panel('about', aboutMarkup(data))}
@@ -197,14 +197,14 @@ function page(ctx, data) {
 }
 
 const missing = () => html`<section class="page atelier-missing">
-  <header class="page-head"><div><p class="eyebrow muted">Atelier</p><h1>We could not find that atelier</h1></div></header>
-  ${emptyState({ icon: 'search', title: 'Nothing lives at this address', text: 'The address may be mistyped, or the atelier may have been closed. Discover other creators instead.', action: { label: 'Discover creators', href: paths.discover() } })}
+  <header class="page-head"><div><p class="eyebrow muted">Studio</p><h1>We could not find that Studio</h1></div></header>
+  ${emptyState({ icon: 'search', title: 'Nothing lives at this address', text: 'The address may be mistyped, or the Studio may have been closed. Discover other creators instead.', action: { label: 'Discover creators', href: paths.discover() } })}
 </section>`;
 
 // --- The view -----------------------------------------------------------------------
 
 export default {
-  title: (ctx, data) => (data?.missing ? 'Atelier not found' : data?.creator?.name || 'Atelier'),
+  title: (ctx, data) => (data?.missing ? 'Studio not found' : data?.creator?.name || 'Studio'),
   auth: 'optional',
 
   async load(ctx) {
@@ -249,7 +249,7 @@ export default {
       if (isOwner(ctx, creator)) {
         return emptyState({ icon: 'studio', title: 'Nothing published yet', text: 'Your first post will appear here, open to everyone or for the tier you choose.', action: { label: 'Write a post', href: paths.studioNew() } });
       }
-      return emptyState({ icon: 'bookmark', title: 'Nothing published yet', text: `${creator.name} has not shared a post yet. Follow the atelier to hear when the first one arrives.`, action: followButton(creator.id) });
+      return emptyState({ icon: 'bookmark', title: 'Nothing published yet', text: `${creator.name} has not shared a post yet. Follow the Studio to hear when the first one arrives.`, action: followButton(creator.id) });
     }
 
     function paintBody() {
@@ -284,8 +284,8 @@ export default {
       const locked = isOwner(ctx, creator) ? 0 : posts.items.filter(entry => !store.canRead(entry)).length;
       if (!locked) { notice.innerHTML = ''; return; }
       const held = heldBy(ctx, creator);
-      const text = `${plural(locked, 'post')} here ${locked === 1 ? 'is' : 'are'} for ${held ? 'members at a higher tier' : 'circle members'}. Joining is free during early access.`;
-      notice.innerHTML = html`<div class="notice atelier-lock-note"><p>${text}</p>${button(held ? 'See tiers' : 'Join the circle', { variant: 'secondary', size: 'small', attrs: { 'data-action': held ? 'manage' : 'join' } })}</div>`.value;
+      const text = `${plural(locked, 'post')} here ${locked === 1 ? 'is' : 'are'} for ${held ? 'members at a higher tier' : 'House members'}. Joining is free during early access.`;
+      notice.innerHTML = html`<div class="notice atelier-lock-note"><p>${text}</p>${button(held ? 'See tiers' : 'Join the House', { variant: 'secondary', size: 'small', attrs: { 'data-action': held ? 'manage' : 'join' } })}</div>`.value;
     }
 
     // Resolves true while more pages may exist. A failure is recorded, painted and thrown (infiniteScroll stops on a throw).
@@ -409,7 +409,7 @@ export default {
 
     function openJoin(tierId) {
       if (isOwner(ctx, creator)) return;
-      if (!store.requireAuth(`Sign in to join ${creator.name}’s circle. It is free during early access.`)) return;
+      if (!store.requireAuth(`Sign in to join ${creator.name}’s House. It is free during early access.`)) return;
       const open = joinableTiers(data);
       if (!open.length) { toast('Memberships are not open right now.', { tone: 'error' }); return; }
       const held = heldBy(ctx, creator);
@@ -426,7 +426,7 @@ export default {
           <fieldset class="join-tiers"><legend class="eyebrow">Tier</legend>${open.map(option)}</fieldset>
           <p class="notice join-early">${EARLY_ACCESS} Nothing is charged today.</p>
           <p class="form-error" role="alert" data-join-error></p>
-          <div class="dialog-actions">${button('Cancel', { variant: 'secondary', attrs: { 'data-modal-close': true } })}<button type="submit" class="button" data-join-submit><span>${held ? 'Change tier' : 'Join circle'}</span></button></div>
+          <div class="dialog-actions">${button('Cancel', { variant: 'secondary', attrs: { 'data-modal-close': true } })}<button type="submit" class="button" data-join-submit><span>${held ? 'Change tier' : 'Join the House'}</span></button></div>
         </form>`,
         onClose: refocusActions,
         onMount: (dialog, handle) => {
@@ -449,7 +449,7 @@ export default {
               if (!membership) return;
               handle.close('joined');
               const name = tierNameOf(data, membership);
-              toast(held ? `You are now at ${name}.` : `Welcome to ${creator.name}’s circle.`, { tone: 'success' });
+              toast(held ? `You are now at ${name}.` : `Welcome to ${creator.name}’s House.`, { tone: 'success' });
             } catch (error) {
               problem.textContent = messageOf(error, 'We could not complete that. Try again in a moment.');
             } finally {
@@ -462,16 +462,16 @@ export default {
 
     async function leaveCircle(trigger) {
       const confirmed = await confirmDialog({
-        title: `Leave ${creator.name}’s circle?`,
+        title: `Leave ${creator.name}’s House?`,
         text: 'You will lose access to posts that are for members. You can rejoin whenever you like; it is free during early access.',
-        confirmLabel: 'Leave circle',
+        confirmLabel: 'Leave the House',
         tone: 'danger'
       });
       if (!confirmed) return;
       setBusy(trigger, true);
       try {
         await store.leave(creator.id);
-        toast(`You have left ${creator.name}’s circle.`, { tone: 'success' });
+        toast(`You have left ${creator.name}’s House.`, { tone: 'success' });
         refocusActions();
       } catch (error) {
         toast(messageOf(error, 'We could not update your membership. Try again.'), { tone: 'error' });
@@ -481,12 +481,12 @@ export default {
     }
 
     function openReport() {
-      if (!store.requireAuth('Sign in to report an atelier.')) return;
+      if (!store.requireAuth('Sign in to report a Studio.')) return;
       modal.open({
         title: `Report ${creator.name}`,
         className: 'report-dialog',
         body: html`<form id="report-form" novalidate>
-          <p>Tell us what is wrong with this atelier. The REFLUENZ team reviews every report.</p>
+          <p>Tell us what is wrong with this Studio. The REFLUENZ team reviews every report.</p>
           <fieldset class="report-reasons"><legend class="eyebrow">Reason</legend>${REPORT_REASONS.map(reason => html`<label class="check-label"><input type="radio" name="reason" value="${reason}"><span>${REASON_LABELS[reason] || reason}</span></label>`)}</fieldset>
           <div class="field"><label for="report-details">Details <span class="muted">(optional)</span></label><textarea id="report-details" name="details" maxlength="1000" rows="4"></textarea></div>
           <p class="form-error" role="alert" data-report-error></p>
@@ -505,7 +505,7 @@ export default {
             try {
               await api.report({ targetType: 'creator', targetId: creator.id, reason, details: form.querySelector('#report-details').value });
               handle.close('sent');
-              toast('Thank you. We will review this atelier.', { tone: 'success' });
+              toast('Thank you. We will review this Studio.', { tone: 'success' });
             } catch (error) {
               problem.textContent = messageOf(error, 'We could not send your report. Try again in a moment.');
             } finally {

@@ -26,10 +26,10 @@ function sentence(note) {
     case 'comment': return html`${person} commented on ${post ?? 'your post'}`;
     case 'reply': return html`${person} replied to your comment${post ? html` on ${post}` : ''}`;
     case 'like': return html`${person} liked ${post ?? 'your post'}`;
-    case 'follow': return html`${person} started following ${atelier ? html`<strong>${atelier}</strong>` : 'your atelier'}`;
-    case 'membership': return html`${person} joined ${atelier ? html`<strong>${atelier}</strong>` : 'your circle'}`;
+    case 'follow': return html`${person} started following ${atelier ? html`<strong>${atelier}</strong>` : 'your Studio'}`;
+    case 'membership': return html`${person} joined ${atelier ? html`<strong>${atelier}</strong>` : 'your House'}`;
     case 'message': return html`${person} sent you a message`;
-    case 'note': return html`${atelier ? html`<strong>${atelier}</strong>` : 'A creator'} posted a note to the circle`;
+    case 'note': return html`${atelier ? html`<strong>${atelier}</strong>` : 'A creator'} posted a note to the House`;
     default: return html`New activity from ${person}`;
   }
 }
@@ -49,7 +49,7 @@ function targetOf(store, note) {
       return paths.studio({ tab: 'members' });
     case 'message': {
       if (!note.creator) return paths.messages();
-      // The owner answers the member who wrote; a member opens their own thread with that atelier.
+      // The owner answers the member who wrote; a member opens their own thread with that Studio.
       if (store.state.myCreator?.id === note.creator.id) return note.actor ? paths.messages(note.creator.id, note.actor.id) : paths.messages();
       return me ? paths.messages(note.creator.id, me) : paths.messages();
     }
@@ -86,7 +86,7 @@ function bodyMarkup(ctx, data) {
     return emptyState({
       icon: 'bell',
       title: 'Nothing new yet',
-      text: 'When someone comments, follows you or joins your circle, and when a creator you follow publishes, it shows up here.',
+      text: 'When someone comments, follows you or joins your House, and when a creator you follow publishes, it shows up here.',
       action: { label: 'Discover creators', href: paths.discover(), variant: 'secondary' }
     });
   }
@@ -117,7 +117,7 @@ export default {
   render(ctx, data) {
     return html`<section class="page activities">
       <header class="page-head">
-        <div><p class="eyebrow muted">Activity</p><h1>Notifications</h1><p class="page-sub">What is happening around your atelier and the creators you follow.</p></div>
+        <div><p class="eyebrow muted">Activity</p><h1>Notifications</h1><p class="page-sub">What is happening around your Studio and the creators you follow.</p></div>
         <div class="activities-tools">${button('Mark all read', { variant: 'secondary', size: 'small', icon: 'check', attrs: { 'data-mark-all': true, disabled: !data.items.some(note => !note.readAt) && !ctx.store.state.unread.notifications } })}</div>
       </header>
       <p class="visually-hidden" id="activities-status" role="status"></p>

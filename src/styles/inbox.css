@@ -10,7 +10,7 @@
 .inbox-list > li + li { border-top: 1px solid var(--rule); }
 .inbox-item { display: flex; align-items: flex-start; gap: 14px; padding: 16px 18px 16px 16px; border-left: 2px solid transparent; min-width: 0; }
 .inbox-item:hover { background: var(--wash); }
-.inbox-item.is-active { background: #eae7e2; border-left-color: var(--bronze); }
+.inbox-item.is-active { background: var(--wash); border-left-color: var(--bronze); }
 .inbox-item:focus-visible { outline-offset: -3px; }
 .inbox-item-text { display: grid; gap: 4px; flex: 1; min-width: 0; }
 .inbox-item-top, .inbox-item-bottom { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-width: 0; }

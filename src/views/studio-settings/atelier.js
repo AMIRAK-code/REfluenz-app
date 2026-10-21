@@ -1,5 +1,5 @@
-// The "Atelier" tab of /app/studio/settings: name, address, category, tagline, location, description, links, the banner
-// and the picture, with a live preview of the atelier header.
+// The "Studio" tab of /app/studio/settings: name, address, category, tagline, location, description, links, the banner
+// and the picture, with a live preview of the Studio header.
 //
 // Everything lives in `data.atelier` (see loadAtelier): typed text is kept there as it is typed, so the page can be drawn again
 // (a picture was chosen, a link row was added, a save failed) without losing anything. The limits and the wording of the messages
@@ -13,7 +13,7 @@ import { focusFirstInvalid, formError, formNote, messenger, reason, refreshCount
 
 const LIMITS = { name: 60, slug: 40, descriptor: 60, location: 60, bio: 400, label: 40, url: 300 };
 const FIELDS = ['name', 'slug', 'category', 'descriptor', 'location', 'bio', 'image'];
-const PRESET_LABELS = { atelier: 'Atelier', ritual: 'Ritual', architecture: 'Architecture' };
+const PRESET_LABELS = { atelier: 'Studio', ritual: 'Ritual', architecture: 'Architecture' };
 const SLUG_PREFIX = '/app/c/';
 const SLUG_MESSAGE = 'Use 2 to 40 letters, numbers or hyphens for the address.';
 const SLUG_STATUS = {
@@ -30,7 +30,7 @@ const PICTURES = {
   cover: { noun: 'banner', title: 'Banner', help: 'A wide picture behind your header, about 1600 by 500 pixels. It is cropped from the centre.', crop: { aspect: 16 / 5, width: 1600 } },
   avatar: { noun: 'picture', title: 'Picture', help: 'Shown beside your name and on your cards. It is cropped to a square from the centre.', crop: { aspect: 1, width: 512 } }
 };
-export const LEAVE_MESSAGE = 'You have unsaved changes to your atelier. Leave without saving?';
+export const LEAVE_MESSAGE = 'You have unsaved changes to your Studio. Leave without saving?';
 
 const trimmed = value => String(value ?? '').trim();
 const normal = (field, value) => (field === 'slug' ? trimmed(value).toLowerCase() : trimmed(value));
@@ -103,13 +103,13 @@ export function validateAtelier(state) {
 // The preview is drawn in parts so that typing does not reload the pictures: the banner changes with the default cover, the
 // picture only matters (as initials) while there is none, the text follows every key.
 const previewBanner = state => html`<img src="${state.creator.coverUrl || presetUrl(state.form.image)}" alt="">`;
-const previewAvatar = state => avatar({ name: trimmed(state.form.name) || 'Your atelier', avatarUrl: state.creator.avatarUrl }, { size: 72 });
+const previewAvatar = state => avatar({ name: trimmed(state.form.name) || 'Your Studio', avatarUrl: state.creator.avatarUrl }, { size: 72 });
 
 function previewNames(state) {
   const { form } = state;
   const line = [form.category, trimmed(form.location)].filter(Boolean).join(' · ');
   return html`${line && html`<p class="eyebrow preview-line">${line}</p>`}
-    <h3 class="preview-name">${trimmed(form.name) || 'Your atelier'}</h3>
+    <h3 class="preview-name">${trimmed(form.name) || 'Your Studio'}</h3>
     ${trimmed(form.descriptor) && html`<p class="preview-descriptor">${trimmed(form.descriptor)}</p>`}`;
 }
 
@@ -121,7 +121,7 @@ function previewAbout(state) {
 
 function previewSection(state) {
   return html`<section class="settings-section preview-section" aria-labelledby="preview-title">
-    <div class="settings-intro"><h2 id="preview-title">Preview</h2><p>How the top of your atelier looks. It follows what you type, before you save.</p></div>
+    <div class="settings-intro"><h2 id="preview-title">Preview</h2><p>How the top of your Studio looks. It follows what you type, before you save.</p></div>
     <div class="settings-body"><div class="atelier-preview" data-preview>
       <div class="preview-banner${state.creator.coverUrl ? '' : ' is-preset'}" data-preview-banner>${previewBanner(state)}</div>
       <div class="preview-head">
@@ -185,9 +185,9 @@ function linksEditor(state) {
   const count = state.form.links.length;
   return html`<fieldset class="links-editor">
     <legend>Links</legend>
-    <p class="field-help" id="links-hint">Up to ${MAX_LINKS}. They appear on your atelier page, in the order below.</p>
+    <p class="field-help" id="links-hint">Up to ${MAX_LINKS}. They appear on your Studio page, in the order below.</p>
     ${count > 0 && html`<ol class="link-rows">${state.form.links.map((row, index) => linkRow(state, row, index))}</ol>`}
-    <div class="link-add">${button('Add a link', { variant: 'secondary', icon: 'plus', attrs: { id: 'link-add', 'data-action': 'add-link', disabled: count >= MAX_LINKS ? true : null } })}${count >= MAX_LINKS ? html`<span class="field-help">That is the most links an atelier can show.</span>` : ''}</div>
+    <div class="link-add">${button('Add a link', { variant: 'secondary', icon: 'plus', attrs: { id: 'link-add', 'data-action': 'add-link', disabled: count >= MAX_LINKS ? true : null } })}${count >= MAX_LINKS ? html`<span class="field-help">That is the most links a Studio can show.</span>` : ''}</div>
   </fieldset>`;
 }
 
@@ -196,20 +196,20 @@ function detailsSection(state) {
   const dirty = isDirty({ atelier: state });
   const changed = slugChanged(state) && Boolean(trimmed(form.slug));
   return html`<section class="settings-section" aria-labelledby="atelier-details-title">
-    <div class="settings-intro"><h2 id="atelier-details-title">Details</h2><p>What people read first when they open your atelier.</p></div>
+    <div class="settings-intro"><h2 id="atelier-details-title">Details</h2><p>What people read first when they open your Studio.</p></div>
     <form class="settings-body" data-form="atelier" novalidate>
-      ${textField({ id: 'atelier-name', label: 'Atelier name', value: form.name, max: LIMITS.name, required: true, error: errors['atelier-name'], extra: { 'data-field': 'name', autocomplete: 'organization' } })}
-      ${textField({ id: 'atelier-slug', label: 'Address', value: form.slug, max: LIMITS.slug, prefix: SLUG_PREFIX, hint: 'Letters, numbers and hyphens, 2 to 40. This is the link to your atelier.', describedBy: 'atelier-slug-status atelier-slug-warning', error: errors['atelier-slug'], required: true, extra: { 'data-field': 'slug', autocomplete: 'off', autocapitalize: 'none', spellcheck: 'false' } })}
+      ${textField({ id: 'atelier-name', label: 'Studio name', value: form.name, max: LIMITS.name, required: true, error: errors['atelier-name'], extra: { 'data-field': 'name', autocomplete: 'organization' } })}
+      ${textField({ id: 'atelier-slug', label: 'Address', value: form.slug, max: LIMITS.slug, prefix: SLUG_PREFIX, hint: 'Letters, numbers and hyphens, 2 to 40. This is the link to your Studio.', describedBy: 'atelier-slug-status atelier-slug-warning', error: errors['atelier-slug'], required: true, extra: { 'data-field': 'slug', autocomplete: 'off', autocapitalize: 'none', spellcheck: 'false' } })}
       <div class="slug-notes">
         <p class="slug-status" id="atelier-slug-status" role="status" aria-live="polite" data-slug-status data-state="${state.slug.state}">${SLUG_STATUS[state.slug.state] || ''}</p>
-        <p class="notice slug-warning" id="atelier-slug-warning" data-slug-warning${changed ? '' : html` hidden`}>Changing your address breaks the links you have already shared: anyone who opens <strong>${SLUG_PREFIX}${state.saved.slug}</strong> will no longer find your atelier.</p>
+        <p class="notice slug-warning" id="atelier-slug-warning" data-slug-warning${changed ? '' : html` hidden`}>Changing your address breaks the links you have already shared: anyone who opens <strong>${SLUG_PREFIX}${state.saved.slug}</strong> will no longer find your Studio.</p>
       </div>
       ${textField({ id: 'atelier-category', label: 'Category', control: 'select', value: form.category, options: [...(CATEGORIES.includes(form.category) ? [] : [{ value: '', label: 'Choose a category' }]), ...CATEGORIES.map(name => ({ value: name, label: name }))], required: true, error: errors['atelier-category'], extra: { 'data-field': 'category' } })}
       <div class="field-row">
         ${textField({ id: 'atelier-descriptor', label: 'Tagline', value: form.descriptor, max: LIMITS.descriptor, hint: 'A few words under your name.', error: errors['atelier-descriptor'], extra: { 'data-field': 'descriptor' } })}
         ${textField({ id: 'atelier-location', label: 'Location', value: form.location, max: LIMITS.location, hint: 'A city or a region, if you want to share it.', error: errors['atelier-location'], extra: { 'data-field': 'location', autocomplete: 'address-level2' } })}
       </div>
-      ${textField({ id: 'atelier-bio', label: 'About your work', control: 'textarea', rows: 5, value: form.bio, max: LIMITS.bio, counter: true, hint: 'Tell people what to expect from your circle.', error: errors['atelier-bio'], extra: { 'data-field': 'bio' } })}
+      ${textField({ id: 'atelier-bio', label: 'About your work', control: 'textarea', rows: 5, value: form.bio, max: LIMITS.bio, counter: true, hint: 'Tell people what to expect from your House.', error: errors['atelier-bio'], extra: { 'data-field': 'bio' } })}
       ${textField({ id: 'atelier-image', label: 'Default cover', control: 'select', value: form.image, options: IMAGE_PRESETS.map(name => ({ value: name, label: PRESET_LABELS[name] || name })), hint: 'Shown behind your header and on your cards until you upload a banner.', error: errors['atelier-image'], extra: { 'data-field': 'image' } })}
       ${linksEditor(state)}
       ${formError('atelier', state.error.atelier)}
@@ -441,7 +441,7 @@ export function mountAtelier(el, ctx, data) {
     if (values.slug) {
       const sure = await confirmDialog({
         title: 'Change your address?',
-        text: `${SLUG_PREFIX}${state.saved.slug} will stop working, and every link to it will lead nowhere. Your atelier will live at ${SLUG_PREFIX}${values.slug}.`,
+        text: `${SLUG_PREFIX}${state.saved.slug} will stop working, and every link to it will lead nowhere. Your Studio will live at ${SLUG_PREFIX}${values.slug}.`,
         confirmLabel: 'Change address',
         tone: 'danger'
       });
@@ -461,13 +461,13 @@ export function mountAtelier(el, ctx, data) {
       state.errors = {};
       state.slug = { state: '', ticket: state.slug.ticket + 1 };
       state.error.atelier = '';
-      state.note.atelier = values.slug ? `Your atelier is now at ${SLUG_PREFIX}${creator.slug}.` : 'Your atelier was updated.';
-      toast('Atelier saved.', { tone: 'success' });
+      state.note.atelier = values.slug ? `Your Studio is now at ${SLUG_PREFIX}${creator.slug}.` : 'Your Studio was updated.';
+      toast('Studio saved.', { tone: 'success' });
       state.saving = false;
       redraw();
     } catch (error) {
       state.saving = false;
-      const message = reason(error, 'We could not save your atelier. Your changes are still here. Try again.');
+      const message = reason(error, 'We could not save your Studio. Your changes are still here. Try again.');
       if (/address is taken/i.test(message)) {
         setSlugState('taken');
         setError(doc, 'atelier-slug', SLUG_STATUS.taken);

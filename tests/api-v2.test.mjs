@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createApi } from '../src/api/index.js';
-import { friendly, fail, createMappers } from '../src/api/util.js';
+import { friendly, fail, createMappers, houseTier, TIER_DEFAULTS } from '../src/api/util.js';
 import { SUPABASE_URL, SUPABASE_KEY } from '../src/config.js';
 import { createFakeApi, IDS } from './helpers/fake-api.mjs';
 
@@ -274,7 +274,7 @@ test('a membership joins its creator and the tier the member holds', async () =>
   const orphan = {...creator, creator_tiers: []};
   const {api: other} = signedIn({tables: {memberships: [{creator_id: CREATOR, tier: 'signature', created_at: 'x', creator: orphan}]}});
   const [held] = await other.myMemberships();
-  assert.deepEqual([held.level, held.tier.name], [3, 'signature'], 'a tier row that is missing still yields a usable membership');
+  assert.deepEqual([held.level, held.tier.name], [3, 'Black Label'], 'a tier row that is missing still yields a usable membership, under its House name');
 });
 
 // ---------------------------------------------------------------------------
@@ -449,8 +449,8 @@ test('friendly() turns database, auth and storage errors into sentences', () => 
     [{message: 'over_email_send_rate_limit'}, 'Too many attempts. Wait a few minutes and try again.'],
     [{message: 'Auth session missing!'}, 'Your session has expired or you do not have permission. Sign in again and retry.'],
     [{message: 'JWT expired'}, 'Your session has expired or you do not have permission. Sign in again and retry.'],
-    [{message: 'duplicate key value violates unique constraint "creators_slug_key"'}, 'That atelier address is taken. Try another name.'],
-    [{message: 'duplicate key value violates unique constraint "creators_owner_id_key"'}, 'You already have an atelier.'],
+    [{message: 'duplicate key value violates unique constraint "creators_slug_key"'}, 'That Studio address is taken. Try another name.'],
+    [{message: 'duplicate key value violates unique constraint "creators_owner_id_key"'}, 'You already have a Studio.'],
     [{message: 'duplicate key value violates unique constraint "entry_media_path_key"'}, 'That file was already added.'],
     [{message: 'new row violates row-level security policy for table "comments"'}, 'You do not have permission to do that.'],
     [{message: 'permission denied for table circle_notes'}, 'You do not have permission to do that.'],
@@ -757,25 +757,25 @@ test('createAtelier retries a taken generated slug with a short suffix, but repo
   assert.deepEqual(fake.queries.filter(q => q.op === 'insert').map(q => q.payload.slug), ['atelier-verne', 'atelier-verne-abcd']);
 
   fake.handlers['creators.insert'] = () => ({data: null, error: taken});
-  await assert.rejects(api.createAtelier({name: 'Atelier Verne', category: 'Writing', slug: 'verne'}), {message: 'That atelier address is taken. Try another name.'});
+  await assert.rejects(api.createAtelier({name: 'Atelier Verne', category: 'Writing', slug: 'verne'}), {message: 'That Studio address is taken. Try another name.'});
   assert.equal(fake.queries.filter(q => q.op === 'insert' && q.payload.slug === 'verne').length, 1, 'a chosen address is not changed behind the person\'s back');
   fake.handlers['creators.insert'] = failing('duplicate key value violates unique constraint "creators_owner_id_key"', '23505');
-  await assert.rejects(api.createAtelier({name: 'Second', category: 'Writing'}), {message: 'You already have an atelier.'});
+  await assert.rejects(api.createAtelier({name: 'Second', category: 'Writing'}), {message: 'You already have a Studio.'});
 });
 
 test('createAtelier and updateAtelier validate their input', async () => {
   const {fake, api} = signedIn();
   const before = fake.queries.length;
-  await assert.rejects(api.createAtelier({category: 'Writing'}), {message: 'Give your atelier a name.'});
+  await assert.rejects(api.createAtelier({category: 'Writing'}), {message: 'Give your Studio a name.'});
   await assert.rejects(api.createAtelier({name: 'Verne'}), {message: 'Choose a category.'});
-  await assert.rejects(api.createAtelier({name: 'V', category: 'Writing'}), {message: 'The atelier name needs at least 2 characters.'});
+  await assert.rejects(api.createAtelier({name: 'V', category: 'Writing'}), {message: 'The Studio name needs at least 2 characters.'});
   await assert.rejects(api.createAtelier({name: 'Verne', category: 'Sport'}), {message: 'Choose a category.'});
   await assert.rejects(api.createAtelier({name: 'Verne', category: 'Writing', image: 'neon'}), {message: 'Choose one of the cover styles.'});
   await assert.rejects(api.createAtelier({name: 'Verne', category: 'Writing', bio: 'x'.repeat(401)}), {message: 'The description can be at most 400 characters.'});
   await assert.rejects(api.createAtelier({name: 'Verne', category: 'Writing', slug: 'No Good'}), {message: 'Use 2 to 40 letters, numbers or hyphens for the address.'});
   await assert.rejects(api.createAtelier({name: 'Verne', category: 'Writing', links: Array.from({length: 6}, () => ({label: 'a', url: 'https://a.test'}))}), {message: 'Add up to 5 links.'});
   await assert.rejects(api.updateAtelier(CREATOR, {links: [{label: 'a', url: 'javascript:alert(1)'}]}), {message: 'A link must be a web address such as https://example.com.'});
-  await assert.rejects(api.updateAtelier('nope', {name: 'Verne'}), {message: 'That atelier could not be found.'});
+  await assert.rejects(api.updateAtelier('nope', {name: 'Verne'}), {message: 'That Studio could not be found.'});
   assert.equal(fake.queries.length, before);
   await assert.rejects(guest().api.createAtelier({name: 'Verne', category: 'Writing'}), {message: 'Sign in to continue.'});
 });
@@ -812,7 +812,7 @@ test('atelier images are validated first, and a failed save removes the new file
   fake.handlers['creators.select'] = () => ok({avatar_path: null, cover_path: null});
   await assert.rejects(api.uploadCreatorImage(CREATOR, 'banner', new Blob(['x'], {type: 'image/png'})), {message: 'Choose the avatar or the cover.'});
   await assert.rejects(api.uploadCreatorImage(CREATOR, 'cover', new Blob(['x'], {type: 'image/gif'})), {message: 'Use a JPG, PNG or WEBP image.'});
-  await assert.rejects(api.uploadCreatorImage('nope', 'cover', new Blob(['x'], {type: 'image/png'})), {message: 'That atelier could not be found.'});
+  await assert.rejects(api.uploadCreatorImage('nope', 'cover', new Blob(['x'], {type: 'image/png'})), {message: 'That Studio could not be found.'});
   assert.equal(fake.storageCalls.length, 0);
   fake.handlers['creators.update'] = failing('new row violates row-level security policy');
   await assert.rejects(api.uploadCreatorImage(CREATOR, 'cover', new Blob(['x'], {type: 'image/png'})), {message: 'You do not have permission to do that.'});
@@ -833,10 +833,24 @@ test('listTiers and updateTier map the creator\'s tiers and write the right colu
   assert.deepEqual([tier.name, tier.priceCents, tier.perks, tier.enabled, tier.level], ['Patron', 1500, ['One', 'Two'], false, 2]);
 });
 
+test('rows that still hold the first tier defaults read as the House defaults; a creator’s own words stay', () => {
+  const legacy = {name: 'Premium', description: 'More context. More connection.', perks: ['Everything in Essential', 'In-depth studio notes', 'Priority conversation prompts']};
+  assert.deepEqual(houseTier('premium', legacy), TIER_DEFAULTS.premium);
+  assert.deepEqual(houseTier('signature', {name: 'Signature', description: 'Inside the creative process.', perks: ['Studio visits']}),
+    {name: 'Black Label', description: 'Inside the creative process.', perks: ['Studio visits']}, 'each field is mapped on its own');
+  const own = {name: 'Patron', description: 'My closest readers.', perks: ['All circle entries']};
+  assert.deepEqual(houseTier('essential', own), own, 'renamed levels and partial perk lists are the creator’s, not defaults');
+  assert.deepEqual(houseTier('premium', {name: 'Essential', description: '', perks: []}).name, 'Essential', 'a legacy name only maps on its own level');
+  const map = createMappers({storage: {from: () => ({getPublicUrl: () => ({data: {publicUrl: ''}})})}});
+  assert.deepEqual([map.tier({tier_id: 'essential', name: 'Essential', perks: null}).name, map.tier({tier_id: 'essential', name: 'Essential', perks: null}).perks], ['Member', []]);
+  assert.equal(friendly({code: 'P0001', message: 'This atelier is not taking messages yet.'}), 'This Studio is not taking messages yet.');
+  assert.equal(friendly({code: 'P0001', message: 'You already have an atelier in this circle.'}), 'You already have a Studio in this House.');
+});
+
 test('updateTier validates before writing', async () => {
   const {fake, api} = signedIn();
   const before = fake.queries.length;
-  await assert.rejects(api.updateTier(CREATOR, 'gold', {}), {message: 'Choose Essential, Premium or Signature.'});
+  await assert.rejects(api.updateTier(CREATOR, 'gold', {}), {message: 'Choose Member, Private or Black Label.'});
   await assert.rejects(api.updateTier(CREATOR, 'premium', {name: 'x'}), {message: 'The tier name needs at least 2 characters.'});
   await assert.rejects(api.updateTier(CREATOR, 'premium', {priceCents: -1}), {message: 'Set a price between 0 and 1,000.'});
   await assert.rejects(api.updateTier(CREATOR, 'premium', {priceCents: 12.5}), {message: 'Set a price between 0 and 1,000.'});
@@ -845,7 +859,7 @@ test('updateTier validates before writing', async () => {
   await assert.rejects(api.updateTier(CREATOR, 'premium', {description: 'x'.repeat(281)}), {message: 'The description can be at most 280 characters.'});
   await assert.rejects(api.updateTier(CREATOR, 'premium', {perks: Array.from({length: 9}, (_, i) => `p${i}`)}), {message: 'List up to 8 perks.'});
   await assert.rejects(api.updateTier(CREATOR, 'premium', {perks: ['x'.repeat(81)]}), {message: 'Each perk can be at most 80 characters.'});
-  await assert.rejects(api.updateTier('nope', 'premium', {}), {message: 'That atelier could not be found.'});
+  await assert.rejects(api.updateTier('nope', 'premium', {}), {message: 'That Studio could not be found.'});
   assert.equal(fake.queries.length, before);
 });
 
@@ -858,7 +872,7 @@ test('entry covers: upload to the covers bucket, attach with set_entry_cover, an
   assert.equal(path, `${CREATOR}/file-uuid.jpg`);
   assert.deepEqual(fake.storageCalls.map(c => [c.bucket, c.op, c.path]), [['covers', 'upload', path]]);
   await assert.rejects(api.uploadEntryCover(CREATOR, new Blob(['x'], {type: 'image/gif'})), {message: 'Use a JPG, PNG or WEBP image.'});
-  await assert.rejects(api.uploadEntryCover('nope', new Blob(['x'], {type: 'image/png'})), {message: 'That atelier could not be found.'});
+  await assert.rejects(api.uploadEntryCover('nope', new Blob(['x'], {type: 'image/png'})), {message: 'That Studio could not be found.'});
 
   fake.storageCalls.length = 0;
   fake.handlers['entries.select'] = () => ok({cover_path: `${CREATOR}/old.png`});
@@ -956,7 +970,7 @@ test('join upserts the membership and maps it with the creator\'s tier', async (
   assert.deepEqual([q.payload, q.options], [{user_id: USER, creator_id: CREATOR, tier: 'premium'}, {onConflict: 'user_id,creator_id'}]);
   assert.ok(q.columns.includes('creator_tiers!creator_id('));
   assert.deepEqual([membership.tierId, membership.level, membership.tier.name, membership.tier.priceCents, membership.creator.id], ['premium', 2, 'Patron', 1900, CREATOR]);
-  await assert.rejects(api.join(CREATOR, 'gold'), {message: 'Choose Essential, Premium or Signature.'});
+  await assert.rejects(api.join(CREATOR, 'gold'), {message: 'Choose Member, Private or Black Label.'});
   fake.handlers['memberships.upsert'] = failing('That membership tier is not open right now.', 'P0001');
   await assert.rejects(api.join(CREATOR, 'premium'), {message: 'That membership tier is not open right now.'});
   fake.handlers['memberships.upsert'] = failing('new row violates row-level security policy for table "memberships"');
@@ -982,8 +996,8 @@ test('circleMembers maps people with the tier they hold; creatorStats maps the a
   assert.deepEqual(await api.creatorStats(CREATOR), {followers: 5, members: 2, entries: 4, drafts: 1, likes: 9, comments: 3, reads: 40, monthlyValueCents: 2800, newMembers30d: 1, newFollowers30d: 2,
     byTier: [{tierId: 'essential', name: 'Friend', level: 1, enabled: true, priceCents: 900, members: 1}], topEntries: [{id: 'e1', title: 'T', kind: 'text', likeCount: 3, commentCount: 1, readCount: 7}]});
   assert.deepEqual(fake.rpcCalls.at(-1), {name: 'creator_stats', args: {p_creator: CREATOR}});
-  fake.handlers['rpc.creator_stats'] = failing('Not your atelier.', 'P0001');
-  await assert.rejects(api.creatorStats(CREATOR), {message: 'Not your atelier.'});
+  fake.handlers['rpc.creator_stats'] = failing('Not your Studio.', 'P0001');
+  await assert.rejects(api.creatorStats(CREATOR), {message: 'Not your Studio.'});
 });
 
 // ---------------------------------------------------------------------------
@@ -1221,7 +1235,7 @@ const BASE = `${CREATOR}/${ENTRY}/file-uuid`;
 const videoPrepared = (over = {}) => ({ kind: 'video', blob: blob('video/mp4', 5000), mime: 'video/mp4', ext: 'mp4', size: 5000, width: 1280, height: 720, duration: 12.6, poster: blob('image/jpeg', 800), preview: blob('image/webp', 300), name: 'clip.mp4', ...over });
 
 
-const REFUSED = 'This upload was refused. Your storage may be full (500 MB per atelier, 60 files per entry): remove media you no longer use, or sign in again, then retry.';
+const REFUSED = 'This upload was refused. Your storage may be full (500 MB per Studio, 60 files per post): remove media you no longer use, or sign in again, then retry.';
 // The object-name rule the database enforces (app_private.media_name_ok).
 const CANONICAL = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 const near = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} is not ${expected}`);
@@ -1961,11 +1975,11 @@ test('fake: drafts are private to their owner', async () => {
 
 test('fake: writes are owner-only and saveEntry applies the server\'s rules', async () => {
   const fake = createFakeApi();
-  await assert.rejects(fake.saveEntry(null, textValues(), 'draft'), error => error.message === 'Open your atelier before writing an entry.' && error.code === 'P0001');
+  await assert.rejects(fake.saveEntry(null, textValues(), 'draft'), error => error.message === 'Open your Studio before writing an entry.' && error.code === 'P0001');
   await assert.rejects(fake.updateAtelier(IDS.verne, {name: 'Mine'}), {message: 'That could not be found, or you do not have permission to change it.'});
   await assert.rejects(fake.updateTier(IDS.verne, 'essential', {name: 'Mine'}), {message: 'That could not be found, or you do not have permission to change it.'});
   await assert.rejects(fake.postNote(IDS.verne, 'Hi'), {message: 'You do not have permission to do that.'});
-  await assert.rejects(fake.creatorStats(IDS.verne), {message: 'Not your atelier.'});
+  await assert.rejects(fake.creatorStats(IDS.verne), {message: 'Not your Studio.'});
   await fake.deleteEntry(E.firstDraftHabits);
   assert.notEqual(await fake.getEntry(E.firstDraftHabits), null, 'a non-owner delete does nothing');
 
@@ -2097,7 +2111,7 @@ test('fake: follows, likes, bookmarks and memberships keep the counters, and the
   assert.notEqual(await fake.getBody(E.joineryNotes), null, 'joining opens the posts of that tier');
   const upgraded = await fake.join(IDS.solene, 'signature');
   assert.deepEqual([upgraded.tierId, (await fake.getCreator(IDS.solene)).memberCount], ['signature', 2], 'joining again changes the tier');
-  await assert.rejects(fake.join(IDS.verano, 'gold'), {message: 'Choose Essential, Premium or Signature.'});
+  await assert.rejects(fake.join(IDS.verano, 'gold'), {message: 'Choose Member, Private or Black Label.'});
   await fake.leave(IDS.verano);
   assert.deepEqual([(await fake.myMemberships()).length, (await fake.getCreator(IDS.verano)).memberCount], [1, 0]);
   await assert.rejects(fake.join(IDS.verne, 'essential').then(() => fake.signInAs(IDS.owner)).then(() => fake.join(IDS.verne, 'essential')), {message: 'You do not have permission to do that.'}, 'owners cannot join their own atelier');
@@ -2243,8 +2257,8 @@ test('fake: profile, settings, avatar and atelier creation', async () => {
   assert.equal(await fake.slugAvailable('noor-notes'), true);
   const creator = await fake.createAtelier({name: 'Noor Notes', category: 'Writing'});
   assert.deepEqual([creator.slug, creator.ownerId, creator.isShowcase], ['noor-notes', IDS.fan3, false]);
-  assert.deepEqual((await fake.listTiers(creator.id)).map(t => [t.id, t.name, t.priceCents]), [['essential', 'Essential', 900], ['premium', 'Premium', 1900], ['signature', 'Signature', 3900]]);
-  assert.equal((await fake.createAtelier({name: 'Noor Notes', category: 'Writing'}).catch(e => e.message)), 'You already have an atelier.');
+  assert.deepEqual((await fake.listTiers(creator.id)).map(t => [t.id, t.name, t.priceCents]), [['essential', 'Member', 900], ['premium', 'Private', 1900], ['signature', 'Black Label', 3900]]);
+  assert.equal((await fake.createAtelier({name: 'Noor Notes', category: 'Writing'}).catch(e => e.message)), 'You already have a Studio.');
   assert.equal((await fake.loadViewer()).myCreator.id, creator.id);
   const withCover = await fake.uploadCreatorImage(creator.id, 'cover', new Blob(['x'], {type: 'image/webp'}));
   assert.match(withCover.coverUrl, new RegExp(`/covers/${creator.id}/`));

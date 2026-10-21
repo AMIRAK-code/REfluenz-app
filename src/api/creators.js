@@ -61,7 +61,7 @@ export function createCreators(ctx, {circle}) {
     async createAtelier(values = {}) {
       const userId = await ctx.requireUserId();
       const clean = cleanAtelier(values);
-      for (const field of ['name', 'category']) if (clean[field] === undefined) throw Error(field === 'name' ? 'Give your atelier a name.' : 'Choose a category.');
+      for (const field of ['name', 'category']) if (clean[field] === undefined) throw Error(field === 'name' ? 'Give your Studio a name.' : 'Choose a category.');
       const chosen = clean.slug !== undefined;
       const base = clean.slug ?? (slugify(clean.name).length >= 2 ? slugify(clean.name) : 'atelier');
       for (let attempt = 0; ; attempt++) {
@@ -74,7 +74,7 @@ export function createCreators(ctx, {circle}) {
     },
 
     async updateAtelier(id, values = {}) {
-      if (bad(id)) throw Error('That atelier could not be found.');
+      if (bad(id)) throw Error('That Studio could not be found.');
       return updateCreator(id, cleanAtelier(values));
     },
 
@@ -87,7 +87,7 @@ export function createCreators(ctx, {circle}) {
     // Avatar and cover share the public covers bucket, under the atelier's folder. The old file goes once the new one is saved.
     async uploadCreatorImage(creatorId, kind, blob) {
       const column = columnOf(kind);
-      if (bad(creatorId)) throw Error('That atelier could not be found.');
+      if (bad(creatorId)) throw Error('That Studio could not be found.');
       const folder = String(creatorId).toLowerCase();
       const previous = (await creatorRow(folder))[column];
       const path = await putImage(client, COVER_BUCKET, folder, blob, {uuid: ctx.uuid, ...COVER_IMAGE});
@@ -102,7 +102,7 @@ export function createCreators(ctx, {circle}) {
     },
     async removeCreatorImage(creatorId, kind) {
       const column = columnOf(kind);
-      if (bad(creatorId)) throw Error('That atelier could not be found.');
+      if (bad(creatorId)) throw Error('That Studio could not be found.');
       const folder = String(creatorId).toLowerCase();
       const previous = (await creatorRow(folder))[column];
       const creator = await updateCreator(folder, {[column]: null});

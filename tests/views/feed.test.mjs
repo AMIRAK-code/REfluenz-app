@@ -155,7 +155,7 @@ describe('home, discover and library views', () => {
       const fake = member();
       await open(fake);
       assert.equal(app.text('#view h1'), 'Welcome back, Sofia.');
-      assert.equal(app.text('[data-feed-heading]'), 'From your circle');
+      assert.equal(app.text('[data-feed-heading]'), 'From your Houses');
       assert.equal(app.text('.pager-lead .entry-title'), 'Notes on a linen wardrobe');
       assert.deepEqual(titles(), ['Notes on a linen wardrobe', 'Tiles of Alfama', 'Fitting day', 'Sketchbook, September', 'The tailor’s ledger', 'A tour of the workshop', 'Inside the cutting room', 'Notes on joinery', 'The pattern archive']);
       const call = callsTo(fake, 'feed')[0].args[0];
@@ -168,7 +168,7 @@ describe('home, discover and library views', () => {
       await open(member());
       assert.equal(app.find('#view h1').id, 'feed-title');
       assert.equal(app.find('.feed-rail').tagName, 'ASIDE');
-      assert.equal(app.find('.feed-rail').getAttribute('aria-label'), 'Your circle and suggestions');
+      assert.equal(app.find('.feed-rail').getAttribute('aria-label'), 'Your Houses and suggestions');
       assert.deepEqual([...app.document.querySelectorAll('#view [role="group"]')].map(group => group.getAttribute('aria-label')), ['Feed', 'Post type', 'Category']);
       assert.equal(pressed('[data-feed-tab="following"]'), 'true');
       assert.equal(pressed('[data-feed-tab="all"]'), 'false');
@@ -183,9 +183,9 @@ describe('home, discover and library views', () => {
 
     it('lists the circle, suggests creators who are not in it, and shows how a circle was joined', async () => {
       await open(member());
-      assert.match(app.text('#rail-circle-title'), /Your circle/);
+      assert.match(app.text('#rail-circle-title'), /Your Houses/);
       assert.deepEqual(names('[aria-labelledby="rail-circle-title"] .rail-person-name'), ['Atelier Solene', 'Casa Verano']);
-      assert.match(app.text('[aria-labelledby="rail-circle-title"]'), /Friend circle/, 'a membership names its tier');
+      assert.match(app.text('[aria-labelledby="rail-circle-title"]'), /House · Friend/, 'a membership names its tier');
       assert.deepEqual(names('[data-rail-suggested] .rail-person-name'), ['Verne & Co']);
       assert.equal(app.find('[data-rail-suggested] [data-follow]').getAttribute('aria-pressed'), 'false');
     });
@@ -297,10 +297,10 @@ describe('home, discover and library views', () => {
     it('suggests creators instead of an empty page, and fills in once someone is followed', async () => {
       const fake = createFakeApi({ signedIn: IDS.fan3 });
       await open(fake);
-      assert.match(app.text('#view .empty h3'), /Your circle is empty/);
+      assert.match(app.text('#view .empty h3'), /You have not joined a House yet/);
       assert.equal(callsTo(fake, 'feed').length, 0, 'there is nobody to ask for');
       assert.equal(app.document.querySelectorAll('.feed-suggest [data-creator]').length, 3);
-      assert.match(app.text('[aria-labelledby="rail-circle-title"]'), /Follow a creator to start your circle\./);
+      assert.match(app.text('[aria-labelledby="rail-circle-title"]'), /Follow a creator or join a House to see them here\./);
       await app.click(`.feed-suggest [data-creator="${IDS.verne}"] [data-follow]`);
       assert.deepEqual(callsTo(fake, 'setFollow')[0].args, [IDS.verne, true]);
       await tick(700);
@@ -315,7 +315,7 @@ describe('home, discover and library views', () => {
       fake.db.entries = fake.db.entries.filter(row => row.creator_id === IDS.verne);
       fake.refresh();
       await open(fake);
-      assert.match(app.text('#view .empty h3'), /Nothing new from your circle yet/);
+      assert.match(app.text('#view .empty h3'), /Nothing new from your Houses yet/);
       assert.equal(app.exists('[data-feed-tab="all"].button'), true, 'a next step: browse everything');
       await app.click('.empty [data-feed-tab="all"]');
       assert.equal(app.path, '/app?tab=all');
@@ -330,7 +330,7 @@ describe('home, discover and library views', () => {
       assert.equal(app.find('[data-feed-notice]').hidden, true);
       await app.click('[data-rail-suggested] [data-follow]');
       assert.equal(app.find('[data-feed-notice]').hidden, false);
-      assert.match(app.text('[data-feed-notice]'), /Your circle has changed\./);
+      assert.match(app.text('[data-feed-notice]'), /Your Houses have changed\./);
       const before = callsTo(fake, 'feed').length;
       await app.click('[data-feed-refresh]');
       assert.equal(app.find('[data-feed-notice]').hidden, true);
@@ -339,7 +339,7 @@ describe('home, discover and library views', () => {
 
       fake.emit(IDS.member, 'notification', newEntryRow(IDS.member));
       await app.settle();
-      assert.match(app.text('[data-feed-notice]'), /There are new posts from your circle\./);
+      assert.match(app.text('[data-feed-notice]'), /There are new posts from your Houses\./);
       assert.equal(app.find('[data-feed-notice]').hidden, false);
     });
 
@@ -977,7 +977,7 @@ describe('home, discover and library views', () => {
         capture();
         await app.click('[data-library-export]');
         const list = JSON.parse(await created[0].text());
-        assert.equal(list.entries.find(item => item.title === 'The pattern archive').access, 'Signature and above');
+        assert.equal(list.entries.find(item => item.title === 'The pattern archive').access, 'Black Label and above');
         assert.ok(list.entries.some(item => item.title === HOSTILE), 'the title is data in the file, as it is');
       });
 

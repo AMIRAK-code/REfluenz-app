@@ -17,11 +17,11 @@ export const accessLabel = (access, tiers) => (access === 'public' ? 'Everyone' 
 
 export function accessHelp(access, tiers) {
   if (access === 'public') return 'Everyone can read this post, signed in or not.';
-  const name = tiers.find(tier => tier.id === access)?.name ?? 'Members';
-  return `Members of your ${name} circle and above can read this post. Everyone else sees the opening paragraph and a blurred preview.`;
+  const name = tiers.find(tier => tier.id === access)?.name ?? 'Member';
+  return `Members of your House at the ${name} level and above can read this post. Everyone else sees the opening paragraph and a blurred preview.`;
 }
 
-// Everyone, then the atelier's open tiers. A tier that has been closed since stays on offer while a post still uses it.
+// Everyone, then the Studio's open tiers. A tier that has been closed since stays on offer while a post still uses it.
 function accessOptions(tiers, current) {
   const open = tiers.filter(tier => tier.enabled !== false || tier.id === current);
   return html`<option value="public"${selected(current === 'public')}>Everyone</option>${open.map(tier => html`<option value="${tier.id}"${selected(current === tier.id)}>${tier.name} and above${tier.enabled === false ? ' (closed to new members)' : ''}</option>`)}`;
@@ -121,7 +121,7 @@ const counter = (id, max, value) => html`<span class="ed-count" data-count="${id
 export function missingMarkup() {
   return html`<section class="page ed">
     <header class="page-head"><div><p class="eyebrow bronze">Studio</p><h1>This post is not here</h1></div></header>
-    ${emptyState({ icon: 'alert', title: 'We could not find this post', text: 'It may have been deleted, or it belongs to another atelier.', action: { label: 'Back to your studio', href: paths.studio(), variant: 'secondary' } })}
+    ${emptyState({ icon: 'alert', title: 'We could not find this post', text: 'It may have been deleted, or it belongs to another Studio.', action: { label: 'Back to your Studio', href: paths.studio(), variant: 'secondary' } })}
   </section>`;
 }
 
@@ -138,7 +138,7 @@ export function pageMarkup(data, s, media) {
       <a class="ed-back" href="${back}">${icon('back', 14)}<span>Studio</span></a>
       <p class="eyebrow bronze ed-eyebrow">${editing ? (live ? 'Edit a live post' : 'Edit a draft') : 'New post'}</p>
       <h1>${editing ? 'Edit your post.' : 'Start with a point of view.'}</h1>
-      <p class="page-sub">${live ? 'Changes go live for readers as soon as you update the post.' : 'Write it, preview it, and publish it when it is ready. Drafts are only visible in your studio.'}</p>
+      <p class="page-sub">${live ? 'Changes go live for readers as soon as you update the post.' : 'Write it, preview it, and publish it when it is ready. Drafts are only visible in your Studio.'}</p>
     </div>
     <div class="ed-view" role="group" aria-label="Editor view">
       <button type="button" class="tab is-active" data-action="mode" data-id="write" aria-pressed="true">Write</button>
@@ -202,7 +202,7 @@ export function pageMarkup(data, s, media) {
       <div id="entry-error" class="form-error ed-error" role="alert"></div>
       <div id="editor-status" class="ed-status" role="status" aria-live="polite" tabindex="-1"></div>
       <div class="ed-footer">
-        <p class="ed-footer-note">${live ? 'This post is live. Moving it to drafts hides it from readers until you publish it again.' : 'Drafts are only visible in your studio.'}</p>
+        <p class="ed-footer-note">${live ? 'This post is live. Moving it to drafts hides it from readers until you publish it again.' : 'Drafts are only visible in your Studio.'}</p>
         <div class="ed-actions">
           <button type="submit" class="button secondary" name="intent" value="draft"><span>${live ? 'Move to drafts' : 'Save draft'}</span></button>
           <button type="submit" class="button" name="intent" value="published"><span>${live ? 'Update post' : 'Publish'}</span>${icon('arrow', 14)}</button>

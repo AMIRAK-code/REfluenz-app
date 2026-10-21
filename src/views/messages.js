@@ -1,7 +1,7 @@
 // Messages: /app/messages (the list of conversations) and /app/messages/:creatorId/:memberId (one conversation).
 //
 // Two panes on a wide screen (list and thread), one pane at a time on a narrow one. The person may be both a member of other
-// ateliers and the owner of their own, so every conversation has a role for the viewer: 'member' (writing to an atelier) or
+// Studios and the owner of their own, so every conversation has a role for the viewer: 'member' (writing to a Studio) or
 // 'creator' (the owner answering a member). Members start conversations; the owner can reply once the member has written.
 // The thread is updated in place (optimistic sends, live messages): the page is never redrawn from scratch while someone types.
 
@@ -23,7 +23,7 @@ const drafts = new Map();
 
 const lower = value => String(value ?? '').toLowerCase();
 
-// 'member': the viewer writes to somebody's atelier. 'creator': the viewer owns the atelier and answers a member. Otherwise null.
+// 'member': the viewer writes to somebody's Studio. 'creator': the viewer owns the Studio and answers a member. Otherwise null.
 function roleOf(store, creatorId, memberId) {
   const me = store.state.user?.id;
   const mine = store.state.myCreator?.id;
@@ -41,12 +41,12 @@ function partnerOf(ctx, thread) {
   const asOwner = thread.creatorId === ctx.store.state.myCreator?.id;
   if (asOwner) return { kind: 'member', name: thread.member?.name || 'Member', avatarUrl: thread.member?.avatarUrl || '', slug: '' };
   const creator = thread.creator || {};
-  return { kind: 'creator', name: creator.name || 'Atelier', avatarUrl: creator.avatarUrl || '', slug: creator.slug || '' };
+  return { kind: 'creator', name: creator.name || 'Studio', avatarUrl: creator.avatarUrl || '', slug: creator.slug || '' };
 }
 
 const isMine = (data, thread, sender) => (sender === 'member' ? thread.memberId === data.me : thread.creatorId === data.myCreatorId);
 
-// Why a conversation cannot be written to, or ''. Showcase ateliers belong to REFLUENZ and have nobody to answer.
+// Why a conversation cannot be written to, or ''. Showcase Studios belong to REFLUENZ and have nobody to answer.
 function blockReason(creator, me) {
   if (!creator) return '';
   if (creator.isShowcase) return 'showcase';
@@ -74,18 +74,18 @@ function threadRow(ctx, data, thread) {
     <span class="inbox-item-text">
       <span class="inbox-item-top"><strong class="inbox-name">${partner.name}</strong><time class="inbox-time" datetime="${thread.lastAt}">${timeAgo(thread.lastAt)}</time></span>
       <span class="inbox-item-bottom"><span class="inbox-preview">${mine ? 'You: ' : ''}${thread.lastBody}</span>${unread > 0 ? html`<span class="inbox-unread"><span aria-hidden="true">${unread > 99 ? '99+' : unread}</span><span class="visually-hidden">${plural(unread, 'unread message')}</span></span>` : ''}</span>
-      ${owner && data.myCreatorId ? html`<span class="eyebrow inbox-tag">Your atelier</span>` : ''}
+      ${owner && data.myCreatorId ? html`<span class="eyebrow inbox-tag">Your Studio</span>` : ''}
     </span>
   </a></li>`;
 }
 
-// Ateliers whose circle the person belongs to and who can be written to, and no conversation exists with yet.
+// Studios whose House the person belongs to and who can be written to, and no conversation exists with yet.
 function starters(ctx, data) {
   const started = new Set(data.inbox.filter(thread => thread.memberId === data.me).map(thread => thread.creatorId));
-  const ateliers = [...ctx.store.state.memberships.values()].map(membership => membership.creator)
+  const studios = [...ctx.store.state.memberships.values()].map(membership => membership.creator)
     .filter(creator => creator?.id && creator.ownerId && !creator.isShowcase && creator.ownerId !== data.me && !started.has(creator.id));
-  if (!ateliers.length) return '';
-  return html`<div class="inbox-starters"><h3 class="eyebrow muted">Start a conversation</h3><ul>${ateliers.map(creator => html`<li><a class="inbox-starter" href="${paths.messages(creator.id, data.me)}">${avatar(creator, { size: 32 })}<span>Write to ${creator.name}</span>${icon('chevron-right', 14)}</a></li>`)}</ul></div>`;
+  if (!studios.length) return '';
+  return html`<div class="inbox-starters"><h3 class="eyebrow muted">Start a conversation</h3><ul>${studios.map(creator => html`<li><a class="inbox-starter" href="${paths.messages(creator.id, data.me)}">${avatar(creator, { size: 32 })}<span>Write to ${creator.name}</span>${icon('chevron-right', 14)}</a></li>`)}</ul></div>`;
 }
 
 function listMarkup(ctx, data) {
@@ -133,7 +133,7 @@ function footMarkup(ctx, data) {
   if (kind === 'blocked') {
     return html`<div class="thread-notice" role="note">
       <p>${open.blocked === 'showcase'
-        ? html`${name} is a showcase atelier of REFLUENZ, so it is not taking messages. Follow it to see new work, or join its circle.`
+        ? html`${name} is a showcase Studio of REFLUENZ, so it is not taking messages. Follow it to see new work, or join its House.`
         : html`${name} is not taking messages right now.`}</p>
       ${open.partner.slug ? html`<a class="text-link" href="${paths.creator(open.partner.slug)}">View ${name}</a>` : ''}
     </div>`;
@@ -159,7 +159,7 @@ function threadMarkup(ctx, data) {
     return html`<div class="inbox-state">${back}${errorState(open.error, { title: 'We could not open this conversation', retry: () => ctx.reload() })}</div>`;
   }
   const partner = open.partner;
-  const sub = partner.kind === 'creator' ? open.creator?.descriptor || open.creator?.category || 'Atelier' : `Member of ${ctx.store.state.myCreator?.name || 'your atelier'}`;
+  const sub = partner.kind === 'creator' ? open.creator?.descriptor || open.creator?.category || 'Studio' : `Member of ${ctx.store.state.myCreator?.name || 'your Studio'}`;
   return html`<header class="thread-head">
       <a class="icon-button thread-back" href="${paths.messages()}" aria-label="Back to all conversations">${icon('back', 18)}</a>
       ${avatar(partner, { size: 44 })}
@@ -190,7 +190,7 @@ async function loadOpen(ctx, inbox, creatorId, memberId) {
 
   const summary = inbox.find(thread => thread.creatorId === creatorId && thread.memberId === memberId);
 
-  // The messages and, for a member, the atelier are asked for together: opening a conversation is one round trip.
+  // The messages and, for a member, the Studio are asked for together: opening a conversation is one round trip.
   let messages;
   let creator = null;
   try {
@@ -213,7 +213,7 @@ async function loadOpen(ctx, inbox, creatorId, memberId) {
       open.creator = store.state.myCreator;
       let member = summary?.member;
       if (!member) {
-        // Only reachable by typing the address: the person has not written yet. The circle may still know their name.
+        // Only reachable by typing the address: the person has not written yet. The House may still know their name.
         const circle = await api.circleMembers(creatorId).catch(() => []);
         member = circle.find(row => row.member?.id === memberId)?.member ?? { id: memberId, name: 'Member', avatarUrl: '' };
       }
@@ -253,8 +253,8 @@ export default {
           icon: 'message',
           title: 'No conversations yet',
           text: data.myCreatorId
-            ? 'Members start the conversation. When someone writes to your atelier it appears here, and you can reply. You can also write to the ateliers whose circle you belong to.'
-            : 'Write to a creator whose circle you belong to, or ask a question from their atelier page. Only you and the creator can read what you send.',
+            ? 'Members start the conversation. When someone writes to your Studio it appears here, and you can reply. You can also write to the Studios whose House you belong to.'
+            : 'Write to a creator whose House you belong to, or ask a question from their Studio page. Only you and the creator can read what you send.',
           action: { label: 'Discover creators', href: paths.discover() }
         })}<div class="inbox-starters-wide" data-inbox-list>${starters(ctx, data)}</div></div>`
         : html`<div class="inbox-layout">

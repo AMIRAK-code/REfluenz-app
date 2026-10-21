@@ -320,7 +320,7 @@ describe('sign in, sign up and recovery (views/auth.js)', () => {
     it('explains early access and asks for name, email and password', async () => {
       app = await mountApp({ api: guest(), path: '/app/signup' });
       assert.equal(app.document.title, 'Create your account — REFLUENZ');
-      assert.equal(app.text('#view h1'), 'Find your circle.');
+      assert.equal(app.text('#view h1'), 'Find your House.');
       assert.match(app.text('.auth-lede'), /Joining is free during early access and nothing is charged/);
       assert.equal(app.find('#auth-name').getAttribute('autocomplete'), 'name');
       assert.equal(app.find('#auth-password').getAttribute('autocomplete'), 'new-password');
@@ -789,7 +789,7 @@ describe('welcome tour (views/onboarding.js)', () => {
     await newcomer();
     await toCreators();
     assert.equal(app.text('#view h1'), 'Follow a few creators.');
-    assert.match(app.text('.onboard-form'), /Joining a circle is free|Creators in your subjects come first/);
+    assert.match(app.text('.onboard-form'), /Joining a House is free|Creators in your subjects come first/);
     const rows = [...app.document.querySelectorAll('.suggest-row')];
     assert.equal(rows.length, 3);
     assert.match(rows[0].textContent, /Casa Verano/, 'Design comes first');
@@ -930,9 +930,9 @@ describe('landing page (index.html, landing.js)', () => {
     const label = text => [...window.document.querySelectorAll('a')].filter(link => link.textContent.trim().startsWith(text)).map(link => link.getAttribute('href'));
     assert.deepEqual(label('Sign in'), ['/app/login']);
     assert.deepEqual(label('Join for free'), ['/app/signup']);
-    assert.deepEqual(label('Find your circle'), ['/app/signup']);
-    assert.deepEqual(label('Open your studio'), ['/app/studio']);
-    assert.deepEqual(label('Try the creator studio'), ['/app/studio']);
+    assert.deepEqual(label('Find your House'), ['/app/signup']);
+    assert.deepEqual(label('Open your Studio'), ['/app/studio']);
+    assert.deepEqual(label('Try the Studio'), ['/app/studio']);
     assert.deepEqual(label('Explore the platform'), ['/app']);
   });
 
@@ -960,7 +960,7 @@ describe('landing page (index.html, landing.js)', () => {
     const header = window.document.querySelector('.landing-header nav a.button');
     assert.equal(header.textContent.trim(), 'Open the app', 'the arrow icon span keeps its place');
     assert.ok(header.querySelector('[data-icon="arrow"]'));
-    assert.equal(window.document.querySelector('a[href="/app/studio"]').textContent.includes('studio'), true, 'creator links stay');
+    assert.equal(window.document.querySelector('a[href="/app/studio"]').textContent.includes('Studio'), true, 'creator links stay');
   });
 
   it('leaves the page alone for a visitor without a session', () => {

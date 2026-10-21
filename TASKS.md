@@ -2,6 +2,14 @@
 
 Orchestrator: Opus 5.5. Implementers and reviewers: Sonnet subagents. Checkers: Haiku subagents.
 
+## Done — House rebrand (status: `docs/HOUSE_REBRAND_STATUS.md`, rules: `docs/HOUSE_IDENTITY.md`)
+
+- [x] Pitch: back-to-top button in the footer, sound control always on screen
+- [x] Tier names, House defaults, legacy mapping, API error copy
+- [x] Copy in every view and the shell (three Sonnet agents, one area each)
+- [x] Black, stone and gold look with Apple-like headings; landing page; docs; 1,058 tests green
+- [ ] Owner pastes `supabase/migrations/20261020120000_house_identity.sql` into the live SQL editor (tier rows, six showcase Studios)
+
 ## Done — post formats: text, image, video (contract: `docs/POST_FORMATS.md`)
 
 - [x] Migration `20261005153611_post_formats.sql` (applied), media pipeline, editor, cards, reader

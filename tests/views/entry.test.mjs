@@ -1,4 +1,4 @@
-// The post page (/app/p/:id): header, words, gallery, film, the lock, actions, the conversation and more from the atelier.
+// The post page (/app/p/:id): header, words, gallery, film, the lock, actions, the conversation and more from the Studio.
 import { describe, it, before, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { installDom, uninstallDom, mountApp, confirmWith } from '../helpers/dom.mjs';
@@ -13,7 +13,7 @@ const callsTo = (fake, method) => fake.calls.filter(call => call.method === meth
 const entryRow = (fake, id) => fake.db.entries.find(row => row.id === id);
 const post = id => `/app/p/${id}`;
 
-// Extra published posts for an atelier, newest first, so the "more from this atelier" list has a next page.
+// Extra published posts for a Studio, newest first, so the "more from this Studio" list has a next page.
 function addPosts(fake, creatorId, count) {
   const source = fake.db.entries.find(row => row.creator_id === creatorId && row.status === 'published' && row.kind === 'text');
   for (let i = 0; i < count; i++) {
@@ -141,7 +141,7 @@ describe('the post page', () => {
       await open(guest(), post(E.linenWardrobe));
       const section = app.find('#view [data-more]');
       assert.equal(section.hidden, false);
-      assert.equal(text('#more-title'), 'More from this atelier');
+      assert.equal(text('#more-title'), 'More from this Studio');
       assert.equal(section.getAttribute('aria-labelledby'), 'more-title');
       const cards = [...section.querySelectorAll('[data-entry]')].map(card => card.dataset.entry);
       assert.equal(cards.length, 4);
@@ -196,7 +196,7 @@ describe('the post page', () => {
       api.fail('listTiers', 'tiers are down');
       await open(api, post(E.tailorsLedger));
       assert.equal(text('h1'), 'The tailor’s ledger');
-      assert.match(text('.post-lock'), /Essential/, 'falls back to the standard tier name');
+      assert.match(text('.post-lock'), /Member and above/, 'falls back to the standard tier name');
     });
   });
 
@@ -273,7 +273,7 @@ describe('the post page', () => {
       await open(api, post(E.cuttingRoom));
       assert.equal(text('h1'), 'Inside the cutting room');
       assert.match(text('.post-badges'), /Patron and above/);
-      assert.equal(text('.post-lock h2'), 'There is more inside the circle');
+      assert.equal(text('.post-lock h2'), 'There is more inside the House');
       assert.match(text('.post-lock .eyebrow'), /Patron and above/);
       assert.match(text('.post-lock'), /Your Friend membership does not include it yet/);
       assert.match(text('.post-lock'), /€19|19[.,]00/);
@@ -969,11 +969,11 @@ describe('the post page', () => {
 
     it('shows an error with a retry when the list cannot be read at all', async () => {
       const api = guest();
-      api.fail('creatorEntries', 'The atelier could not be reached.');
+      api.fail('creatorEntries', 'The Studio could not be reached.');
       await open(api, post(E.linenWardrobe));
       const section = app.find('#view [data-more]');
       assert.equal(section.hidden, false);
-      assert.match(section.textContent, /We could not load more from this atelier/);
+      assert.match(section.textContent, /We could not load more from this Studio/);
       api.fail('creatorEntries', null);
       await app.click('#view [data-more-retry]');
       assert.equal(app.document.querySelectorAll('#view [data-more] [data-entry]').length, 4);

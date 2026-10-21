@@ -27,7 +27,7 @@ function setUnread(fake, user, { notifications = 0, messages = 0 }) {
   for (let i = 0; i < messages; i++) fake.db.messages.push({ id: rowId(), creator_id: IDS.verne, member_id: user, sender: 'creator', body: 'Hello', created_at: at, read_at: null });
 }
 // A realtime row of the messages table.
-const messageRow = (over = {}) => ({ id: rowId(), creator_id: IDS.verne, member_id: IDS.member, sender: 'creator', body: 'Thank you for joining the circle.', created_at: '2026-10-07T09:30:00+00:00', read_at: null, ...over });
+const messageRow = (over = {}) => ({ id: rowId(), creator_id: IDS.verne, member_id: IDS.member, sender: 'creator', body: 'Thank you for joining the House.', created_at: '2026-10-07T09:30:00+00:00', read_at: null, ...over });
 
 // Every route of docs/ARCHITECTURE.md section 3, with concrete ids.
 const PATHS = [
@@ -68,7 +68,9 @@ describe('boot', () => {
 
     it('links the base styles and one stylesheet per feature area, and they exist', () => {
       const page = read('app.html');
-      const sheets = [...page.matchAll(/rel="stylesheet" href="([^"]+)"/g)].map(match => match[1]);
+      const linked = [...page.matchAll(/rel="stylesheet" href="([^"]+)"/g)].map(match => match[1]);
+      assert.ok(linked.some(href => href.startsWith('https://fonts.googleapis.com/css2?family=Hanken+Grotesk')), 'the House fonts load from Google Fonts');
+      const sheets = linked.filter(href => href.startsWith('/'));
       assert.deepEqual(sheets, ['/src/design.css', '/src/styles/base.css', '/src/styles/shell.css', ...['auth', 'feed', 'creator', 'entry', 'inbox', 'studio', 'editor', 'settings'].map(name => `/src/styles/${name}.css`)]);
       for (const sheet of sheets) assert.ok(existsSync(new URL(`..${sheet}`, import.meta.url)), sheet);
     });
@@ -223,7 +225,7 @@ describe('boot', () => {
   describe('the shell for a member', () => {
     it('offers every section, an account menu and no New post', async () => {
       await open({ api: PERSONAS.member(), path: '/app' });
-      assert.deepEqual(labels('.sidebar .nav-link'), ['Home', 'Discover', 'Library', 'Messages', 'Notifications', 'Memberships', 'Open your atelier', 'Settings']);
+      assert.deepEqual(labels('.sidebar .nav-link'), ['Home', 'Discover', 'Library', 'Messages', 'Notifications', 'Memberships', 'Open your Studio', 'Settings']);
       assert.deepEqual(links('.sidebar .side-nav'), ['/app', '/app/discover', '/app/library', '/app/messages', '/app/notifications', '/app/memberships', '/app/studio', '/app/settings']);
       assert.equal(app.exists('.new-post'), false);
       assert.deepEqual(labels('.mobile-bar .mobile-link'), ['Home', 'Discover', 'Library', 'Messages', 'You']);
@@ -283,7 +285,7 @@ describe('boot', () => {
       await close();
     });
 
-    it('lists My atelier and Studio in the account menu', async () => {
+    it('lists My Studio and Studio in the account menu', async () => {
       await open({ api: PERSONAS.creator() });
       assert.deepEqual(links('.account-menu .menu-panel'), ['/app/settings', '/app/c/verne-and-co', '/app/studio', '/app/memberships']);
       await close();
@@ -301,7 +303,7 @@ describe('boot', () => {
       await app.click(trigger);
       assert.equal(panel.hidden, false);
       const items = [...panel.querySelectorAll('[role="menuitem"]')];
-      assert.deepEqual(items.map(item => item.textContent.trim()), ['Settings', 'Open your atelier', 'Memberships', 'Sign out']);
+      assert.deepEqual(items.map(item => item.textContent.trim()), ['Settings', 'Open your Studio', 'Memberships', 'Sign out']);
       assert.equal(app.document.activeElement, items[0]);
       const key = (key, target = app.document.activeElement) => target.dispatchEvent(new app.window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
       key('ArrowDown'); assert.equal(app.document.activeElement, items[1]);
@@ -521,7 +523,7 @@ describe('boot', () => {
       setUnread(api, IDS.member, { messages: 1 });
       api.emit(IDS.member, 'message', messageRow());
       await tick(5);
-      assert.match(app.text('#toast'), /New message: Thank you for joining the circle\./);
+      assert.match(app.text('#toast'), /New message: Thank you for joining the House\./);
       assert.deepEqual([...app.document.querySelectorAll('.sidebar [data-badge="messages"]')].map(el => el.textContent), ['1']);
       await close();
     });
@@ -574,7 +576,7 @@ describe('boot', () => {
       await close();
     });
 
-    it('shows the studio to the owner of an atelier only', async () => {
+    it('shows the studio to the owner of a Studio only', async () => {
       await open({ api: PERSONAS.creator(), path: '/app/studio/new' });
       assert.equal(app.path, '/app/studio/new');
       assert.ok(app.exists('.new-post'));

@@ -1,6 +1,6 @@
 // The creator studio (docs/ARCHITECTURE.md section 3, /app/studio).
 //
-// A member without an atelier sees the "Open your atelier" flow (views/studio/open.js). The owner of an atelier sees the
+// A member without a Studio sees the "Open your Studio" flow (views/studio/open.js). The owner of a Studio sees the
 // dashboard: header, new post chooser, numbers, and four tabs (Published, Drafts, Members, Notes).
 //
 // The page itself loads at once; the numbers and each tab's list load after it, each with its own skeleton, error state and
@@ -67,7 +67,7 @@ function renderStudio(ctx, st) {
   return html`<section class="page studio" aria-labelledby="studio-title">
     <header class="page-head studio-head">
       <div class="studio-identity">${avatar(creator, { size: 64 })}<div><p class="eyebrow muted">Creator studio</p><h1 id="studio-title">${creator.name}</h1>${line && html`<p class="studio-line muted">${line}</p>`}</div></div>
-      <div class="studio-head-actions">${button('View public page', { variant: 'secondary', size: 'small', href: paths.creator(creator.slug), icon: 'eye' })}${button('Edit atelier', { variant: 'secondary', size: 'small', href: paths.studioSettings(), icon: 'edit' })}</div>
+      <div class="studio-head-actions">${button('View public page', { variant: 'secondary', size: 'small', href: paths.creator(creator.slug), icon: 'eye' })}${button('Edit Studio', { variant: 'secondary', size: 'small', href: paths.studioSettings(), icon: 'edit' })}</div>
     </header>
     ${newPostChooser()}
     <section class="section studio-overview" aria-labelledby="studio-overview-title">
@@ -75,7 +75,7 @@ function renderStudio(ctx, st) {
       <div data-region="stats" aria-live="polite">${renderStats(st.stats)}</div>
     </section>
     <section class="section studio-content" aria-labelledby="studio-content-title">
-      <h2 id="studio-content-title" class="visually-hidden">Your posts, circle and notes</h2>
+      <h2 id="studio-content-title" class="visually-hidden">Your posts, House and notes</h2>
       ${tabs(st)}
       <div id="studio-panel" class="studio-panel" role="tabpanel" aria-labelledby="studio-tab-${st.tab}" tabindex="-1" data-region="panel">${panelMarkup(st, st.tab, ctx)}</div>
     </section>
@@ -343,7 +343,7 @@ function mountStudio(el, ctx, st) {
     setBusy(submit, true);
     try {
       const note = await api.postNote(creatorId, text);
-      toast('Note posted. Your circle has been told.', { tone: 'success' });
+      toast('Note posted. Your House has been told.', { tone: 'success' });
       if (!alive) return;
       notes.items = [note, ...notes.items.filter(other => other.id !== note.id)];
       if (notes.status !== 'ready') notes.extra.push(note);
@@ -367,7 +367,7 @@ function mountStudio(el, ctx, st) {
     const notes = st.notes;
     const note = notes.items.find(item => item.id === control.dataset.deleteNote);
     if (!note) return;
-    const confirmed = await confirmDialog({ title: 'Delete this note?', text: 'It is removed for everyone in your circle. This cannot be undone.', confirmLabel: 'Delete note', tone: 'danger' });
+    const confirmed = await confirmDialog({ title: 'Delete this note?', text: 'It is removed for everyone in your House. This cannot be undone.', confirmLabel: 'Delete note', tone: 'danger' });
     if (!confirmed || !alive) return;
     setBusy(control, true);
     try {
@@ -452,12 +452,12 @@ function mountStudio(el, ctx, st) {
 // --- The view ------------------------------------------------------------------------------
 
 export default {
-  title: (ctx, data) => (data?.mode === 'studio' ? 'Studio' : 'Open your atelier'),
+  title: (ctx, data) => (data?.mode === 'studio' ? 'Studio' : 'Open your Studio'),
   auth: 'required',
 
   async load(ctx) {
     const { store } = ctx;
-    // Viewer data that failed to load must not be mistaken for "no atelier": read it again, and show the error if it fails again.
+    // Viewer data that failed to load must not be mistaken for "no Studio": read it again, and show the error if it fails again.
     if (!store.state.myCreator && store.state.viewerError) await store.reloadViewer();
     const creator = store.state.myCreator;
     if (!creator) return { mode: 'open' };

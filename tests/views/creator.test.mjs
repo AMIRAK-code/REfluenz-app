@@ -1,4 +1,4 @@
-// The atelier page (/app/c/:slug), its join and report dialogs, and the memberships page (/app/memberships).
+// The Studio page (/app/c/:slug), its join and report dialogs, and the memberships page (/app/memberships).
 import { describe, it, before, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { installDom, uninstallDom, mountApp, tick, IntersectionObserverStub } from '../helpers/dom.mjs';
@@ -13,7 +13,7 @@ const callsTo = (fake, method) => fake.calls.filter(call => call.method === meth
 const creatorRow = (fake, id) => fake.db.creators.find(row => row.id === id);
 const tierRow = (fake, creatorId, tierId) => fake.db.creator_tiers.find(row => row.creator_id === creatorId && row.tier_id === tierId);
 
-// Extra published posts for an atelier, newest first, so a page of 12 has a next page.
+// Extra published posts for a Studio, newest first, so a page of 12 has a next page.
 function addPosts(fake, creatorId, count, { kind = 'text', access = 'public' } = {}) {
   const source = fake.db.entries.find(row => row.creator_id === creatorId && row.status === 'published');
   for (let i = 0; i < count; i++) {
@@ -23,7 +23,7 @@ function addPosts(fake, creatorId, count, { kind = 'text', access = 'public' } =
   fake.refresh();
 }
 
-// More circles for the seeded member, each at its own atelier (the api returns the whole list).
+// More Houses for the seeded member, each at its own Studio (the api returns the whole list).
 function addMemberships(fake, count) {
   for (let i = 0; i < count; i++) {
     const id = `2a000000-0000-4000-8000-${String(i + 1).padStart(12, '0')}`;
@@ -79,14 +79,14 @@ describe('creator and memberships views', () => {
       assert.match(app.text('.atelier-state'), /Joining is free during early access/);
       assert.equal(cards().length, 5);
       assert.equal(app.find('#view').querySelectorAll('.is-locked').length, 3, 'essential, premium and signature posts are locked for a guest');
-      assert.match(app.text('.atelier-lock-note'), /3 posts here are for circle members\. Joining is free during early access\./);
+      assert.match(app.text('.atelier-lock-note'), /3 posts here are for House members\. Joining is free during early access\./);
     });
 
     it('has landmarks, labelled tabs and no message button on a showcase atelier', async () => {
       await open(guest(), '/app/c/atelier-solene');
       assert.equal(app.find('#view section').getAttribute('aria-labelledby'), 'atelier-name');
       assert.equal(app.find('#atelier-name').tagName, 'H1');
-      assert.equal(app.find('[role="tablist"]').getAttribute('aria-label'), 'Atelier sections');
+      assert.equal(app.find('[role="tablist"]').getAttribute('aria-label'), 'Studio sections');
       assert.deepEqual([...app.document.querySelectorAll('[role="tab"]')].map(tab => tab.getAttribute('aria-selected')), ['true', 'false', 'false']);
       assert.equal(app.find('#atelier-panel-membership').hidden, true);
       assert.ok(!app.exists('[data-action="message"]'));
@@ -97,7 +97,7 @@ describe('creator and memberships views', () => {
       await open(guest(), '/app/c/verne-and-co');
       await app.click('[data-action="join"]');
       assert.ok(dialogOpen());
-      assert.match(dialog().textContent, /Sign in to join Verne & Co’s circle\. It is free during early access\./);
+      assert.match(dialog().textContent, /Sign in to join Verne & Co’s House\. It is free during early access\./);
       assert.ok(app.exists('#modal a[href^="/app/login?next="]'));
       assert.equal(callsTo(app.api, 'join').length, 0);
       await app.click('#modal [data-modal-close]');
@@ -107,7 +107,7 @@ describe('creator and memberships views', () => {
       await app.click('#modal [data-modal-close]');
 
       await app.click('[data-action="report"]');
-      assert.match(dialog().textContent, /Sign in to report an atelier\./);
+      assert.match(dialog().textContent, /Sign in to report a Studio\./);
       await app.click('#modal [data-modal-close]');
 
       await app.click('.atelier-actions [data-follow]');
@@ -156,17 +156,17 @@ describe('creator and memberships views', () => {
   describe('not found and failures', () => {
     it('shows a friendly page for an address that has no atelier', async () => {
       await open(guest(), '/app/c/nobody-here');
-      assert.match(app.text('#view h1'), /We could not find that atelier/);
-      assert.equal(app.document.title, 'Atelier not found — REFLUENZ');
+      assert.match(app.text('#view h1'), /We could not find that Studio/);
+      assert.equal(app.document.title, 'Studio not found — REFLUENZ');
       assert.equal(app.find('#view .empty a').getAttribute('href'), '/app/discover');
       assert.equal(callsTo(app.api, 'creatorEntries').length, 0);
     });
 
     it('shows an error with Retry when the atelier cannot be loaded, and recovers', async () => {
       const api = guest();
-      api.fail('getCreatorBySlug', 'We could not reach the atelier. Check your connection.');
+      api.fail('getCreatorBySlug', 'We could not reach the Studio. Check your connection.');
       await open(api, '/app/c/verne-and-co');
-      assert.match(app.text('#view .error-state'), /We could not reach the atelier/);
+      assert.match(app.text('#view .error-state'), /We could not reach the Studio/);
       assert.ok(app.exists('#view [data-retry]'), 'the error offers Retry');
       api.fail('getCreatorBySlug', null);
       await app.router.reload();
@@ -207,7 +207,7 @@ describe('creator and memberships views', () => {
       assert.equal(current.dataset.tier, 'essential');
       assert.match(current.textContent, /Your tier/);
       assert.ok(current.querySelector('[data-action="leave"]'));
-      assert.match(app.text('.atelier-lead'), /You are in Atelier Solene’s circle at Friend/);
+      assert.match(app.text('.atelier-lead'), /You are in Atelier Solene’s House at Friend/);
       assert.match(app.text('.tier-card[data-tier="premium"]'), /Switch to Patron/);
     });
 
@@ -225,7 +225,7 @@ describe('creator and memberships views', () => {
       assert.ok(!dialogOpen());
       assert.deepEqual(callsTo(api, 'join').at(-1).args, [IDS.verne, 'premium']);
       assert.equal(api.db.memberships.some(row => row.user_id === IDS.member && row.creator_id === IDS.verne && row.tier === 'premium'), true);
-      assert.match(toastText(), /Welcome to Verne & Co’s circle\./);
+      assert.match(toastText(), /Welcome to Verne & Co’s House\./);
       assert.equal(stat('members'), '1');
       assert.match(app.text('.atelier-state'), /Member at Supporter/);
       assert.ok(app.exists('[data-action="manage"]'));
@@ -278,7 +278,7 @@ describe('creator and memberships views', () => {
       const api = member();
       await open(api, '/app/c/atelier-solene?tab=membership');
       await app.click('[data-action="leave"]');
-      assert.match(dialog().textContent, /Leave Atelier Solene’s circle\?/);
+      assert.match(dialog().textContent, /Leave Atelier Solene’s House\?/);
       await app.click('#modal [data-confirm="no"]');
       assert.equal(callsTo(api, 'leave').length, 0);
       assert.equal(app.store.state.memberships.has(IDS.solene), true);
@@ -295,7 +295,7 @@ describe('creator and memberships views', () => {
       await app.click('#modal [data-confirm="yes"]');
       assert.equal(app.store.state.memberships.has(IDS.solene), false);
       assert.equal(api.db.memberships.some(row => row.user_id === IDS.member && row.creator_id === IDS.solene), false);
-      assert.match(toastText(), /You have left Atelier Solene’s circle\./);
+      assert.match(toastText(), /You have left Atelier Solene’s House\./);
       assert.equal(stat('members'), '1');
       assert.ok(app.exists('.atelier-actions [data-action="join"]'));
       await app.click('#atelier-tab-posts');
@@ -404,8 +404,8 @@ describe('creator and memberships views', () => {
     it('gets New post and Edit atelier instead of follow, join, message and report', async () => {
       await open(owner(), '/app/c/verne-and-co');
       assert.equal(app.find('.atelier-primary a[href="/app/studio/new"]').textContent.trim(), 'New post');
-      assert.equal(app.find('.atelier-primary a[href="/app/studio/settings"]').textContent.trim(), 'Edit atelier');
-      assert.match(app.text('.atelier-state'), /This is your atelier/);
+      assert.equal(app.find('.atelier-primary a[href="/app/studio/settings"]').textContent.trim(), 'Edit Studio');
+      assert.match(app.text('.atelier-state'), /This is your Studio/);
       for (const selector of ['[data-follow]', '[data-action="join"]', '[data-action="manage"]', '[data-action="message"]', '[data-action="report"]']) assert.ok(!app.exists(selector), selector);
       assert.ok(app.exists('[data-action="copy"]'));
       assert.deepEqual(titles(), ['First draft habits']);
@@ -479,9 +479,9 @@ describe('creator and memberships views', () => {
       assert.match(about, /Writing/);
       assert.match(about, /1 post/);
       assert.match(about, /From €9 \/ month\. Free during early access\. Prices apply once payments launch\./);
-      assert.ok(!/showcase atelier/.test(about));
+      assert.ok(!/showcase Studio/.test(about));
       await open(guest(), '/app/c/casa-verano?tab=about');
-      assert.match(app.text('#atelier-panel-about'), /showcase atelier, curated by REFLUENZ/);
+      assert.match(app.text('#atelier-panel-about'), /showcase Studio, curated by REFLUENZ/);
     });
 
     it('renders safe external links only, opening web links in a new tab without leaking the opener', async () => {
@@ -559,7 +559,7 @@ describe('creator and memberships views', () => {
       assert.equal(api.db.reports.length, 0);
       await app.submit('#report-form', { reason: 'spam', details: 'Posts the same offer every day.' });
       assert.ok(!dialogOpen());
-      assert.match(toastText(), /Thank you\. We will review this atelier\./);
+      assert.match(toastText(), /Thank you\. We will review this Studio\./);
       assert.equal(api.db.reports.length, 1);
       assert.equal(api.db.reports[0].target_type, 'creator');
       assert.equal(api.db.reports[0].target_id, IDS.verne);
@@ -670,8 +670,8 @@ describe('creator and memberships views', () => {
       assert.match(row.querySelector('.membership-since').textContent, /Member since 5 Aug 2026\. Free during early access\./);
       assert.equal(row.querySelector('a.button').getAttribute('href'), '/app/c/atelier-solene?tab=membership');
       assert.equal(row.querySelector('a.button').getAttribute('aria-label'), 'Manage your membership at Atelier Solene');
-      assert.equal(row.querySelector('[data-leave]').getAttribute('aria-label'), 'Leave Atelier Solene’s circle');
-      assert.match(app.text('[data-summary="count"]'), /1 circle/);
+      assert.equal(row.querySelector('[data-leave]').getAttribute('aria-label'), 'Leave Atelier Solene’s House');
+      assert.match(app.text('[data-summary="count"]'), /1 House/);
       assert.match(app.text('[data-summary="total"]'), /€9/);
       assert.match(app.text('.membership-free'), /Nothing is charged during early access\./);
       assert.match(app.text('.page-sub'), /free during early access/);
@@ -684,7 +684,7 @@ describe('creator and memberships views', () => {
       api.refresh();
       await open(api);
       assert.equal(rows().length, 2);
-      assert.match(app.text('[data-summary="count"]'), /2 circles/);
+      assert.match(app.text('[data-summary="count"]'), /2 Houses/);
       assert.match(app.text('[data-summary="total"]'), /€28 \/ month/);
       assert.deepEqual(rows().map(row => row.querySelector('h2 a').textContent), ['Casa Verano', 'Atelier Solene'], 'newest first');
 
@@ -695,7 +695,7 @@ describe('creator and memberships views', () => {
 
     it('shows what to do next when there are no circles yet', async () => {
       await open(createFakeApi({ signedIn: IDS.fan2 }));
-      assert.match(app.text('#view .empty'), /A circle starts with one connection/);
+      assert.match(app.text('#view .empty'), /A House starts with one connection/);
       assert.equal(app.find('#view .empty a').getAttribute('href'), '/app/discover');
       assert.ok(!app.exists('.membership-summary'));
     });
@@ -704,7 +704,7 @@ describe('creator and memberships views', () => {
       const api = member();
       await open(api);
       await app.click('[data-leave]');
-      assert.match(dialog().textContent, /Leave Atelier Solene’s circle\?/);
+      assert.match(dialog().textContent, /Leave Atelier Solene’s House\?/);
       await app.click('#modal [data-confirm="no"]');
       assert.equal(rows().length, 1);
       assert.equal(callsTo(api, 'leave').length, 0);
@@ -714,8 +714,8 @@ describe('creator and memberships views', () => {
       assert.deepEqual(callsTo(api, 'leave').at(-1).args, [IDS.solene]);
       assert.equal(api.db.memberships.some(row => row.user_id === IDS.member), false);
       assert.equal(app.store.state.memberships.size, 0);
-      assert.match(toastText(), /You have left Atelier Solene’s circle\./);
-      assert.match(app.text('#view .empty'), /A circle starts with one connection/);
+      assert.match(toastText(), /You have left Atelier Solene’s House\./);
+      assert.match(app.text('#view .empty'), /A House starts with one connection/);
       assert.equal(app.document.activeElement.id, 'memberships-heading', 'focus moves to the heading');
     });
 
@@ -747,7 +747,7 @@ describe('creator and memberships views', () => {
       addMemberships(api, 25);
       await open(api);
       assert.equal(rows().length, 20);
-      assert.match(app.text('[data-summary="count"]'), /26 circles/);
+      assert.match(app.text('[data-summary="count"]'), /26 Houses/);
       const more = app.find('#memberships-more');
       assert.equal(more.textContent.trim(), 'Show more (6)');
       await app.click(more);
@@ -780,7 +780,7 @@ describe('creator and memberships views', () => {
       assert.ok(app.exists('.membership-avatar .avatar--initials'));
       await app.click('[data-leave]');
       assert.equal(dialog().querySelector('img'), null);
-      assert.equal(dialog().querySelector('#modal-title').textContent, `Leave ${HOSTILE}’s circle?`);
+      assert.equal(dialog().querySelector('#modal-title').textContent, `Leave ${HOSTILE}’s House?`);
     });
 
     it('is reached from the atelier page after joining', async () => {

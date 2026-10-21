@@ -380,7 +380,7 @@ export function mountEditor(el, ctx, data, s) {
       video,
       mediaNote,
       paragraphs: paragraphs(values.body),
-      lockNote: values.access === 'public' ? '' : `Members of your ${tierName ?? 'circle'} circle and above read the rest. Everyone else sees the opening paragraph, a blurred preview and an invitation to join.`
+      lockNote: values.access === 'public' ? '' : `Members of your House at the ${tierName ?? 'Member'} level and above read the rest. Everyone else sees the opening paragraph, a blurred preview and an invitation to join.`
     };
   }
 
@@ -426,7 +426,7 @@ export function mountEditor(el, ctx, data, s) {
     if (on) $('#editor-status')?.focus?.({ preventScroll: true });
   }
 
-  const doneMessage = status => (status === 'draft' ? (s.live ? 'Moved to your drafts.' : 'Draft saved in your studio.') : s.live ? 'Post updated.' : 'Post published.');
+  const doneMessage = status => (status === 'draft' ? (s.live ? 'Moved to your drafts.' : 'Draft saved in your Studio.') : s.live ? 'Post updated.' : 'Post published.');
 
   async function save(event) {
     event.preventDefault();
@@ -467,7 +467,7 @@ export function mountEditor(el, ctx, data, s) {
       s.finished = true;
       s.dirty = false;
       s.uploaded.clear();
-      say(status === 'published' ? 'Saved. Opening your post…' : 'Saved. Opening your studio…');
+      say(status === 'published' ? 'Saved. Opening your post…' : 'Saved. Opening your Studio…');
       toast(doneMessage(status), { tone: 'success' });
       const target = status === 'draft' ? paths.studio({ tab: 'drafts' }) : paths.entry(id);
       Promise.resolve(ctx.navigate(target, { force: true })).then(went => {

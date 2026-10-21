@@ -1,10 +1,10 @@
-# REFLUENZ — The Digital Atelier
+# REFLUENZ — Your work. Your House. Your rules.
 
-A creator-membership platform in the spirit of Patreon, with an editorial identity. Anyone can browse public work without an account. A free account lets you follow creators, save and like posts, comment, message creators and join a creator's circle at one of their tiers. Any member can open **one atelier** (a creator page), publish **text, image or video** posts (public, or for a tier and above), name and price their three tiers, see their members and numbers, and post circle notes.
+A premium creator-membership platform for work of every kind, in the spirit of Patreon, with an editorial identity: **the House** (brand and copy rules in [docs/HOUSE_IDENTITY.md](docs/HOUSE_IDENTITY.md)). Anyone can browse public work without an account. A free account lets you follow creators, save and like posts, comment, message creators and join a creator's **House** at one of its three levels, **Member**, **Private** or **Black Label**. Any member can open **one Studio** (a creator page), publish **text, image or video** posts (public, or for a level and above), name and price their three levels, see their members and numbers, and post House notes.
 
 The visual system follows the landing page: warm white, black, restrained bronze, square geometry, fine rules, monochrome editorial imagery and large, tightly set headings.
 
-**Payments are not live.** Joining a circle is free during early access and the interface says so wherever a price is shown. See [Payments](#payments-not-live-yet).
+**Payments are not live.** Joining a House is free during early access and the interface says so wherever a price is shown. See [Payments](#payments-not-live-yet).
 
 ## Run
 
@@ -27,16 +27,16 @@ Vercel builds with `npm run build` and serves `dist/`. `vercel.json` rewrites `/
 | --- | --- |
 | `/app` | Home: latest from everyone for guests; Following, filters and a rail of suggestions for members |
 | `/app/discover` | Search, categories, kinds, sort |
-| `/app/c/:slug` | An atelier: posts, membership tiers, about; `?join=1` opens the join dialog |
+| `/app/c/:slug` | A Studio: posts, membership levels, about; `?join=1` opens the join dialog |
 | `/app/p/:id` | A post: text, image gallery or video, likes, comments, share, report; locked posts show a blurred preview |
-| `/app/library`, `/app/memberships` | Saved posts (with export), circles you belong to |
+| `/app/library`, `/app/memberships` | Saved posts (with export), the Houses you belong to |
 | `/app/messages`, `/app/notifications` | Conversations and activity, live |
-| `/app/studio` | Open your atelier, then numbers, published, drafts, members (CSV), circle notes |
+| `/app/studio` | Open your Studio, then numbers, published, drafts, members (CSV), House notes |
 | `/app/studio/new`, `/app/studio/edit/:id` | The post editor (text, image, video) |
-| `/app/studio/settings`, `/app/settings` | Atelier and tiers; profile, account, notifications, data export, delete account |
+| `/app/studio/settings`, `/app/settings` | Studio and levels; profile, account, notifications, data export, delete account |
 | `/app/login`, `/app/signup`, `/app/forgot`, `/app/reset`, `/app/welcome` | Sign in, create an account, recover, welcome tour |
 
-Showcase ateliers (REFLUENZ's own sample content, no owner) carry a "Showcase" badge, can be followed, joined and read, but not messaged.
+Showcase Studios (REFLUENZ's own sample content across fields, no owner) carry a "Showcase" badge, can be followed, joined and read, but not messaged.
 
 ## Architecture
 
@@ -62,17 +62,17 @@ Rules the code keeps: markup is built with the escaping `html` tag (never string
 ## Backend: Supabase
 
 - Project: `refluenz` (`gughgswzovomkxjlqvsr`, eu-west-1). The URL and publishable key are in `src/config.js`; they are public by design, every table is protected by row level security.
-- Schema, policies, functions and seed data are in `supabase/migrations/`, in the order they were applied. The latest are `20261006231142_platform_v2.sql` and `20261006231241_platform_v2_indexes.sql`.
+- Schema, policies, functions and seed data are in `supabase/migrations/`, in the order they were applied. The latest is `20261020120000_house_identity.sql` (House tier names and defaults, showcase Studios across fields); it is safe to run more than once, and until it runs the client shows the House defaults in place of the old ones.
 - `src/api/*` is the only code that talks to Supabase. Views get plain camelCase objects and friendly error messages.
 
 | Table | What it holds |
 | --- | --- |
 | `profiles`, `user_settings` | Name, bio, website, avatar; preferences and notification choices (created on sign-up) |
-| `creators`, `creator_tiers`, `tiers` | Ateliers (one per owner; showcase ateliers have none); each atelier's name, price, perks and open/closed state for the shared ladder `essential` < `premium` < `signature` |
+| `creators`, `creator_tiers`, `tiers` | Studios (one per owner; showcase Studios have none); each Studio's name, price, perks and open/closed state for the shared ladder `essential` < `premium` < `signature` |
 | `entries`, `entry_bodies`, `entry_media`, `entry_reads` | Post metadata and the free first-paragraph excerpt; the full text (readable only with the right tier); image and video files; read counts |
 | `follows`, `bookmarks`, `likes`, `comments`, `memberships` | Personal lists and social data |
-| `messages`, `circle_notes`, `notifications` | Private member and creator threads, circle notes, the activity feed (realtime) |
-| `reports`, `app_private.rate_log` | Reports of posts, comments and ateliers; rate limits |
+| `messages`, `circle_notes`, `notifications` | Private member and creator threads, House notes (`circle_notes`), the activity feed (realtime) |
+| `reports`, `app_private.rate_log` | Reports of posts, comments and Studios; rate limits |
 
 Storage buckets: `entry-media` (private, signed links), `previews` (public, tiny blurred teasers), `avatars` and `covers` (public).
 
@@ -84,18 +84,18 @@ Storage buckets: `entry-media` (private, signed links), `previews` (public, tiny
 
    Confirmation and password-reset emails link back to `/app.html` on the current origin. The app replaces that address with the clean path (`/app`, or `/app/reset` after a recovery link). An expired or reused link lands on `/app/login` with a "Send me a new link" action.
 2. **Email.** The built-in sender is rate-limited. Configure custom SMTP before launch.
-3. **Delete-account edge function.** Account deletion calls `supabase/functions/delete-account`, which verifies the caller's token itself, removes the person's files (entry-media, previews, covers, avatars), their atelier and finally the user. It must be deployed with JWT verification **off**, because the project's publishable key is not a JWT:
+3. **Delete-account edge function.** Account deletion calls `supabase/functions/delete-account`, which verifies the caller's token itself, removes the person's files (entry-media, previews, covers, avatars), their Studio and finally the user. It must be deployed with JWT verification **off**, because the project's publishable key is not a JWT:
 
    ```sh
    supabase functions deploy delete-account --project-ref gughgswzovomkxjlqvsr --no-verify-jwt
    ```
 
    It uses the `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` that Supabase injects into every function; set nothing by hand. It answers CORS only for `https://refluenz.com` and `localhost` / `127.0.0.1`; add your preview origins to `ORIGINS` in `index.ts` if you test deletion there. Until it is deployed, "Delete my account" in Settings fails with an error message and nothing is deleted.
-4. **Migrations.** Apply `supabase/migrations/*.sql` in order to a new project. The two `platform_v2` migrations are already applied to production.
+4. **Migrations.** Apply `supabase/migrations/*.sql` in order to a new project. The two `platform_v2` migrations are already applied to production; `house_identity` is applied by pasting it into the SQL editor of the live project.
 
 ## Payments: not live yet
 
-Joining a circle is free during early access, and the UI says so. Membership rows are written by the member directly. To charge for tiers, add Stripe (Checkout plus a webhook running with the service role), drop the member-side `join circle` and `change tier` insert and update policies so only the webhook writes `memberships`, and replace the "free during early access" notes in the views. The paywall itself (`entry_bodies` row level security) needs no change.
+Joining a House is free during early access, and the UI says so. Membership rows are written by the member directly. To charge for tiers, add Stripe (Checkout plus a webhook running with the service role), drop the member-side `join circle` and `change tier` insert and update policies so only the webhook writes `memberships`, and replace the "free during early access" notes in the views. The paywall itself (`entry_bodies` row level security) needs no change.
 
 ## Testing
 
@@ -111,7 +111,7 @@ npm run build
 - `tests/views/*.test.mjs` mount each page in happy-dom against the fake api: guest, member and owner rendering, each action on its happy and failure path, empty states, pagination, hostile strings.
 - `tests/links.test.mjs` checks that every link on every page leads to a route.
 
-Row level security was additionally verified with SQL role simulation against the live project: gated bodies stay hidden without the right tier, drafts are private, ateliers cannot be edited by others, and creators can reply only inside threads a member started.
+Row level security was additionally verified with SQL role simulation against the live project: gated bodies stay hidden without the right tier, drafts are private, Studios cannot be edited by others, and creators can reply only inside threads a member started.
 
 Browser checks (real layout at 375 px, drag and drop, canvas and video preparation, playback of signed media) are not covered by the unit tests and are done by hand before a release.
 

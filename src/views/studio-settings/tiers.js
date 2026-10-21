@@ -1,4 +1,4 @@
-// The "Tiers" tab of /app/studio/settings: the three levels of the circle (Essential, Premium, Signature) as editable cards.
+// The "Tiers" tab of /app/studio/settings: the three levels of the House (Member, Private, Black Label) as editable cards.
 // Each tier is saved on its own through api.updateTier. Typed text lives in `data.tiers.drafts`, so a failed save or a redraw
 // never loses it. Limits and wording come from the api (src/api/util.js cleanTier).
 
@@ -11,7 +11,7 @@ import { focusFirstInvalid, formError, formNote, messenger, reason, refreshCount
 export const MAX_PERKS = 8;
 const LIMITS = { name: 40, description: 280, perk: 80 };
 export const LEAVE_MESSAGE = 'You have unsaved changes to your tiers. Leave without saving?';
-const EARLY_ACCESS = 'Payments are not live yet. Joining is free during early access, so nothing is charged to your members. The prices you set are shown on your atelier and apply once payments launch.';
+const EARLY_ACCESS = 'Payments are not live yet. Joining is free during early access, so nothing is charged to your members. The prices you set are shown on your Studio and apply once payments launch.';
 
 const trimmed = value => String(value ?? '').trim();
 
@@ -46,7 +46,7 @@ export async function loadTiers(ctx, creator) {
   // The numbers only add the member counts: a failure there must not hide the tiers.
   const [list, stats] = await Promise.all([api.listTiers(creator.id), api.creatorStats(creator.id).catch(() => null)]);
   const tiers = (list || []).filter(tier => TIER_IDS.includes(tier.id)).sort((a, b) => a.level - b.level);
-  if (!tiers.length) throw Error('We could not find the tiers of your atelier. Reload the page and try again.');
+  if (!tiers.length) throw Error('We could not find the tiers of your Studio. Reload the page and try again.');
   const counter = { next: 1 };
   return {
     creator, tiers, stats, counter,

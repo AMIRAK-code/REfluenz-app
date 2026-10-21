@@ -1,4 +1,4 @@
-// CSV export of the circle (studio, Members tab). Pure helpers plus the one function that touches the document.
+// CSV export of the House (studio, Members tab). Pure helpers plus the one function that touches the document.
 
 // A spreadsheet runs a cell that starts with = + - @ (or a tab / carriage return) as a formula, and a member can choose any
 // display name. Such cells get a leading apostrophe, which spreadsheets show as plain text. Every cell is quoted.
@@ -22,7 +22,7 @@ export function membersCsv(members = []) {
   return `${rows.join('\r\n')}\r\n`;
 }
 
-export const csvFilename = (slug, now = new Date()) => `refluenz-circle-${String(slug || 'atelier').replace(/[^a-z0-9-]/gi, '').slice(0, 40) || 'atelier'}-${now.toISOString().slice(0, 10)}.csv`;
+export const csvFilename = (slug, now = new Date()) => `refluenz-house-${String(slug || 'studio').replace(/[^a-z0-9-]/gi, '').slice(0, 40) || 'studio'}-${now.toISOString().slice(0, 10)}.csv`;
 
 // Hands the text to the browser as a file. The byte order mark lets Excel read accents correctly.
 export function downloadCsv(filename, text) {

@@ -810,7 +810,7 @@ describe('core', () => {
         assert.ok(card.querySelector('.entry-cover').classList.contains('is-preview'));
         assert.match(card.querySelector('img').getAttribute('src'), /previews\/c\/e\/p\.webp$/);
         assert.equal(card.querySelector('img[data-cover]'), null);
-        assert.equal(card.querySelector('.lock-badge').textContent, 'Premium');
+        assert.equal(card.querySelector('.lock-badge').textContent, 'Private');
       });
 
       it('shows the preset for a locked media post that has no preview', () => {

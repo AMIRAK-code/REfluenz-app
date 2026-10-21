@@ -10,7 +10,7 @@
 .side-nav { display: flex; flex-direction: column; gap: 2px; }
 .nav-link { position: relative; display: flex; align-items: center; gap: 13px; min-height: 44px; padding: 10px 12px; font-size: 14px; color: var(--muted); border-left: 2px solid transparent; }
 .nav-link:hover { color: var(--ink); background: var(--wash); }
-.nav-link.is-active { color: var(--ink); background: #eae7e2; border-left-color: var(--bronze); }
+.nav-link.is-active { color: var(--ink); background: var(--wash); border-left-color: var(--bronze); }
 .nav-count { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; background: var(--bronze); color: var(--white); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
 .new-post { margin: 0 4px 22px; }
 .new-post-button { width: 100%; justify-content: center; gap: 10px; }
@@ -92,7 +92,7 @@
 
 
 /* High-contrast shell */
-/* Dark sidebar: a strong anchor against the warm paper content. */
+/* Black sidebar: the House anchor against the stone content, with gold for what is active. */
 .sidebar { background: var(--night); color: var(--night-text); border-right-color: var(--night); }
 .sidebar .wordmark, .sidebar-wordmark { color: var(--white); }
 .sidebar .muted, .sidebar .eyebrow:not(.bronze), .sidebar-caption { color: var(--night-muted); }

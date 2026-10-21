@@ -87,7 +87,7 @@ export function createEntries(ctx, {purge, circle}) {
 
     // Uploads the picture only; setEntryCover attaches it. Returns the object path.
     async uploadEntryCover(creatorId, blob) {
-      if (!isUuid(creatorId)) throw Error('That atelier could not be found.');
+      if (!isUuid(creatorId)) throw Error('That Studio could not be found.');
       return putImage(client, COVER_BUCKET, String(creatorId).toLowerCase(), blob, {uuid: ctx.uuid, ...COVER_IMAGE});
     },
     // Attaches an uploaded cover (or clears it with null) and removes the file it replaces.

@@ -112,7 +112,7 @@ const followedLabel = count => (count > 0 ? `You follow ${count} ${count === 1 ?
 const COPY = [
   { heading: 'Welcome to REFLUENZ.', lede: 'Tell us what to call you. Everything here is optional.' },
   { heading: 'What draws you in?', lede: 'We use your choices to put the creators you may like first.' },
-  { heading: 'Follow a few creators.', lede: 'Their new work will gather on your home page. Joining a circle is free during early access.' }
+  { heading: 'Follow a few creators.', lede: 'Their new work will gather on your home page. Joining a House is free during early access.' }
 ];
 
 // --- Data -------------------------------------------------------------------------

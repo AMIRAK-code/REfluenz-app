@@ -127,7 +127,7 @@ export default {
         <div>
           <p class="eyebrow muted">Discover</p>
           <h1>Find creators and their work</h1>
-          <p class="page-sub">Search by name, topic or title, or browse by category. Joining a creator’s circle is free during early access.</p>
+          <p class="page-sub">Search by name, topic or title, or browse by category. Joining a creator’s House is free during early access.</p>
         </div>
       </header>
       <form class="discover-search" role="search" action="${paths.discover()}" method="get" data-discover-form>
@@ -204,7 +204,7 @@ export default {
     const creatorsEmpty = () => emptyState({
       icon: 'members',
       title: state.category ? `No ${state.category} creators yet` : 'No creators yet',
-      text: state.category ? 'Try another category, or clear the filter to see every creator.' : 'Creators will appear here as they open their ateliers.',
+      text: state.category ? 'Try another category, or clear the filter to see every creator.' : 'Creators will appear here as they open their Studios.',
       action: state.category ? button('Clear filters', { variant: 'secondary', attrs: { 'data-discover-clear': true } }) : undefined
     });
     const entriesEmpty = () => emptyState({

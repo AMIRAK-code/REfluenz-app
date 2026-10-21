@@ -1,7 +1,7 @@
 // The application shell (docs/ARCHITECTURE.md 5.6): sidebar, topbar, mobile bar, menus, badges and the listeners that
 // serve the whole page (follow / save / like buttons, sign-out, search, new messages).
 //
-// The chrome is drawn again only when something it shows changes (account, name, picture, atelier). The active link,
+// The chrome is drawn again only when something it shows changes (account, name, picture, Studio). The active link,
 // the unread badges, the sign-in links and the search box are patched in place, so a menu that is open, or text that
 // is being typed, survives a route change or a realtime update.
 
@@ -42,8 +42,8 @@ function accountMenu(model) {
   const panel = html`<div class="menu-heading" role="presentation"><strong>${model.name}</strong><span class="muted">${model.email}</span></div>
     <a class="menu-item" role="menuitem" href="${paths.settings()}">${icon('settings', 16)}<span>Settings</span></a>
     ${model.creator
-      ? html`<a class="menu-item" role="menuitem" href="${paths.creator(model.creator.slug)}">${icon('user', 16)}<span>My atelier</span></a><a class="menu-item" role="menuitem" href="${paths.studio()}">${icon('studio', 16)}<span>Studio</span></a>`
-      : html`<a class="menu-item" role="menuitem" href="${paths.studio()}">${icon('studio', 16)}<span>Open your atelier</span></a>`}
+      ? html`<a class="menu-item" role="menuitem" href="${paths.creator(model.creator.slug)}">${icon('user', 16)}<span>My Studio</span></a><a class="menu-item" role="menuitem" href="${paths.studio()}">${icon('studio', 16)}<span>Studio</span></a>`
+      : html`<a class="menu-item" role="menuitem" href="${paths.studio()}">${icon('studio', 16)}<span>Open your Studio</span></a>`}
     <a class="menu-item" role="menuitem" href="${paths.memberships}">${icon('members', 16)}<span>Memberships</span></a>
     <button type="button" class="menu-item" role="menuitem" data-action="sign-out">${icon('logout', 16)}<span>Sign out</span></button>`;
   return menu({ id: 'menu-account', label: 'Account menu', className: 'account-menu', trigger: { className: 'avatar-button', content: avatar(person, { size: 36 }) }, panel });
@@ -58,7 +58,7 @@ function sidebar(model, counts) {
       { label: 'Messages', glyph: 'message', href: paths.messages(), badge: 'messages' },
       { label: 'Notifications', glyph: 'bell', href: paths.notifications, badge: 'notifications' },
       { label: 'Memberships', glyph: 'members', href: paths.memberships },
-      { label: model.creator ? 'Studio' : 'Open your atelier', glyph: 'studio', href: paths.studio() },
+      { label: model.creator ? 'Studio' : 'Open your Studio', glyph: 'studio', href: paths.studio() },
       { label: 'Settings', glyph: 'settings', href: paths.settings() }
     ]
     : [
@@ -67,9 +67,9 @@ function sidebar(model, counts) {
     ];
   const bottom = model.signedIn
     ? html`<a class="profile-link" href="${paths.settings()}">${avatar({ name: model.name, avatarUrl: model.avatarUrl }, { size: 36 })}<span class="profile-text"><strong>${model.name}</strong><small>${model.email}</small></span></a>`
-    : html`<div class="sidebar-join"><p class="eyebrow">Join REFLUENZ</p><p>Follow creators, save work and join circles. Free while we are in early access.</p><a class="button small" href="${paths.signup()}" data-next-link="signup">Join free</a><a class="text-link" href="${paths.login()}" data-next-link="login">Sign in</a></div>`;
+    : html`<div class="sidebar-join"><p class="eyebrow">Join REFLUENZ</p><p>Follow creators, save work and join Houses. Free while we are in early access.</p><a class="button small" href="${paths.signup()}" data-next-link="signup">Join free</a><a class="text-link" href="${paths.login()}" data-next-link="login">Sign in</a></div>`;
   return html`<a class="wordmark sidebar-wordmark" href="${paths.home}" aria-label="REFLUENZ, home">REFLUENZ</a>
-    <p class="eyebrow muted sidebar-caption">The digital atelier</p>
+    <p class="eyebrow muted sidebar-caption">The House for work of every kind</p>
     ${model.creator && newPostMenu('menu-new-sidebar', { className: 'button new-post-button', content: html`${icon('plus', 16)}<span class="nav-label">New post</span>` }, 'new-post')}
     <nav aria-label="Main"><ul class="side-nav">${items.map(item => navItem(item, counts))}</ul></nav>
     <div class="sidebar-bottom">${bottom}</div>`;

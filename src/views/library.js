@@ -2,7 +2,7 @@
 //
 // Each post can be taken out again with "Remove" (the same optimistic save toggle as the bookmark, with its rollback and
 // message), and the whole list can be downloaded as a JSON reading list. Posts that were unpublished or deleted are
-// left out by the api; posts of circles you have since left stay, locked, until you remove them.
+// left out by the api; posts of Houses you have since left stay, locked, until you remove them.
 
 import { button, delegate, emptyState, entryCard, html, setBusy, toast } from '../core/ui.js';
 import { paths } from '../core/paths.js';

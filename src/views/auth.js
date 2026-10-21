@@ -24,8 +24,8 @@ const NAME_MAX = 60;
 const GENERIC_ERROR = 'Something went wrong. Try again in a moment.';
 
 const COPY = {
-  login: { title: 'Sign in', kicker: 'Welcome back', heading: 'Step inside.', lede: 'Your library, your circles and your conversations, as you left them.', ledeNext: 'Sign in to continue where you left off.' },
-  signup: { title: 'Create your account', kicker: 'Free to join', heading: 'Find your circle.', lede: 'Follow creators, keep a library and join circles. Joining is free during early access and nothing is charged.' },
+  login: { title: 'Sign in', kicker: 'Welcome back', heading: 'Step inside.', lede: 'Your library, your Houses and your conversations, as you left them.', ledeNext: 'Sign in to continue where you left off.' },
+  signup: { title: 'Create your account', kicker: 'Free to join', heading: 'Find your House.', lede: 'Follow creators, keep a library and join Houses. Joining is free during early access and nothing is charged.' },
   forgot: { title: 'Reset your password', kicker: 'Account recovery', heading: 'Reset your password.', lede: 'Enter the email you signed up with. We will send a link to choose a new password.' },
   reset: { title: 'Choose a new password', kicker: 'Account recovery', heading: 'Choose a new password.', lede: `Use at least ${PASSWORD_MIN} characters. You stay signed in afterwards.` }
 };
@@ -201,7 +201,7 @@ export default {
         </div>
         <p class="eyebrow muted auth-foot">Early access. Free to join, nothing is charged.</p>
       </div>
-      <figure class="auth-picture"><img src="${presetUrl('atelier')}" alt="A monochrome study of a sculptural coat in an atelier" decoding="async"><figcaption class="eyebrow">The digital atelier</figcaption></figure>
+      <figure class="auth-picture"><img src="${presetUrl('atelier')}" alt="A monochrome study of a sculptural coat in a sunlit room" decoding="async"><figcaption class="eyebrow">Your work. Your House. Your rules.</figcaption></figure>
     </section>`;
   },
 

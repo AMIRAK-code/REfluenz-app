@@ -69,9 +69,9 @@ const E = IDS.entries;
 
 // Seed ----------------------------------------------------------------------------------
 const LADDER = [
-  {id: 'essential', name: 'Essential', price: 9, level: 1, description: 'A closer look at the work.', features: ['All circle entries', 'The complete entry archive', 'Members’ conversation']},
-  {id: 'premium', name: 'Premium', price: 19, level: 2, description: 'More context. More connection.', features: ['Everything in Essential', 'In-depth studio notes', 'Priority conversation prompts']},
-  {id: 'signature', name: 'Signature', price: 39, level: 3, description: 'Inside the creative process.', features: ['Everything in Premium', 'Signature reference collections', 'Private workshop notes']}
+  {id: 'essential', name: 'Member', price: 9, level: 1, description: 'A closer look at the work.', features: ['Every House post', 'The complete archive', 'The members’ conversation']},
+  {id: 'premium', name: 'Private', price: 19, level: 2, description: 'Closer to the work, closer to the creator.', features: ['Everything in Member', 'In-depth Studio notes', 'First in the conversation']},
+  {id: 'signature', name: 'Black Label', price: 39, level: 3, description: 'Inside the creative process.', features: ['Everything in Private', 'Black Label collections', 'Private sessions and notes']}
 ];
 
 const body = (...paragraphs) => paragraphs.join('\n\n');
@@ -397,13 +397,13 @@ export function createFakeApi({signedIn = IDS.member, confirmEmail = true, db: o
     async createAtelier(values = {}) {
       const user = needUser();
       const clean = cleanAtelier(values);
-      if (clean.name === undefined) throw Error('Give your atelier a name.');
+      if (clean.name === undefined) throw Error('Give your Studio a name.');
       if (clean.category === undefined) throw Error('Choose a category.');
-      if (ownedCreator(user)) throw Error('You already have an atelier.');
+      if (ownedCreator(user)) throw Error('You already have a Studio.');
       const base = clean.slug ?? (slugify(clean.name).length >= 2 ? slugify(clean.name) : 'atelier');
       let slug = base;
       for (let n = 2; db.creators.some(c => c.slug === slug); n++) {
-        if (clean.slug !== undefined) throw Error('That atelier address is taken. Try another name.');
+        if (clean.slug !== undefined) throw Error('That Studio address is taken. Try another name.');
         slug = `${base.slice(0, 35)}-${n}`;
       }
       const at = stamp();
@@ -416,7 +416,7 @@ export function createFakeApi({signedIn = IDS.member, confirmEmail = true, db: o
     async updateAtelier(id, values = {}) {
       const clean = cleanAtelier(values), row = creatorRow(id);
       if (!row || row.owner_id !== needUser()) throw Error(NOT_FOUND);
-      if (clean.slug !== undefined && db.creators.some(c => c.slug === clean.slug && c.id !== id)) throw Error('That atelier address is taken. Try another name.');
+      if (clean.slug !== undefined && db.creators.some(c => c.slug === clean.slug && c.id !== id)) throw Error('That Studio address is taken. Try another name.');
       Object.assign(row, clean, {updated_at: stamp()});
       return map.creator(row);
     },
@@ -448,7 +448,7 @@ export function createFakeApi({signedIn = IDS.member, confirmEmail = true, db: o
     // tiers
     async listTiers(creatorId) { return map.tiers(tierRows(creatorId)); },
     async updateTier(creatorId, tierId, values = {}) {
-      if (!TIER_IDS.includes(tierId)) throw Error('Choose Essential, Premium or Signature.');
+      if (!TIER_IDS.includes(tierId)) throw Error('Choose Member, Private or Black Label.');
       const clean = cleanTier(values);
       const row = db.creator_tiers.find(t => t.creator_id === creatorId && t.tier_id === tierId);
       if (!row || !owns(needUser(), creatorId)) throw Error(NOT_FOUND);
@@ -488,7 +488,7 @@ export function createFakeApi({signedIn = IDS.member, confirmEmail = true, db: o
       const user = me();
       if (!user) throw Error(PERMISSION);
       const creator = ownedCreator(user);
-      if (!creator) throw rule('Open your atelier before writing an entry.');
+      if (!creator) throw rule('Open your Studio before writing an entry.');
       const kind = values.kind || 'text';
       const text = String(values.body ?? '').trim();
       if (!['text', 'image', 'video'].includes(kind)) throw rule('Choose a post type.');
@@ -702,7 +702,7 @@ export function createFakeApi({signedIn = IDS.member, confirmEmail = true, db: o
     // memberships
     async join(creatorId, tierId) {
       const user = needUser(), creator = creatorRow(creatorId);
-      if (!TIER_IDS.includes(tierId)) throw Error('Choose Essential, Premium or Signature.');
+      if (!TIER_IDS.includes(tierId)) throw Error('Choose Member, Private or Black Label.');
       if (!creator || creator.owner_id === user) throw Error(PERMISSION);
       if (!db.creator_tiers.some(t => t.creator_id === creatorId && t.tier_id === tierId && t.enabled)) throw rule('That membership tier is not open right now.');
       const existing = membershipOf(user, creatorId), at = stamp();
@@ -726,7 +726,7 @@ export function createFakeApi({signedIn = IDS.member, confirmEmail = true, db: o
     },
     async creatorStats(creatorId) {
       const creator = creatorRow(creatorId);
-      if (!creator || !owns(me(), creatorId)) throw rule('Not your atelier.');
+      if (!creator || !owns(me(), creatorId)) throw rule('Not your Studio.');
       const entries = db.entries.filter(e => e.creator_id === creatorId), published = entries.filter(e => e.status === 'published');
       const since = clock - 30 * 86_400_000;
       const members = db.memberships.filter(m => m.creator_id === creatorId);

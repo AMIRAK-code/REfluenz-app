@@ -133,11 +133,11 @@ describe('creator studio view', () => {
 
     it('explains the offer and shows the form, in plain words about early access', async () => {
       await open(member());
-      assert.equal(app.document.title, 'Open your atelier — REFLUENZ');
-      assert.equal(app.text('#view h1'), 'Open your atelier');
+      assert.equal(app.document.title, 'Open your Studio — REFLUENZ');
+      assert.equal(app.text('#view h1'), 'Open your Studio');
       assert.equal(app.find('#view section').getAttribute('aria-labelledby'), 'studio-open-title');
       assert.match(app.text('.studio-offer'), /Publish what you make/);
-      assert.match(app.text('.studio-offer'), /Build a circle/);
+      assert.match(app.text('.studio-offer'), /Build a House/);
       assert.match(app.text('.studio-offer .notice'), /Payments are not live yet\. Joining is free during early access/);
       assert.ok(app.exists('[data-open-form]'));
       assert.equal(app.exists('.studio-metrics'), false, 'no dashboard without an atelier');
@@ -229,7 +229,7 @@ describe('creator studio view', () => {
       await open(fake);
       await app.submit('[data-open-form]');
       assert.equal(callsTo(fake, 'createAtelier').length, 0);
-      assert.match(app.text('[data-error-for="name"]'), /Give your atelier a name\./);
+      assert.match(app.text('[data-error-for="name"]'), /Give your Studio a name\./);
       assert.match(app.text('[data-error-for="category"]'), /Choose a category\./);
       assert.match(app.text('[data-form-error]'), /Check the highlighted fields/);
       assert.equal(app.find('#atelier-name').getAttribute('aria-invalid'), 'true');
@@ -278,7 +278,7 @@ describe('creator studio view', () => {
       assert.equal(app.path, '/app/studio');
       assert.equal(app.text('#view h1'), 'Salt & Linen');
       assert.equal(app.document.title, 'Studio — REFLUENZ');
-      assert.match(toastText(), /Your atelier is open/);
+      assert.match(toastText(), /Your Studio is open/);
       assert.equal(fake.db.creators.find(row => row.slug === 'salt-linen').owner_id, IDS.member);
       // the sidebar turns into the creator's
       assert.ok(app.exists('#view .studio-new'), 'the new post chooser is there');
@@ -298,7 +298,7 @@ describe('creator studio view', () => {
       await type('#atelier-name', 'Hold Fast');
       await choose('#atelier-category', 'Music');
       await type('#atelier-bio', 'Words I typed.');
-      fake.fail('createAtelier', 'The atelier could not be opened right now.');
+      fake.fail('createAtelier', 'The Studio could not be opened right now.');
       await app.submit('[data-open-form]');
       assert.match(app.text('[data-form-error]'), /could not be opened right now/);
       assert.match(toastText(), /could not be opened right now/);
@@ -316,7 +316,7 @@ describe('creator studio view', () => {
     it('puts a server message about the address on the address field', async () => {
       const fake = member();
       await open(fake);
-      fake.fail('createAtelier', 'That atelier address is taken. Try another name.');
+      fake.fail('createAtelier', 'That Studio address is taken. Try another name.');
       await app.submit('[data-open-form]', { name: 'Race Lost', category: 'Art', slug: 'race-lost' });
       assert.match(app.text('[data-error-for="slug"]'), /address is taken/);
       assert.equal(app.document.activeElement?.id, 'atelier-slug');
@@ -326,7 +326,7 @@ describe('creator studio view', () => {
       const fake = member();
       await open(fake);
       const real = fake.createAtelier.bind(fake);
-      fake.createAtelier = async values => { await real(values); throw Error('You already have an atelier.'); };
+      fake.createAtelier = async values => { await real(values); throw Error('You already have a Studio.'); };
       await app.submit('[data-open-form]', { name: 'Twice Over', category: 'Art' });
       assert.equal(app.path, '/app/studio');
       assert.equal(app.text('#view h1'), 'Twice Over');
@@ -375,7 +375,7 @@ describe('creator studio view', () => {
       assert.equal(app.find('#view > section').getAttribute('aria-labelledby'), 'studio-title');
       assert.match(app.text('.studio-line'), /Essays on getting started · Writing · Turin, Italy/);
       assert.equal(app.find('.studio-head-actions a[href="/app/c/verne-and-co"]').textContent.trim(), 'View public page');
-      assert.equal(app.find('.studio-head-actions a[href="/app/studio/settings"]').textContent.trim(), 'Edit atelier');
+      assert.equal(app.find('.studio-head-actions a[href="/app/studio/settings"]').textContent.trim(), 'Edit Studio');
       assert.ok(app.exists('.studio-identity .avatar'));
     });
 
@@ -394,7 +394,7 @@ describe('creator studio view', () => {
 
     it('has headings for each part and labelled landmarks', async () => {
       await open(owner());
-      assert.deepEqual(rows('h2').map(node => node.textContent.trim()), ['New post', 'Overview', 'Your posts, circle and notes']);
+      assert.deepEqual(rows('h2').map(node => node.textContent.trim()), ['New post', 'Overview', 'Your posts, House and notes']);
       for (const section of app.document.querySelectorAll('#view section[aria-labelledby]')) assert.ok(app.exists(`#${section.getAttribute('aria-labelledby')}`));
       assert.equal(app.find('[data-region="stats"]').getAttribute('aria-live'), 'polite');
     });
@@ -817,7 +817,7 @@ describe('creator studio view', () => {
   describe('the circle', () => {
     it('shows an empty state for a circle that is forming', async () => {
       await open(owner(), '/app/studio?tab=members');
-      assert.match(app.text('.empty h3'), /Your circle is forming/);
+      assert.match(app.text('.empty h3'), /Your House is forming/);
       assert.match(app.text('.empty p'), /Joining is free during early access/);
       assert.equal(app.find('.empty a.button').getAttribute('href'), '/app/c/verne-and-co');
       assert.equal(app.find('[data-export-members]').disabled, true, 'nothing to export');
@@ -842,7 +842,7 @@ describe('creator studio view', () => {
       await type('#studio-member-search', 'ad');
       assert.deepEqual(rows('.studio-member strong').map(node => node.textContent).sort(), ['Ada Lindgren', 'Adriana Costa']);
       assert.equal(app.find('#studio-member-search'), box, 'the same field stays on the page');
-      assert.match(app.text('.studio-list-foot'), /2 members of 3 in your circle/);
+      assert.match(app.text('.studio-list-foot'), /2 members of 3 in your House/);
       assert.match(app.text('[data-region="announce"]'), /2 members shown\./);
       await type('#studio-member-search', 'ADA L');
       assert.deepEqual(rows('.studio-member strong').map(node => node.textContent), ['Ada Lindgren']);
@@ -891,7 +891,7 @@ describe('creator studio view', () => {
       const fake = owner();
       fake.fail('circleMembers', 'The circle is resting.');
       await open(fake, '/app/studio?tab=members');
-      assert.match(app.text('[data-region="results"] .error-state'), /We could not load your circle/);
+      assert.match(app.text('[data-region="results"] .error-state'), /We could not load your House/);
       assert.match(app.text('[data-region="results"] .error-state'), /The circle is resting\./);
       assert.equal(app.find('[data-export-members]').disabled, true);
       fake.fail('circleMembers', null);
@@ -930,7 +930,7 @@ describe('creator studio view', () => {
       assert.equal(files.length, 1);
       assert.match(files[0].type, /^text\/csv/);
       assert.equal(names.length, 1);
-      assert.match(names[0], /^refluenz-circle-verne-and-co-\d{4}-\d\d-\d\d\.csv$/);
+      assert.match(names[0], /^refluenz-house-verne-and-co-\d{4}-\d\d-\d\d\.csv$/);
       const bytes = new Uint8Array(await files[0].arrayBuffer());
       assert.deepEqual([...bytes.slice(0, 3)], [0xef, 0xbb, 0xbf], 'a byte order mark so spreadsheets read accents');
       assert.equal(await files[0].text(), '"Name","Tier","Joined"\r\n"Tomas Reyes","Supporter","2026-09-01"\r\n"Ada Lindgren","Reader","2026-09-01"\r\n');
@@ -955,8 +955,8 @@ describe('creator studio view', () => {
       assert.equal(csvCell(null), '""');
       assert.equal(csvCell('\t=x'), '"\'\t=x"');
       assert.equal(membersCsv([{ member: { name: 'A\nB' }, tier: { name: 'Reader' }, joinedAt: 'not a date' }]), '"Name","Tier","Joined"\r\n"A B","Reader",""\r\n');
-      assert.match(csvFilename('Odd/Slug ../', new Date('2026-10-07T10:00:00Z')), /^refluenz-circle-OddSlug-2026-10-07\.csv$/);
-      assert.equal(csvFilename('', new Date('2026-10-07T10:00:00Z')), 'refluenz-circle-atelier-2026-10-07.csv');
+      assert.match(csvFilename('Odd/Slug ../', new Date('2026-10-07T10:00:00Z')), /^refluenz-house-OddSlug-2026-10-07\.csv$/);
+      assert.equal(csvFilename('', new Date('2026-10-07T10:00:00Z')), 'refluenz-house-studio-2026-10-07.csv');
     });
 
     it('says so when the file cannot be created', async () => {
@@ -1002,7 +1002,7 @@ describe('creator studio view', () => {
       assert.deepEqual(rows('.studio-note-text').map(node => node.textContent), ['A new rule for Mondays.', 'Welcome to the circle. New essays arrive on Mondays.']);
       assert.equal(app.find('#studio-note-text').value, '');
       assert.equal(app.text('[data-note-count]'), '0 / 2,000');
-      assert.match(toastText(), /Note posted\. Your circle has been told\./);
+      assert.match(toastText(), /Note posted\. Your House has been told\./);
       assert.match(app.text('[data-region="announce"]'), /Note posted\./);
       assert.equal(app.find('[data-note-submit]').disabled, false);
       assert.equal(fake.db.circle_notes.length, 2);

@@ -27,18 +27,18 @@ const NOTIFY_GROUPS = [
       { key: 'new_entry', label: 'New posts', text: 'A creator you follow or belong to publishes something new.' },
       { key: 'reply', label: 'Replies', text: 'Someone replies to one of your comments.' },
       { key: 'message', label: 'Messages', text: 'A new message in one of your conversations.' },
-      { key: 'note', label: 'Circle notes', text: 'A creator you belong to posts a note to their circle.' }
+      { key: 'note', label: 'House notes', text: 'A creator you belong to posts a note to their House.' }
     ]
   },
   {
     id: 'creating',
     title: 'As a creator',
-    text: 'What reaches you about your own atelier. Nothing arrives until you open one.',
+    text: 'What reaches you about your own Studio. Nothing arrives until you open one.',
     items: [
       { key: 'comment', label: 'Comments', text: 'Someone comments on one of your posts.' },
       { key: 'like', label: 'Likes', text: 'Someone likes one of your posts.' },
-      { key: 'follow', label: 'New followers', text: 'Someone follows your atelier.' },
-      { key: 'membership', label: 'New members', text: 'Someone joins your circle.' }
+      { key: 'follow', label: 'New followers', text: 'Someone follows your Studio.' },
+      { key: 'membership', label: 'New members', text: 'Someone joins your House.' }
     ]
   }
 ];
@@ -84,7 +84,7 @@ function profileSection(ctx, data) {
   const values = profileValues(data);
   const errors = data.errors;
   return html`<section class="settings-section" aria-labelledby="details-title">
-    <div class="settings-intro"><h2 id="details-title">Details</h2><p>Creators see these when you write to them or join their circle.</p></div>
+    <div class="settings-intro"><h2 id="details-title">Details</h2><p>Creators see these when you write to them or join their House.</p></div>
     <form class="settings-body" data-form="profile" novalidate>
       ${textField({ id: 'profile-name', name: 'name', label: 'Display name', value: values.name, max: 60, required: true, error: errors['profile-name'], extra: { autocomplete: 'name' } })}
       ${textField({ id: 'profile-bio', name: 'bio', label: 'About you', control: 'textarea', rows: 4, value: values.bio, max: 240, counter: true, hint: 'A line or two. Optional.', error: errors['profile-bio'] })}
@@ -99,9 +99,9 @@ function atelierLink(ctx) {
   const creator = ctx.store.state.myCreator;
   if (!creator) return '';
   return html`<section class="settings-section" aria-labelledby="atelier-link-title">
-    <div class="settings-intro"><h2 id="atelier-link-title">Your atelier</h2><p>The page you share with your circle has its own settings.</p></div>
+    <div class="settings-intro"><h2 id="atelier-link-title">Your Studio</h2><p>The page you share with your House has its own settings.</p></div>
     <div class="settings-body"><p class="settings-lede"><strong>${creator.name}</strong> has its own name, address, banner and tiers.</p>
-    <div class="form-actions">${button('Atelier settings', { variant: 'secondary', href: paths.studioSettings(), icon: 'studio' })}</div></div>
+    <div class="form-actions">${button('Studio settings', { variant: 'secondary', href: paths.studioSettings(), icon: 'studio' })}</div></div>
   </section>`;
 }
 
@@ -164,7 +164,7 @@ function dataPanel(ctx, data) {
   return html`<section class="settings-section" aria-labelledby="export-title">
       <div class="settings-intro"><h2 id="export-title">Export</h2><p>A copy of what you have given REFLUENZ.</p></div>
       <div class="settings-body">
-        <p class="settings-lede">Download your profile, settings, follows, saved and liked posts, memberships, comments and conversations${creator ? ', together with your atelier, posts and circle notes' : ''} as one JSON file.</p>
+        <p class="settings-lede">Download your profile, settings, follows, saved and liked posts, memberships, comments and conversations${creator ? ', together with your Studio, posts and House notes' : ''} as one JSON file.</p>
         ${formError('export', data.error.export)}
         ${formNote('export', data.note.export)}
         <div class="form-actions">${button('Export my data', { variant: 'secondary', icon: 'export', attrs: { 'data-action': 'export' } })}</div>
@@ -173,7 +173,7 @@ function dataPanel(ctx, data) {
     <section class="settings-section danger-zone" aria-labelledby="delete-title">
       <div class="settings-intro"><h2 id="delete-title">Delete your account</h2><p>Permanent. There is no way back.</p></div>
       <div class="settings-body">
-        <p class="settings-lede">Deleting your account removes your profile and sign-in${creator ? ', your atelier, every post, draft and uploaded file, and your circle' : ''}, along with your follows, saves, comments, memberships and messages.</p>
+        <p class="settings-lede">Deleting your account removes your profile and sign-in${creator ? ', your Studio, every post, draft and uploaded file, and your House' : ''}, along with your follows, saves, comments, memberships and messages.</p>
         <p class="field-help">Export your data first if you want to keep a copy.</p>
         <div class="form-actions">${button('Delete my account', { variant: 'danger', attrs: { 'data-action': 'delete-account' } })}</div>
       </div>
@@ -189,9 +189,9 @@ function deleteDialog(ctx) {
   const creator = store.state.myCreator;
   const consequences = [
     'Your profile, picture and settings',
-    creator && html`Your atelier <strong>${creator.name}</strong> and its address`,
+    creator && html`Your Studio <strong>${creator.name}</strong> and its address`,
     creator && 'Every post, draft, image and film you uploaded',
-    creator && 'Your circle: members lose access to your posts and your notes',
+    creator && 'Your House: members lose access to your posts and your notes',
     'Your follows, saves, likes, comments and memberships',
     'Your messages'
   ].filter(Boolean);

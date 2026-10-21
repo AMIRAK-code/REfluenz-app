@@ -85,7 +85,7 @@ export const tick = (ms = 0) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const makeSession = (id = 'user-1', email = 'mila@example.test') => ({ access_token: `token-${id}`, user: { id, email } });
 
-export const LADDER = [{ id: 'essential', level: 1, name: 'Essential' }, { id: 'premium', level: 2, name: 'Premium' }, { id: 'signature', level: 3, name: 'Signature' }];
+export const LADDER = [{ id: 'essential', level: 1, name: 'Member' }, { id: 'premium', level: 2, name: 'Private' }, { id: 'signature', level: 3, name: 'Black Label' }];
 
 export const makeViewer = (overrides = {}) => ({
   profile: { id: 'user-1', name: 'Mila Rossi', bio: '', website: '', avatarUrl: null, avatarPath: null },

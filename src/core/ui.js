@@ -385,7 +385,7 @@ export function pickFiles({ accept = '', multiple = false } = {}) {
 const followContent = on => html`${icon(on ? 'check' : 'plus', 14)}<span data-label>${on ? 'Following' : 'Follow'}</span>`;
 const likeContent = (on, count) => html`${icon('heart', 16)}<span class="count" data-count>${count > 0 ? compactNumber(count) : ''}</span>`;
 
-// Your own atelier cannot be followed, so it gets no button.
+// Your own Studio cannot be followed, so it gets no button.
 export function followButton(creatorId) {
   if (store.state.myCreator?.id === creatorId) return html``;
   const on = store.state.following.has(creatorId);
@@ -472,7 +472,7 @@ export function creatorCard(creator) {
   </article>`;
 }
 
-// One tier of a creator's circle. `action` is markup (a button) or {label, href, attrs, variant}.
+// One tier of a creator's House. `action` is markup (a button) or {label, href, attrs, variant}.
 export function tierCard(tier, { current = false, selected = false, action } = {}) {
   const closed = tier.enabled === false;
   return html`<article class="tier-card${selected ? ' is-selected' : ''}${current ? ' is-current' : ''}${closed ? ' is-closed' : ''}" data-tier="${tier.id}">

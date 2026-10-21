@@ -183,7 +183,7 @@ describe('post editor view', () => {
       assert.equal(app.find(`#${group.getAttribute('aria-labelledby')}`).textContent, 'Post type');
       assert.deepEqual([...group.querySelectorAll('button')].map(button => [button.dataset.id, button.getAttribute('aria-pressed')]), [['text', 'true'], ['image', 'false'], ['video', 'false']]);
       assert.deepEqual([...app.find('.ed-actions').querySelectorAll('button')].map(button => button.textContent.trim()), ['Save draft', 'Publish']);
-      assert.match(app.text('.ed-footer-note'), /Drafts are only visible in your studio/);
+      assert.match(app.text('.ed-footer-note'), /Drafts are only visible in your Studio/);
     });
 
     it('gives every control a label, and the alt text of each picture its own', async () => {
@@ -227,6 +227,7 @@ describe('post editor view', () => {
       assert.deepEqual([...app.find('#entry-format').options].map(option => option.text), ['Essay', 'Guide', 'Studio note', 'Field note', 'Collection']);
       assert.deepEqual([...app.find('#entry-access').options].map(option => [option.value, option.text]), [['public', 'Everyone'], ['essential', 'Reader and above'], ['premium', 'Supporter and above']]);
       assert.deepEqual([...app.find('#entry-image').options].map(option => option.value), ['atelier', 'ritual', 'architecture']);
+      assert.deepEqual([...app.find('#entry-image').options].map(option => option.text), ['Studio', 'Ritual', 'Architecture'], 'the cover study of value atelier is called Studio on screen');
       await act('kind', 'image');
       assert.deepEqual([...app.find('#entry-format').options].map(option => option.text), ['Essay', 'Guide', 'Studio note', 'Field note', 'Collection', 'Gallery', 'Film']);
     });
@@ -244,7 +245,7 @@ describe('post editor view', () => {
       await open(owner());
       assert.match(app.text('#entry-access-help'), /Everyone can read this post, signed in or not/);
       await choose('#entry-access', 'premium');
-      assert.match(app.text('#entry-access-help'), /Members of your Supporter circle and above can read this post/);
+      assert.match(app.text('#entry-access-help'), /Members of your House at the Supporter level and above can read this post/);
     });
 
     it('shows an error with Retry when the tiers cannot be loaded, and opens once they can', async () => {
@@ -287,7 +288,7 @@ describe('post editor view', () => {
       await open(owner(), `/app/studio/edit/${E.linenWardrobe}`);
       assert.match(app.text('h1'), /This post is not here/);
       assert.equal(app.exists('#editor-form'), false);
-      assert.equal(app.find('#view a[href="/app/studio"]').textContent.trim(), 'Back to your studio');
+      assert.equal(app.find('#view a[href="/app/studio"]').textContent.trim(), 'Back to your Studio');
       await app.navigate('/app/studio/edit/3f000000-0000-4000-8000-000000000999');
       assert.match(app.text('h1'), /This post is not here/);
       assert.match(app.document.title, /Post not found/);
@@ -380,7 +381,7 @@ describe('post editor view', () => {
       assert.equal(status, 'draft');
       assert.deepEqual(values, { kind: 'text', title: 'A walk before breakfast', subtitle: 'Notes from the road', body: LONG, category: 'Culture', format: 'Field note', image: 'ritual', access: 'essential' });
       assert.equal(app.path, '/app/studio?tab=drafts');
-      assert.match(toastText(), /Draft saved in your studio\./);
+      assert.match(toastText(), /Draft saved in your Studio\./);
       const saved = fake.db.entries.find(entry => entry.title === 'A walk before breakfast');
       assert.deepEqual([saved.status, saved.kind, saved.access], ['draft', 'text', 'essential']);
     });
@@ -1426,7 +1427,7 @@ describe('post editor view', () => {
       await choose('#entry-access', 'premium');
       await act('mode', 'preview');
       assert.match(app.text('#editor-preview .eyebrow.bronze'), /Supporter and above/);
-      assert.match(app.text('.ed-lock-note'), /Members of your Supporter circle and above read the rest\. Everyone else sees the opening paragraph, a blurred preview and an invitation to join\./);
+      assert.match(app.text('.ed-lock-note'), /Members of your House at the Supporter level and above read the rest\. Everyone else sees the opening paragraph, a blurred preview and an invitation to join\./);
     });
 
     it('shows an empty post as such', async () => {

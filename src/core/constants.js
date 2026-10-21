@@ -3,7 +3,6 @@
 
 export const SITE_NAME = 'REFLUENZ';
 
-export const CATEGORIES = ['Style', 'Beauty', 'Design', 'Culture'];
 export const KINDS = ['text', 'image', 'video'];
 export const TEXT_FORMATS = ['Essay', 'Guide', 'Studio note', 'Field note', 'Collection'];
 export const FORMATS = [...TEXT_FORMATS, 'Gallery', 'Film'];
@@ -17,7 +16,8 @@ export const PRESET_BASE = '/editorial/v1';
 // The shared access ladder (public.tiers). Creators rename and price each level, the level itself is fixed.
 export const TIER_IDS = ['essential', 'premium', 'signature'];
 export const TIER_LEVELS = { public: 0, essential: 1, premium: 2, signature: 3 };
-export const TIER_NAMES = { public: 'Open', essential: 'Essential', premium: 'Premium', signature: 'Signature' };
+// The House's three doors: Member, Private and Black Label.
+export const TIER_NAMES = { public: 'Open', essential: 'Member', premium: 'Private', signature: 'Black Label' };
 
 export const DEFAULT_SETTINGS = Object.freeze({ compact: false, welcomeDismissed: false, onboarded: true, notifyPrefs: {} });
 

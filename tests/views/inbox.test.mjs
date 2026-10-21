@@ -82,22 +82,22 @@ describe('messages and notifications views', () => {
       assert.ok(item.classList.contains('is-unread'));
       assert.match(app.text('.inbox-placeholder'), /Choose a conversation/);
       assert.equal(app.find('.inbox').dataset.pane, 'list');
-      assert.equal(app.exists('.inbox-tag'), false, 'a member’s own conversations are not tagged as the atelier');
+      assert.equal(app.exists('.inbox-tag'), false, 'a member’s own conversations are not tagged as the Studio');
     });
 
-    it('shows the member as the other party to the owner, tagged with their atelier, and prefixes their own last line', async () => {
+    it('shows the member as the other party to the owner, tagged with their Studio, and prefixes their own last line', async () => {
       await open(owner(), '/app/messages');
       const item = app.find('.inbox-item');
       assert.equal(item.querySelector('.inbox-name').textContent, 'Sofia Marchetti');
       assert.equal(item.getAttribute('href'), THREAD);
       assert.match(item.querySelector('.inbox-preview').textContent, /^You: Yes, and about leaving them open\.$/);
-      assert.match(item.textContent, /Your atelier/);
+      assert.match(item.textContent, /Your Studio/);
       assert.equal(item.classList.contains('is-unread'), false, 'nothing from the member is waiting');
     });
 
     it('shows a person who is both a member and an owner each conversation from their own side', async () => {
       const fake = owner();
-      // Marco is also a member of nobody's atelier by default: give him a conversation with a showcase-free atelier of his own making.
+      // Marco is also a member of nobody's Studio by default: give him a conversation with a showcase-free Studio of his own making.
       fake.db.creators.push({ ...creatorRow(fake, IDS.verano), id: uuid(2), slug: 'other-hand', name: 'Other Hand', owner_id: IDS.fan3, is_showcase: false });
       const other = fake.db.creators.at(-1).id;
       join(fake, IDS.owner, other);
@@ -108,7 +108,7 @@ describe('messages and notifications views', () => {
       assert.deepEqual(names.sort(), ['Other Hand', 'Sofia Marchetti']);
       const own = [...app.document.querySelectorAll('.inbox-item')].find(item => item.textContent.includes('Other Hand'));
       assert.match(own.querySelector('.inbox-preview').textContent, /^You: Question from Marco$/);
-      assert.equal(own.textContent.includes('Your atelier'), false);
+      assert.equal(own.textContent.includes('Your Studio'), false);
     });
 
     it('explains the empty state and offers the next step', async () => {
@@ -116,7 +116,7 @@ describe('messages and notifications views', () => {
       assert.match(app.text('#view'), /No conversations yet/);
       assert.equal(app.exists('.inbox-item'), false);
       assert.ok(app.find('#view .empty a[href="/app/discover"]'));
-      assert.equal(app.exists('.inbox-starter'), false, 'no circle, nobody to suggest');
+      assert.equal(app.exists('.inbox-starter'), false, 'no House, nobody to suggest');
     });
 
     it('explains to an owner that members start conversations', async () => {
@@ -126,16 +126,16 @@ describe('messages and notifications views', () => {
       assert.match(app.text('#view .empty'), /Members start the conversation/);
     });
 
-    it('suggests the ateliers whose circle the person belongs to and who can be written to', async () => {
+    it('suggests the Studios whose House the person belongs to and who can be written to', async () => {
       const fake = createFakeApi({ signedIn: IDS.fan1 });
       join(fake, IDS.fan1, IDS.verne);
       await open(fake, '/app/messages');
       const starters = attr('.inbox-starter', 'href');
-      assert.deepEqual(starters, [`/app/messages/${IDS.verne}/${IDS.fan1}`], 'Atelier Solene is a showcase atelier and is left out');
+      assert.deepEqual(starters, [`/app/messages/${IDS.verne}/${IDS.fan1}`], 'Atelier Solene is a showcase Studio and is left out');
       assert.match(app.text('.inbox-starters'), /Write to Verne & Co/);
     });
 
-    it('stops suggesting an atelier once a conversation exists, and keeps suggesting while the inbox is otherwise empty', async () => {
+    it('stops suggesting a Studio once a conversation exists, and keeps suggesting while the inbox is otherwise empty', async () => {
       const fake = member();
       join(fake, IDS.member, IDS.verne);
       await open(fake, '/app/messages');
@@ -285,7 +285,7 @@ describe('messages and notifications views', () => {
       assert.equal(fake.db.messages.at(-1).body, 'One more question');
     });
 
-    it('sends as the creator when the viewer owns the atelier', async () => {
+    it('sends as the creator when the viewer owns the Studio', async () => {
       const fake = owner();
       await open(fake, THREAD);
       await sendText('Thank you for asking.');
@@ -384,15 +384,15 @@ describe('messages and notifications views', () => {
       assert.deepEqual(bubbles().slice(-2), ['First', 'Second']);
     });
 
-    it('explains that a showcase atelier is not taking messages', async () => {
+    it('explains that a showcase Studio is not taking messages', async () => {
       await open(member(), `/app/messages/${IDS.solene}/${IDS.member}`);
       assert.equal(app.exists('#compose-text'), false);
-      assert.match(app.text('.thread-notice'), /Atelier Solene is a showcase atelier of REFLUENZ, so it is not taking messages/);
+      assert.match(app.text('.thread-notice'), /Atelier Solene is a showcase Studio of REFLUENZ, so it is not taking messages/);
       assert.equal(app.find('.thread-notice a').getAttribute('href'), '/app/c/atelier-solene');
       assert.equal(app.exists('[data-send]'), false);
     });
 
-    it('lets a member start a conversation with an atelier they have never written to', async () => {
+    it('lets a member start a conversation with a Studio they have never written to', async () => {
       const fake = createFakeApi({ signedIn: IDS.fan1 });
       await open(fake, `/app/messages/${IDS.verne}/${IDS.fan1}`);
       assert.match(app.text('.thread-empty'), /Say hello to Verne & Co/);
@@ -419,7 +419,7 @@ describe('messages and notifications views', () => {
       const fake = owner();
       join(fake, IDS.fan2, IDS.verne);
       await open(fake, `/app/messages/${IDS.verne}/${IDS.fan2}`);
-      assert.equal(app.text('.thread-who h2'), 'Tomas Reyes', 'the circle knows the name');
+      assert.equal(app.text('.thread-who h2'), 'Tomas Reyes', 'the House knows the name');
       assert.match(app.text('.thread-empty'), /Tomas Reyes has not written to you yet/);
       assert.match(app.text('.thread-notice'), /Members start the conversation\. You can reply here once Tomas Reyes has written to you/);
       assert.equal(app.exists('#compose-text'), false);
@@ -445,7 +445,7 @@ describe('messages and notifications views', () => {
       for (const path of [
         `/app/messages/${IDS.verne}/${IDS.fan1}`,        // another member's conversation
         `/app/messages/${IDS.verne}/not-an-id`,          // not a uuid
-        `/app/messages/${MISSING}/${IDS.member}`         // an atelier that does not exist
+        `/app/messages/${MISSING}/${IDS.member}`         // a Studio that does not exist
       ]) {
         await open(fake, path);
         assert.match(app.text('.inbox-state'), /This conversation is not available/, path);
@@ -632,7 +632,7 @@ describe('messages and notifications views', () => {
       assert.equal(said('follow'), 'Ada Lindgren started following Verne & Co');
       assert.equal(said('membership'), 'Tomas Reyes joined Verne & Co');
       assert.equal(said('message'), 'Sofia Marchetti sent you a message');
-      assert.equal(said('note'), 'Verne & Co posted a note to the circle');
+      assert.equal(said('note'), 'Verne & Co posted a note to the House');
       const href = type => byType[type].querySelector('a.activity-main').getAttribute('href');
       assert.equal(href('new_entry'), `/app/p/${E.firstDraftHabits}`);
       assert.equal(href('like'), `/app/p/${E.firstDraftHabits}`);
